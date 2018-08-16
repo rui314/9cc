@@ -21,6 +21,11 @@ void gen_x86(Vector *irv) {
     case '-':
       printf("  sub %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
       break;
+    case '*':
+      printf("  mov rax, %s\n", regs[ir->rhs]);
+      printf("  mul %s\n", regs[ir->lhs]);
+      printf("  mov %s, rax\n", regs[ir->lhs]);
+      break;
     case IR_NOP:
       break;
     default:
