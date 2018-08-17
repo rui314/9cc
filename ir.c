@@ -16,16 +16,6 @@ static IR *add(int op, int lhs, int rhs) {
   return ir;
 }
 
-static IR *add_imm(int op, int lhs, int imm) {
-  IR *ir = calloc(1, sizeof(IR));
-  ir->op = op;
-  ir->lhs = lhs;
-  ir->has_imm = true;
-  ir->imm = imm;
-  vec_push(code, ir);
-  return ir;
-}
-
 static int gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
     error("not an lvalue");
@@ -38,7 +28,7 @@ static int gen_lval(Node *node) {
   int r = regno++;
   int off = (intptr_t)map_get(vars, node->name);
   add(IR_MOV, r, basereg);
-  add_imm('+', r, off);
+  add(IR_ADD_IMM, r, off);
   return r;
 }
 
