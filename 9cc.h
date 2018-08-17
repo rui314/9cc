@@ -94,6 +94,9 @@ typedef struct {
   int op;
   int lhs;
   int rhs;
+
+  bool has_imm;
+  int imm;
 } IR;
 
 Vector *gen_ir(Node *node);
