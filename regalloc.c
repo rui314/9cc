@@ -1,6 +1,6 @@
 #include "9cc.h"
 
-char *regs[] = {"rdi", "rsi", "r10", "r11", "r12", "r13", "r14", "r15"};
+char *regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
 
 static bool used[sizeof(regs) / sizeof(*regs)];
 static int *reg_map;
@@ -27,11 +27,7 @@ static void kill(int r) {
   used[r] = false;
 }
 
-void alloc_regs(Vector *irv) {
-  reg_map = malloc(sizeof(int) * irv->len);
-  for (int i = 0; i < irv->len; i++)
-    reg_map[i] = -1;
-
+static void visit(Vector *irv) {
   for (int i = 0; i < irv->len; i++) {
     IR *ir = irv->data[i];
     IRInfo *info = get_irinfo(ir);
@@ -57,5 +53,18 @@ void alloc_regs(Vector *irv) {
       kill(ir->lhs);
       ir->op = IR_NOP;
     }
+  }
+}
+
+void alloc_regs(Vector *fns) {
+  for (int i = 0; i < fns->len; i++) {
+    Function *fn = fns->data[i];
+
+    reg_map = malloc(sizeof(int) * fn->ir->len);
+    for (int j = 0; j < fn->ir->len; j++)
+      reg_map[j] = -1;
+    memset(used, 0, sizeof(used));
+
+    visit(fn->ir);
   }
 }

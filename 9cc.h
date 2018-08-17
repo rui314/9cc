@@ -75,7 +75,8 @@ enum {
   ND_IDENT,         // Identifier
   ND_IF,            // "if"
   ND_RETURN,        // "return"
-  ND_CALL,       // Function call
+  ND_CALL,          // Function call
+  ND_FUNC,          // Function definition
   ND_COMP_STMT,     // Compound statement
   ND_EXPR_STMT,     // Expressions tatement
 };
@@ -95,11 +96,14 @@ typedef struct Node {
   struct Node *then;
   struct Node *els;
 
+  // Function definition
+  struct Node *body;
+
   // Function call
   Vector *args;
 } Node;
 
-Node *parse(Vector *tokens);
+Vector *parse(Vector *tokens);
 
 /// ir.c
 
@@ -146,10 +150,16 @@ typedef struct {
   int ty;
 } IRInfo;
 
+typedef struct {
+  char *name;
+  int args[6];
+  Vector *ir;
+} Function;
+
 extern IRInfo irinfo[];
 IRInfo *get_irinfo(IR *ir);
 
-Vector *gen_ir(Node *node);
+Vector *gen_ir(Vector *nodes);
 void dump_ir(Vector *irv);
 
 /// regalloc.c
@@ -158,7 +168,7 @@ extern char *regs[];
 void alloc_regs(Vector *irv);
 
 /// codegen.c
-void gen_x86(Vector *irv);
+void gen_x86(Vector *fns);
 
 /// main.c
 char **argv;

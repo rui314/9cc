@@ -25,20 +25,16 @@ int main(int argc, char **argv) {
 
   // Tokenize and parse.
   Vector *tokens = tokenize(input);
-  Node* node = parse(tokens);
+  Vector *fns = gen_ir(parse(tokens));
 
-  Vector *irv = gen_ir(node);
   if (dump_ir1)
-    dump_ir(irv);
+    dump_ir(fns);
 
-  alloc_regs(irv);
+  alloc_regs(fns);
 
   if (dump_ir2)
-    dump_ir(irv);
+    dump_ir(fns);
 
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-  gen_x86(irv);
+  gen_x86(fns);
   return 0;
 }
