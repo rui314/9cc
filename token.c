@@ -66,6 +66,7 @@ static Vector *scan(char *p) {
 
 Vector *tokenize(char *p) {
   keywords = new_map();
+  map_put(keywords, "if", (void *)TK_IF);
   map_put(keywords, "return", (void *)TK_RETURN);
 
   return scan(p);
