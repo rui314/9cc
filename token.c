@@ -24,7 +24,7 @@ static Vector *scan(char *p) {
     }
 
     // Single-letter token
-    if (strchr("+-*/;=", *p)) {
+    if (strchr("+-*/;=()", *p)) {
       add_token(v, *p, p);
       i++;
       p++;
