@@ -1,14 +1,7 @@
 #include "9cc.h"
 
-static char *gen_label() {
-  static int n;
-  char buf[10];
-  sprintf(buf, ".L%d", n++);
-  return strdup(buf);
-}
-
 void gen_x86(Vector *irv) {
-  char *ret = gen_label();
+  char *ret = ".Lend";
 
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
@@ -29,6 +22,13 @@ void gen_x86(Vector *irv) {
     case IR_RETURN:
       printf("  mov rax, %s\n", regs[ir->lhs]);
       printf("  jmp %s\n", ret);
+      break;
+    case IR_LABEL:
+      printf(".L%d:\n", ir->lhs);
+      break;
+    case IR_UNLESS:
+      printf("  cmp %s, 0\n", regs[ir->lhs]);
+      printf("  je .L%d\n", ir->rhs);
       break;
     case IR_ALLOCA:
       if (ir->rhs)

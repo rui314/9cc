@@ -8,6 +8,15 @@ noreturn void error(char *fmt, ...) {
   exit(1);
 }
 
+char *format(char *fmt, ...) {
+  char buf[1024];
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return strdup(buf);
+}
+
 Vector *new_vec() {
   Vector *v = malloc(sizeof(Vector));
   v->data = malloc(sizeof(void *) * 16);
