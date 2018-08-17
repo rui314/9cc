@@ -26,6 +26,9 @@ void gen_x86(Vector *irv) {
     case IR_LABEL:
       printf(".L%d:\n", ir->lhs);
       break;
+    case IR_JMP:
+      printf("  jmp .L%d\n", ir->lhs);
+      break;
     case IR_UNLESS:
       printf("  cmp %s, 0\n", regs[ir->lhs]);
       printf("  je .L%d\n", ir->rhs);
