@@ -46,6 +46,11 @@ void alloc_regs(Vector *irv) {
       ir->lhs = alloc(ir->lhs);
       ir->rhs = alloc(ir->rhs);
       break;
+    case IR_TY_CALL:
+      ir->lhs = alloc(ir->lhs);
+      for (int i = 0; i < ir->nargs; i++)
+	ir->args[i] = alloc(ir->args[i]);
+      break;
     }
 
     if (ir->op == IR_KILL) {
