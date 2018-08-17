@@ -11,6 +11,7 @@ IRInfo irinfo[] = {
   {IR_LABEL, "", IR_TY_LABEL},
   {IR_JMP, "JMP", IR_TY_LABEL},
   {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
+  {IR_CALL, "CALL", IR_TY_CALL},
   {IR_RETURN, "RET", IR_TY_REG},
   {IR_ALLOCA, "ALLOCA", IR_TY_REG_IMM},
   {IR_LOAD, "LOAD", IR_TY_REG_REG},
@@ -50,6 +51,14 @@ static char *tostr(IR *ir) {
     return format("%s r%d, %d\n", info->name, ir->lhs, ir->rhs);
   case IR_TY_REG_LABEL:
     return format("%s r%d, .L%d\n", info->name, ir->lhs, ir->rhs);
+  case IR_TY_CALL: {
+    StringBuilder *sb = new_sb();
+    sb_append(sb, format("r%d = %s(", ir->name, ir->lhs));
+    for (int i = 0; i < ir->nargs; i++)
+      sb_append(sb, format(", r%d", ir->args));
+    sb_append(sb, ")\n");
+    return sb_get(sb);
+  }
   default:
     assert(info->ty == IR_TY_NOARG);
     return format("%s\n", info->name);
@@ -96,6 +105,23 @@ static int gen_expr(Node *node) {
   if (node->ty == ND_IDENT) {
     int r = gen_lval(node);
     add(IR_LOAD, r, r);
+    return r;
+  }
+
+  if (node->ty == IR_CALL) {
+    int args[6];
+    for (int i = 0; i < node->args->len; i++)
+      args[i] = gen_expr(node->args->data[i]);
+
+    int r = regno++;
+
+    IR *ir = add(IR_CALL, r, -1);
+    ir->name = node->name;
+    ir->nargs = node->args->len;
+    memcpy(ir->args, args, sizeof(args));
+
+    for (int i = 0; i < ir->nargs; i++)
+      add(IR_KILL, ir->args[i], -1);
     return r;
   }
 
