@@ -135,16 +135,36 @@ static Node *compound_stmt() {
   node->ty = ND_COMP_STMT;
   node->stmts = new_vec();
 
-  for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty == TK_EOF)
-      return node;
+  while (!consume('}'))
     vec_push(node->stmts, stmt());
-  }
+  return node;
 }
 
-Node *parse(Vector *v) {
-  tokens = v;
+static Node *function() {
+  Node *node = calloc(1, sizeof(Node));
+  node->ty = ND_FUNC;
+  node->args = new_vec();
+
+  Token *t = tokens->data[pos];
+  if (t->ty != TK_IDENT)
+    error("function name expected, but got %s", t->input);
+  node->name = t->name;
+  pos++;
+
+  expect('(');
+  while (!consume(')'))
+    vec_push(node->args, term());
+  expect('{');
+  node->body = compound_stmt();
+  return node;
+};
+
+Vector *parse(Vector *tokens_) {
+  tokens = tokens_;
   pos = 0;
-  return compound_stmt();
+
+  Vector *v = new_vec();
+  while (((Token *)tokens->data[pos])->ty != TK_EOF)
+    vec_push(v, function());
+  return v;
 }

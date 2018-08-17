@@ -9,7 +9,7 @@ noreturn void error(char *fmt, ...) {
 }
 
 char *format(char *fmt, ...) {
-  char buf[1024];
+  char buf[2048];
   va_list ap;
   va_start(ap, fmt);
   vsnprintf(buf, sizeof(buf), fmt, ap);
