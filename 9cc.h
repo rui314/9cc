@@ -33,6 +33,16 @@ void map_put(Map *map, char *key, void *val);
 void *map_get(Map *map, char *key);
 bool map_exists(Map *map, char *key);
 
+typedef struct {
+  char *data;
+  int capacity;
+  int len;
+} StringBuilder;
+
+StringBuilder *new_sb(void);
+void sb_append(StringBuilder *sb, char *s);
+char *sb_get(StringBuilder *sb);
+
 /// util_test.c
 
 void util_test();

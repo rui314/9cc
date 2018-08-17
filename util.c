@@ -58,3 +58,33 @@ bool map_exists(Map *map, char *key) {
       return true;
   return false;
 }
+
+StringBuilder *new_sb(void) {
+  StringBuilder *sb = malloc(sizeof(StringBuilder));
+  sb->data = malloc(8);
+  sb->capacity = 8;
+  sb->len = 0;
+  return sb;
+}
+
+static void sb_grow(StringBuilder *sb, int len) {
+  if (sb->len + len <= sb->capacity)
+    return;
+
+  while (sb->len + len > sb->capacity)
+    sb->capacity *= 2;
+  sb->data = realloc(sb->data, sb->capacity);
+}
+
+void sb_append(StringBuilder *sb, char *s) {
+  int len = strlen(s);
+  sb_grow(sb, len);
+  memcpy(sb->data + sb->len, s, len);
+  sb->len += len;
+}
+
+char *sb_get(StringBuilder *sb) {
+  sb_grow(sb, 1);
+  sb->data[sb->len] = '\0';
+  return sb->data;
+}

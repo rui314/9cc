@@ -38,7 +38,29 @@ static void map_test() {
   expect(__LINE__, false, map_exists(map, "baz"));
 }
 
+static void sb_test() {
+  StringBuilder *sb1 = new_sb();
+  expect(__LINE__, 0, strlen(sb_get(sb1)));
+
+  StringBuilder *sb2 = new_sb();
+  sb_append(sb2, "foo");
+  expect(__LINE__, 1, !strcmp(sb_get(sb2), "foo"));
+
+  StringBuilder *sb3 = new_sb();
+  sb_append(sb3, "foo");
+  sb_append(sb3, "bar");
+  expect(__LINE__, 1, !strcmp(sb_get(sb3), "foobar"));
+
+  StringBuilder *sb4 = new_sb();
+  sb_append(sb4, "foo");
+  sb_append(sb4, "bar");
+  sb_append(sb4, "foo");
+  sb_append(sb4, "bar");
+  expect(__LINE__, 1, !strcmp(sb_get(sb4), "foobarfoobar"));
+}
+
 void util_test() {
   vec_test();
   map_test();
+  sb_test();
 }
