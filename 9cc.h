@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -38,6 +39,7 @@ void util_test();
 
 enum {
   TK_NUM = 256, // Number literal
+  TK_RETURN,    // "return"
   TK_EOF,       // End marker
 };
 
@@ -54,13 +56,18 @@ Vector *tokenize(char *p);
 
 enum {
   ND_NUM = 256,     // Number literal
+  ND_RETURN,        // Return statement
+  ND_COMP_STMT,     // Compound statement
+  ND_EXPR_STMT,     // Expressions tatement
 };
 
 typedef struct Node {
-  int ty;           // Node type
-  struct Node *lhs; // left-hand side
-  struct Node *rhs; // right-hand side
-  int val;          // Number literal
+  int ty;            // Node type
+  struct Node *lhs;  // left-hand side
+  struct Node *rhs;  // right-hand side
+  int val;           // Number literal
+  struct Node *expr; // "return" or expresson stmt
+  Vector *stmts;     // Compound statement
 } Node;
 
 Node *parse(Vector *tokens);

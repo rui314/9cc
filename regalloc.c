@@ -48,7 +48,7 @@ void alloc_regs(Vector *irv) {
       ir->rhs = alloc(ir->rhs);
       break;
     case IR_RETURN:
-      kill(reg_map[ir->lhs]);
+      ir->lhs = alloc(ir->lhs);
       break;
     case IR_KILL:
       kill(reg_map[ir->lhs]);
