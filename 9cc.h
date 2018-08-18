@@ -153,7 +153,6 @@ typedef struct {
 
 typedef struct {
   char *name;
-  int args[6];
   int stacksize;
   Vector *ir;
 } Function;
@@ -171,6 +170,3 @@ void alloc_regs(Vector *irv);
 
 /// codegen.c
 void gen_x86(Vector *fns);
-
-/// main.c
-char **argv;
