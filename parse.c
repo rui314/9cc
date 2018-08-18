@@ -152,8 +152,13 @@ static Node *function() {
   pos++;
 
   expect('(');
-  while (!consume(')'))
+  if (!consume(')')) {
     vec_push(node->args, term());
+    while (consume(','))
+      vec_push(node->args, term());
+    expect(')');
+  }
+
   expect('{');
   node->body = compound_stmt();
   return node;
