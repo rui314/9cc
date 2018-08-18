@@ -18,6 +18,7 @@ try() {
 
 echo 'int plus(int x, int y) { return x + y; }' | gcc -xc -c -o tmp-plus.o -
 
+try 1 'main() { return 1; }'
 try 10 'main() { return 2*3+4; }'
 try 14 'main() { return 2+3*4; }'
 try 26 'main() { return 2*3+4*5; }'
