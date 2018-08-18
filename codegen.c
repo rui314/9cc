@@ -2,6 +2,8 @@
 
 static int label;
 
+const char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
 void gen(Function *fn) {
   char *ret = format(".Lend%d", label++);
 
@@ -22,8 +24,8 @@ void gen(Function *fn) {
     case IR_IMM:
       printf("  mov %s, %d\n", regs[ir->lhs], ir->rhs);
       break;
-    case IR_ADD_IMM:
-      printf("  add %s, %d\n", regs[ir->lhs], ir->rhs);
+    case IR_SUB_IMM:
+      printf("  sub %s, %d\n", regs[ir->lhs], ir->rhs);
       break;
     case IR_MOV:
       printf("  mov %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
@@ -33,9 +35,8 @@ void gen(Function *fn) {
       printf("  jmp %s\n", ret);
       break;
     case IR_CALL: {
-      char *arg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
       for (int i = 0; i < ir->nargs; i++)
-	printf("  mov %s, %s\n", arg[i], regs[ir->args[i]]);
+	printf("  mov %s, %s\n", argreg[i], regs[ir->args[i]]);
 
       printf("  push r10\n");
       printf("  push r11\n");
@@ -62,6 +63,10 @@ void gen(Function *fn) {
       break;
     case IR_STORE:
       printf("  mov [%s], %s\n", regs[ir->lhs], regs[ir->rhs]);
+      break;
+    case IR_SAVE_ARGS:
+      for (int i = 0; i < ir->lhs; i++)
+	printf("  mov [rbp-%d], %s\n", (i + 1) * 8, argreg[i]);
       break;
     case '+':
       printf("  add %s, %s\n", regs[ir->lhs], regs[ir->rhs]);

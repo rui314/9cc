@@ -9,7 +9,7 @@ IRInfo irinfo[] = {
   {'*', "MUL", IR_TY_REG_REG},
   {'/', "DIV", IR_TY_REG_REG},
   {IR_IMM, "MOV", IR_TY_REG_IMM},
-  {IR_ADD_IMM, "ADD", IR_TY_REG_IMM},
+  {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
   {IR_MOV, "MOV", IR_TY_REG_REG},
   {IR_LABEL, "", IR_TY_LABEL},
   {IR_JMP, "JMP", IR_TY_LABEL},
@@ -19,6 +19,7 @@ IRInfo irinfo[] = {
   {IR_LOAD, "LOAD", IR_TY_REG_REG},
   {IR_STORE, "STORE", IR_TY_REG_REG},
   {IR_KILL, "KILL", IR_TY_REG},
+  {IR_SAVE_ARGS, "SAVE_ARGS", IR_TY_IMM},
   {IR_NOP, "NOP", IR_TY_NOARG},
   {0, NULL, 0},
 };
@@ -42,6 +43,8 @@ static char *tostr(IR *ir) {
   switch (info->ty) {
   case IR_TY_LABEL:
     return format(".L%d:\n", ir->lhs);
+  case IR_TY_IMM:
+    return format("%s %d\n", info->name, ir->lhs);
   case IR_TY_REG:
     return format("%s r%d\n", info->name, ir->lhs);
   case IR_TY_REG_REG:
@@ -94,7 +97,7 @@ static int gen_lval(Node *node) {
   int r = regno++;
   int off = (intptr_t)map_get(vars, node->name);
   add(IR_MOV, r, 0);
-  add(IR_ADD_IMM, r, -off);
+  add(IR_SUB_IMM, r, off);
   return r;
 }
 
@@ -191,6 +194,22 @@ static void gen_stmt(Node *node) {
   error("unknown node: %d", node->ty);
 }
 
+static void gen_args(Vector *nodes) {
+  if (nodes->len == 0)
+    return;
+
+  add(IR_SAVE_ARGS, nodes->len, -1);
+
+  for (int i = 0; i < nodes->len; i++) {
+    Node *node = nodes->data[i];
+    if (node->ty != ND_IDENT)
+      error("bad parameter");
+
+    stacksize += 8;
+    map_put(vars, node->name, (void *)(intptr_t)stacksize);
+  }
+}
+
 Vector *gen_ir(Vector *nodes) {
   Vector *v = new_vec();
 
@@ -201,8 +220,9 @@ Vector *gen_ir(Vector *nodes) {
     code = new_vec();
     vars = new_map();
     regno = 1;
-    stacksize = 8;
+    stacksize = 0;
 
+    gen_args(node->args);
     gen_stmt(node->body);
 
     Function *fn = malloc(sizeof(Function));
