@@ -20,17 +20,14 @@ static Node *addr_of(Node *base, Type *ty) {
   Node *node = calloc(1, sizeof(Node));
   node->op = ND_ADDR;
   node->ty = ptr_of(ty);
-
-  Node *copy = calloc(1, sizeof(Node));
-  memcpy(copy, base, sizeof(Node));
-  node->expr = copy;
+  node->expr = base;
   return node;
 }
 
-static void walk(Node *node, bool decay) {
+static Node *walk(Node *node, bool decay) {
   switch (node->op) {
   case ND_NUM:
-    return;
+    return node;
   case ND_IDENT: {
     Var *var = map_get(vars, node->name);
     if (!var)
@@ -40,10 +37,9 @@ static void walk(Node *node, bool decay) {
     node->offset = var->offset;
 
     if (decay && var->ty->ty == ARY)
-      *node = *addr_of(node, var->ty->ary_of);
-    else
-      node->ty = var->ty;
-    return;
+      return addr_of(node, var->ty->ary_of);
+    node->ty = var->ty;
+    return node;
   }
   case ND_VARDEF: {
     stacksize += size_of(node->ty);
@@ -55,25 +51,25 @@ static void walk(Node *node, bool decay) {
     map_put(vars, node->name, var);
 
     if (node->init)
-      walk(node->init, true);
-    return;
+      node->init = walk(node->init, true);
+    return node;
   }
   case ND_IF:
-    walk(node->cond, true);
-    walk(node->then, true);
+    node->cond = walk(node->cond, true);
+    node->then = walk(node->then, true);
     if (node->els)
-      walk(node->els, true);
-    return;
+      node->els = walk(node->els, true);
+    return node;
   case ND_FOR:
-    walk(node->init, true);
-    walk(node->cond, true);
-    walk(node->inc, true);
-    walk(node->body, true);
-    return;
+    node->init = walk(node->init, true);
+    node->cond = walk(node->cond, true);
+    node->inc = walk(node->inc, true);
+    node->body = walk(node->body, true);
+    return node;
   case '+':
   case '-':
-    walk(node->lhs, true);
-    walk(node->rhs, true);
+    node->lhs = walk(node->lhs, true);
+    node->rhs = walk(node->rhs, true);
 
     if (node->rhs->ty->ty == PTR)
       swap(&node->lhs, &node->rhs);
@@ -81,51 +77,51 @@ static void walk(Node *node, bool decay) {
       error("'pointer %c pointer' is not defined", node->op);
 
     node->ty = node->lhs->ty;
-    return;
+    return node;
   case '=':
-    walk(node->lhs, false);
-    walk(node->rhs, true);
+    node->lhs = walk(node->lhs, false);
+    node->rhs = walk(node->rhs, true);
     node->ty = node->lhs->ty;
-    return;
+    return node;
   case '*':
   case '/':
   case '<':
   case ND_LOGAND:
   case ND_LOGOR:
-    walk(node->lhs, true);
-    walk(node->rhs, true);
+    node->lhs = walk(node->lhs, true);
+    node->rhs = walk(node->rhs, true);
     node->ty = node->lhs->ty;
-    return;
+    return node;
   case ND_ADDR:
-    walk(node->expr, true);
+    node->expr = walk(node->expr, true);
     node->ty = ptr_of(node->expr->ty);
-    return;
+    return node;
   case ND_DEREF:
-    walk(node->expr, true);
+    node->expr = walk(node->expr, true);
     if (node->expr->ty->ty != PTR)
       error("operand must be a pointer");
     node->ty = node->expr->ty->ptr_of;
-    return;
+    return node;
   case ND_RETURN:
-    walk(node->expr, true);
-    return;
+    node->expr = walk(node->expr, true);
+    return node;
   case ND_CALL:
     for (int i = 0; i < node->args->len; i++)
-      walk(node->args->data[i], true);
+      node->args->data[i] = walk(node->args->data[i], true);
     node->ty = &int_ty;
-    return;
+    return node;
   case ND_FUNC:
     for (int i = 0; i < node->args->len; i++)
-      walk(node->args->data[i], true);
-    walk(node->body, true);
-    return;
+      node->args->data[i] = walk(node->args->data[i], true);
+    node->body = walk(node->body, true);
+    return node;
   case ND_COMP_STMT:
     for (int i = 0; i < node->stmts->len; i++)
-      walk(node->stmts->data[i], true);
-    return;
+      node->stmts->data[i] = walk(node->stmts->data[i], true);
+    return node;
   case ND_EXPR_STMT:
-    walk(node->expr, true);
-    return;
+    node->expr = walk(node->expr, true);
+    return node;
   default:
     assert(0 && "unknown node type");
   }
