@@ -105,7 +105,7 @@ typedef struct Node {
 
 Vector *parse(Vector *tokens);
 
-/// ir.c
+/// gen_ir.c
 
 enum {
   IR_ADD,
@@ -170,5 +170,5 @@ void dump_ir(Vector *irv);
 extern char *regs[];
 void alloc_regs(Vector *irv);
 
-/// codegen.c
+/// gen_x86.c
 void gen_x86(Vector *fns);
