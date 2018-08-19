@@ -90,14 +90,32 @@ static Node *add() {
   }
 }
 
-static Node *logand() {
+static Node *rel() {
   Node *lhs = add();
+  for (;;) {
+    Token *t = tokens->data[pos];
+    if (t->ty == '<') {
+      pos++;
+      lhs = new_node('<', lhs, add());
+      continue;
+    }
+    if (t->ty == '>') {
+      pos++;
+      lhs = new_node('<', add(), lhs);
+      continue;
+    }
+    return lhs;
+  }
+}
+
+static Node *logand() {
+  Node *lhs = rel();
   for (;;) {
     Token *t = tokens->data[pos];
     if (t->ty != TK_LOGAND)
       return lhs;
     pos++;
-    lhs = new_node(ND_LOGAND, lhs, add());
+    lhs = new_node(ND_LOGAND, lhs, rel());
   }
 }
 
