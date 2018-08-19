@@ -49,7 +49,7 @@ static void visit(Vector *irv) {
     case IR_TY_CALL:
       ir->lhs = alloc(ir->lhs);
       for (int i = 0; i < ir->nargs; i++)
-	ir->args[i] = alloc(ir->args[i]);
+        ir->args[i] = alloc(ir->args[i]);
       break;
     }
 

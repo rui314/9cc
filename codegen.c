@@ -36,7 +36,7 @@ void gen(Function *fn) {
       break;
     case IR_CALL: {
       for (int i = 0; i < ir->nargs; i++)
-	printf("  mov %s, %s\n", argreg[i], regs[ir->args[i]]);
+        printf("  mov %s, %s\n", argreg[i], regs[ir->args[i]]);
 
       printf("  push r10\n");
       printf("  push r11\n");
@@ -66,7 +66,7 @@ void gen(Function *fn) {
       break;
     case IR_SAVE_ARGS:
       for (int i = 0; i < ir->lhs; i++)
-	printf("  mov [rbp-%d], %s\n", (i + 1) * 8, argreg[i]);
+        printf("  mov [rbp-%d], %s\n", (i + 1) * 8, argreg[i]);
       break;
     case IR_ADD:
       printf("  add %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
