@@ -84,6 +84,12 @@ static Node *unary() {
     node->expr = mul();
     return node;
   }
+  if (consume('&')) {
+    Node *node = calloc(1, sizeof(Node));
+    node->op = ND_ADDR;
+    node->expr = mul();
+    return node;
+  }
   return term();
 }
 
