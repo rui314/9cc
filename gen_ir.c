@@ -84,10 +84,8 @@ static int gen_lval(Node *node) {
   if (node->ty != ND_IDENT)
     error("not an lvalue");
 
-  if (!map_exists(vars, node->name)) {
-    stacksize += 8;
-    map_put(vars, node->name, (void *)(intptr_t)stacksize);
-  }
+  if (!map_exists(vars, node->name))
+    error("undefined variable: %s", node->name);
 
   int r = regno++;
   int off = (intptr_t)map_get(vars, node->name);
@@ -188,6 +186,12 @@ static int gen_expr(Node *node) {
 }
 
 static void gen_stmt(Node *node) {
+  if (node->ty == ND_VARDEF) {
+    stacksize += 8;
+    map_put(vars, node->name, (void *)(intptr_t)stacksize);
+    return;
+  }
+
   if (node->ty == ND_IF) {
     int r = gen_expr(node->cond);
     int x = label++;
