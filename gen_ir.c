@@ -8,7 +8,7 @@ IRInfo irinfo[] = {
         [IR_CALL] = {"CALL", IR_TY_CALL},
         [IR_DIV] = {"DIV", IR_TY_REG_REG},
         [IR_IMM] = {"MOV", IR_TY_REG_IMM},
-        [IR_JMP] = {"JMP", IR_TY_LABEL},
+        [IR_JMP] = {"JMP", IR_TY_JMP},
         [IR_KILL] = {"KILL", IR_TY_REG},
         [IR_LABEL] = {"", IR_TY_LABEL},
         [IR_LOAD] = {"LOAD", IR_TY_REG_REG},
@@ -34,28 +34,30 @@ static char *tostr(IR *ir) {
 
   switch (info.ty) {
   case IR_TY_LABEL:
-    return format(".L%d:\n", ir->lhs);
+    return format(".L%d:", ir->lhs);
   case IR_TY_IMM:
-    return format("%s %d\n", info.name, ir->lhs);
+    return format("  %s %d", info.name, ir->lhs);
   case IR_TY_REG:
-    return format("%s r%d\n", info.name, ir->lhs);
+    return format("  %s r%d", info.name, ir->lhs);
+  case IR_TY_JMP:
+    return format("  %s .L%d", info.name, ir->lhs);
   case IR_TY_REG_REG:
-    return format("%s r%d, r%d\n", info.name, ir->lhs, ir->rhs);
+    return format("  %s r%d, r%d", info.name, ir->lhs, ir->rhs);
   case IR_TY_REG_IMM:
-    return format("%s r%d, %d\n", info.name, ir->lhs, ir->rhs);
+    return format("  %s r%d, %d", info.name, ir->lhs, ir->rhs);
   case IR_TY_REG_LABEL:
-    return format("%s r%d, .L%d\n", info.name, ir->lhs, ir->rhs);
+    return format("  %s r%d, .L%d", info.name, ir->lhs, ir->rhs);
   case IR_TY_CALL: {
     StringBuilder *sb = new_sb();
-    sb_append(sb, format("r%d = %s(", ir->lhs, ir->name));
+    sb_append(sb, format("  r%d = %s(", ir->lhs, ir->name));
     for (int i = 0; i < ir->nargs; i++)
       sb_append(sb, format(", r%d", ir->args));
-    sb_append(sb, ")\n");
+    sb_append(sb, ")");
     return sb_get(sb);
   }
   default:
     assert(info.ty == IR_TY_NOARG);
-    return format("%s\n", info.name);
+    return format("  %s", info.name);
   }
 }
 
@@ -64,7 +66,7 @@ void dump_ir(Vector *irv) {
     Function *fn = irv->data[i];
     fprintf(stderr, "%s():\n", fn->name);
     for (int j = 0; j < fn->ir->len; j++)
-      fprintf(stderr, "  %s", tostr(fn->ir->data[j]));
+      fprintf(stderr, "%s\n", tostr(fn->ir->data[j]));
   }
 }
 
@@ -94,19 +96,49 @@ static int gen_lval(Node *node) {
 }
 
 static int gen_expr(Node *node) {
-  if (node->ty == ND_NUM) {
+  switch (node->ty) {
+  case ND_NUM: {
     int r = regno++;
     add(IR_IMM, r, node->val);
     return r;
   }
+  case ND_LOGAND: {
+    int x = label++;
 
-  if (node->ty == ND_IDENT) {
+    int r1 = gen_expr(node->lhs);
+    add(IR_UNLESS, r1, x);
+    int r2 = gen_expr(node->rhs);
+    add(IR_MOV, r1, r2);
+    add(IR_KILL, r2, -1);
+    add(IR_UNLESS, r1, x);
+    add(IR_IMM, r1, 1);
+    add(IR_LABEL, x, -1);
+    return r1;
+  }
+  case ND_LOGOR: {
+    int x = label++;
+    int y = label++;
+
+    int r1 = gen_expr(node->lhs);
+    add(IR_UNLESS, r1, x);
+    add(IR_IMM, r1, 1);
+    add(IR_JMP, y, -1);
+    add(IR_LABEL, x, -1);
+
+    int r2 = gen_expr(node->rhs);
+    add(IR_MOV, r1, r2);
+    add(IR_KILL, r2, -1);
+    add(IR_UNLESS, r1, y);
+    add(IR_IMM, r1, 1);
+    add(IR_LABEL, y, -1);
+    return r1;
+  }
+  case ND_IDENT: {
     int r = gen_lval(node);
     add(IR_LOAD, r, r);
     return r;
   }
-
-  if (node->ty == ND_CALL) {
+  case ND_CALL: {
     int args[6];
     for (int i = 0; i < node->args->len; i++)
       args[i] = gen_expr(node->args->data[i]);
@@ -122,13 +154,13 @@ static int gen_expr(Node *node) {
       add(IR_KILL, ir->args[i], -1);
     return r;
   }
-
-  if (node->ty == '=') {
+  case '=': {
     int rhs = gen_expr(node->rhs);
     int lhs = gen_lval(node->lhs);
     add(IR_STORE, lhs, rhs);
     add(IR_KILL, rhs, -1);
     return lhs;
+  }
   }
 
   assert(strchr("+-*/", node->ty));

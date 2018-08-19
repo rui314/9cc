@@ -72,30 +72,50 @@ static Node *mul() {
   Node *lhs = term();
   for (;;) {
     Token *t = tokens->data[pos];
-    int op = t->ty;
-    if (op != '*' && op != '/')
+    if (t->ty != '*' && t->ty != '/')
       return lhs;
     pos++;
-    lhs = new_node(op, lhs, term());
+    lhs = new_node(t->ty, lhs, term());
   }
 }
 
-static Node *expr() {
+static Node *add() {
   Node *lhs = mul();
   for (;;) {
     Token *t = tokens->data[pos];
-    int op = t->ty;
-    if (op != '+' && op != '-')
+    if (t->ty != '+' && t->ty != '-')
       return lhs;
     pos++;
-    lhs = new_node(op, lhs, mul());
+    lhs = new_node(t->ty, lhs, mul());
+  }
+}
+
+static Node *logand() {
+  Node *lhs = add();
+  for (;;) {
+    Token *t = tokens->data[pos];
+    if (t->ty != TK_LOGAND)
+      return lhs;
+    pos++;
+    lhs = new_node(ND_LOGAND, lhs, add());
+  }
+}
+
+static Node *logor() {
+  Node *lhs = logand();
+  for (;;) {
+    Token *t = tokens->data[pos];
+    if (t->ty != TK_LOGOR)
+      return lhs;
+    pos++;
+    lhs = new_node(ND_LOGOR, lhs, logand());
   }
 }
 
 static Node *assign() {
-  Node *lhs = expr();
+  Node *lhs = logor();
   if (consume('='))
-    return new_node('=', lhs, expr());
+    return new_node('=', lhs, logor());
   return lhs;
 }
 
