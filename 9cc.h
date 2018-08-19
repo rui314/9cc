@@ -73,16 +73,16 @@ Vector *tokenize(char *p);
 /// parse.c
 
 enum {
-  ND_NUM = 256,     // Number literal
-  ND_IDENT,         // Identifier
-  ND_IF,            // "if"
-  ND_LOGAND,        // &&
-  ND_LOGOR,         // ||
-  ND_RETURN,        // "return"
-  ND_CALL,          // Function call
-  ND_FUNC,          // Function definition
-  ND_COMP_STMT,     // Compound statement
-  ND_EXPR_STMT,     // Expressions tatement
+  ND_NUM = 256, // Number literal
+  ND_IDENT,     // Identifier
+  ND_IF,        // "if"
+  ND_LOGAND,    // &&
+  ND_LOGOR,     // ||
+  ND_RETURN,    // "return"
+  ND_CALL,      // Function call
+  ND_FUNC,      // Function definition
+  ND_COMP_STMT, // Compound statement
+  ND_EXPR_STMT, // Expressions tatement
 };
 
 typedef struct Node {
