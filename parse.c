@@ -142,6 +142,19 @@ static Node *stmt() {
   Token *t = tokens->data[pos];
 
   switch (t->ty) {
+  case TK_INT: {
+    pos++;
+    node->ty = ND_VARDEF;
+
+    t = tokens->data[pos];
+    if (t->ty != TK_IDENT)
+      error("variable name expected, but got %s", t->input);
+    node->name = t->name;
+    pos++;
+
+    expect(';');
+    return node;
+  }
   case TK_IF:
     pos++;
     node->ty = ND_IF;
@@ -203,6 +216,11 @@ static Node *function() {
   node->args = new_vec();
 
   Token *t = tokens->data[pos];
+  if (t->ty != TK_INT)
+    error("function return type expected, but got %s", t->input);
+  pos++;
+
+  t = tokens->data[pos];
   if (t->ty != TK_IDENT)
     error("function name expected, but got %s", t->input);
   node->name = t->name;
