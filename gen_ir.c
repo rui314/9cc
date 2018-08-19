@@ -12,13 +12,16 @@ IRInfo irinfo[] = {
         [IR_KILL] = {"KILL", IR_TY_REG},
         [IR_LABEL] = {"", IR_TY_LABEL},
         [IR_LT] = {"LT", IR_TY_REG_REG},
-        [IR_LOAD] = {"LOAD", IR_TY_REG_REG},
+        [IR_LOAD32] = {"LOAD32", IR_TY_REG_REG},
+        [IR_LOAD64] = {"LOAD64", IR_TY_REG_REG},
         [IR_MOV] = {"MOV", IR_TY_REG_REG},
         [IR_MUL] = {"MUL", IR_TY_REG_REG},
         [IR_NOP] = {"NOP", IR_TY_NOARG},
         [IR_RETURN] = {"RET", IR_TY_REG},
-        [IR_SAVE_ARGS] = {"SAVE_ARGS", IR_TY_IMM},
-        [IR_STORE] = {"STORE", IR_TY_REG_REG},
+        [IR_STORE32] = {"STORE32", IR_TY_REG_REG},
+        [IR_STORE64] = {"STORE64", IR_TY_REG_REG},
+        [IR_STORE32_ARG] = {"STORE32_ARG", IR_TY_IMM_IMM},
+        [IR_STORE64_ARG] = {"STORE64_ARG", IR_TY_IMM_IMM},
         [IR_SUB] = {"SUB", IR_TY_REG_REG},
         [IR_SUB_IMM] = {"SUB", IR_TY_REG_IMM},
         [IR_UNLESS] = {"UNLESS", IR_TY_REG_LABEL},
@@ -40,6 +43,8 @@ static char *tostr(IR *ir) {
     return format("  %s r%d, r%d", info.name, ir->lhs, ir->rhs);
   case IR_TY_REG_IMM:
     return format("  %s r%d, %d", info.name, ir->lhs, ir->rhs);
+  case IR_TY_IMM_IMM:
+    return format("  %s %d, %d", info.name, ir->lhs, ir->rhs);
   case IR_TY_REG_LABEL:
     return format("  %s r%d, .L%d", info.name, ir->lhs, ir->rhs);
   case IR_TY_CALL: {
@@ -82,16 +87,21 @@ static void kill(int r) { add(IR_KILL, r, -1); }
 
 static void label(int x) { add(IR_LABEL, x, -1); }
 
-static int gen_lval(Node *node) {
-  if (node->op != ND_LVAR)
-    error("not an lvalue: %d (%s)", node->op, node->name);
-  int r = nreg++;
-  add(IR_MOV, r, 0);
-  add(IR_SUB_IMM, r, node->offset);
-  return r;
-}
-
 static int gen_expr(Node *node);
+
+static int gen_lval(Node *node) {
+  if (node->op == ND_DEREF)
+    return gen_expr(node->expr);
+
+  if (node->op == ND_LVAR) {
+    int r = nreg++;
+    add(IR_MOV, r, 0);
+    add(IR_SUB_IMM, r, node->offset);
+    return r;
+  }
+
+  error("not an lvalue: %d (%s)", node->op, node->name);
+}
 
 static int gen_binop(int ty, Node *lhs, Node *rhs) {
   int r1 = gen_expr(lhs);
@@ -141,7 +151,10 @@ static int gen_expr(Node *node) {
   }
   case ND_LVAR: {
     int r = gen_lval(node);
-    add(IR_LOAD, r, r);
+    if (node->ty->ty == PTR)
+      add(IR_LOAD64, r, r);
+    else
+      add(IR_LOAD32, r, r);
     return r;
   }
   case ND_CALL: {
@@ -160,15 +173,20 @@ static int gen_expr(Node *node) {
       kill(ir->args[i]);
     return r;
   }
+  case ND_ADDR:
+    return gen_lval(node->expr);
   case ND_DEREF: {
     int r = gen_expr(node->expr);
-    add(IR_LOAD, r, r);
+    add(IR_LOAD64, r, r);
     return r;
   }
   case '=': {
     int rhs = gen_expr(node->rhs);
     int lhs = gen_lval(node->lhs);
-    add(IR_STORE, lhs, rhs);
+    if (node->lhs->ty->ty == PTR)
+      add(IR_STORE64, lhs, rhs);
+    else
+      add(IR_STORE32, lhs, rhs);
     kill(rhs);
     return lhs;
   }
@@ -209,7 +227,10 @@ static void gen_stmt(Node *node) {
     int lhs = nreg++;
     add(IR_MOV, lhs, 0);
     add(IR_SUB_IMM, lhs, node->offset);
-    add(IR_STORE, lhs, rhs);
+    if (node->ty->ty == PTR)
+      add(IR_STORE64, lhs, rhs);
+    else
+      add(IR_STORE32, lhs, rhs);
     kill(lhs);
     kill(rhs);
     return;
@@ -285,8 +306,12 @@ Vector *gen_ir(Vector *nodes) {
     code = new_vec();
     nreg = 1;
 
-    if (nodes->len > 0)
-      add(IR_SAVE_ARGS, node->args->len, -1);
+    for (int i = 0; i < node->args->len; i++) {
+      Node *arg = node->args->data[i];
+      int op = (arg->ty->ty == PTR) ? IR_STORE64_ARG : IR_STORE32_ARG;
+      add(op, arg->offset, i);
+    }
+
     gen_stmt(node->body);
 
     Function *fn = malloc(sizeof(Function));
