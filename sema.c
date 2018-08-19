@@ -96,6 +96,10 @@ static void walk(Node *node, bool decay) {
     walk(node->rhs, true);
     node->ty = node->lhs->ty;
     return;
+  case ND_ADDR:
+    walk(node->expr, true);
+    node->ty = ptr_of(node->expr->ty);
+    return;
   case ND_DEREF:
     walk(node->expr, true);
     if (node->expr->ty->ty != PTR)
