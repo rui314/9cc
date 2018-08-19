@@ -4,24 +4,15 @@
 // Base pointer is always assigned to r0.
 
 IRInfo irinfo[] = {
-  {IR_ADD, "ADD", IR_TY_REG_REG},
-  {IR_SUB, "SUB", IR_TY_REG_REG},
-  {IR_MUL, "MUL", IR_TY_REG_REG},
-  {IR_DIV, "DIV", IR_TY_REG_REG},
-  {IR_IMM, "MOV", IR_TY_REG_IMM},
-  {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
-  {IR_MOV, "MOV", IR_TY_REG_REG},
-  {IR_LABEL, "", IR_TY_LABEL},
-  {IR_JMP, "JMP", IR_TY_LABEL},
-  {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
-  {IR_CALL, "CALL", IR_TY_CALL},
-  {IR_RETURN, "RET", IR_TY_REG},
-  {IR_LOAD, "LOAD", IR_TY_REG_REG},
-  {IR_STORE, "STORE", IR_TY_REG_REG},
-  {IR_KILL, "KILL", IR_TY_REG},
-  {IR_SAVE_ARGS, "SAVE_ARGS", IR_TY_IMM},
-  {IR_NOP, "NOP", IR_TY_NOARG},
-  {0, NULL, 0},
+    {IR_ADD, "ADD", IR_TY_REG_REG},   {IR_SUB, "SUB", IR_TY_REG_REG},
+    {IR_MUL, "MUL", IR_TY_REG_REG},   {IR_DIV, "DIV", IR_TY_REG_REG},
+    {IR_IMM, "MOV", IR_TY_REG_IMM},   {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
+    {IR_MOV, "MOV", IR_TY_REG_REG},   {IR_LABEL, "", IR_TY_LABEL},
+    {IR_JMP, "JMP", IR_TY_LABEL},     {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
+    {IR_CALL, "CALL", IR_TY_CALL},    {IR_RETURN, "RET", IR_TY_REG},
+    {IR_LOAD, "LOAD", IR_TY_REG_REG}, {IR_STORE, "STORE", IR_TY_REG_REG},
+    {IR_KILL, "KILL", IR_TY_REG},     {IR_SAVE_ARGS, "SAVE_ARGS", IR_TY_IMM},
+    {IR_NOP, "NOP", IR_TY_NOARG},     {0, NULL, 0},
 };
 
 static Vector *code;
