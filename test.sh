@@ -32,8 +32,8 @@ try 41 'int main() { return  12 + 34 - 5 ; }'
 try 45 'int main() { return (2+3)*(4+5); }'
 try 153 'int main() { return 1+2+3+4+5+6+7+8+9+10+11+12+13+14+15+16+17; }'
 
-try 2 'int main() { int a; a=2; return a; }'
-try 10 'int main() { int a; a=2; int b; b=3+2; return a*b; }'
+try 2 'int main() { int a=2; return a; }'
+try 10 'int main() { int a=2; int b; b=3+2; return a*b; }'
 try 2 'int main() { if (1) return 2; return 3; }'
 try 3 'int main() { if (0) return 2; return 3; }'
 try 2 'int main() { if (1) return 2; else return 3; }'
@@ -62,7 +62,7 @@ try 0 'int main() { return 0>0; }'
 try 0 'int main() { return 0>1; }'
 try 1 'int main() { return 1>0; }'
 
-try 60 'int main() { int sum; sum=0; int i; for (i=10; i<15; i=i+1) sum = sum + i; return sum;}'
-try 89 'int main() { int i; int j; int k; int m; i=1; j=1; for (k=0; k<10; k=k+1) { m=i+j; i=j; j=m; } return i;}'
+try 60 'int main() { int sum=0; int i; for (i=10; i<15; i=i+1) sum = sum + i; return sum;}'
+try 89 'int main() { int i=1; int j=1; int k; for (k=0; k<10; k=k+1) { int m=i+j; i=j; j=m; } return i;}'
 
 echo OK

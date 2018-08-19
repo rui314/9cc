@@ -189,6 +189,17 @@ static void gen_stmt(Node *node) {
   if (node->ty == ND_VARDEF) {
     stacksize += 8;
     map_put(vars, node->name, (void *)(intptr_t)stacksize);
+
+    if (!node->init)
+      return;
+
+    int rhs = gen_expr(node->init);
+    int lhs = regno++;
+    add(IR_MOV, lhs, 0);
+    add(IR_SUB_IMM, lhs, stacksize);
+    add(IR_STORE, lhs, rhs);
+    add(IR_KILL, lhs, -1);
+    add(IR_KILL, rhs, -1);
     return;
   }
 
