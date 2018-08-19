@@ -173,9 +173,23 @@ static int gen_expr(Node *node) {
     return lhs;
   }
   case '+':
-    return gen_binop(IR_ADD, node->lhs, node->rhs);
-  case '-':
-    return gen_binop(IR_SUB, node->lhs, node->rhs);
+  case '-': {
+    int insn = (node->op == '+') ? IR_ADD : IR_SUB;
+
+    if (node->lhs->ty->ty != PTR)
+      return gen_binop(insn, node->lhs, node->rhs);
+
+    int rhs = gen_expr(node->rhs);
+    int r = nreg++;
+    add(IR_IMM, r, size_of(node->lhs->ty->ptr_of));
+    add(IR_MUL, rhs, r);
+    kill(r);
+
+    int lhs = gen_expr(node->lhs);
+    add(insn, lhs, rhs);
+    kill(rhs);
+    return lhs;
+  }
   case '*':
     return gen_binop(IR_MUL, node->lhs, node->rhs);
   case '/':

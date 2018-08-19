@@ -132,6 +132,7 @@ typedef struct Node {
 } Node;
 
 Vector *parse(Vector *tokens);
+int size_of(Type *ty);
 
 /// sema.c
 
