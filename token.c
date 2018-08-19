@@ -1,7 +1,5 @@
 #include "9cc.h"
 
-Map *keywords;
-
 // Tokenizer
 static Token *add_token(Vector *v, int ty, char *input) {
   Token *t = malloc(sizeof(Token));
@@ -11,11 +9,22 @@ static Token *add_token(Vector *v, int ty, char *input) {
   return t;
 }
 
+static Map *keywords;
+
+static struct {
+  char *name;
+  int ty;
+} symbols[] = {
+    {"&&", TK_LOGAND}, {"||", TK_LOGOR}, {NULL, 0},
+};
+
 // Tokenized input is stored to this array.
 static Vector *scan(char *p) {
   Vector *v = new_vec();
 
   int i = 0;
+
+loop:
   while (*p) {
     // Skip whitespace
     if (isspace(*p)) {
@@ -29,6 +38,19 @@ static Vector *scan(char *p) {
       i++;
       p++;
       continue;
+    }
+
+    // Multi-letter token
+    for (int i = 0; symbols[i].name; i++) {
+      char *name = symbols[i].name;
+      int len = strlen(name);
+      if (strncmp(p, name, len))
+        continue;
+
+      add_token(v, symbols[i].ty, p);
+      i++;
+      p += len;
+      goto loop;
     }
 
     // Identifier
