@@ -172,6 +172,13 @@ static Node *stmt() {
     node->expr = assign();
     expect(';');
     return node;
+  case '{':
+    pos++;
+    node->ty = ND_COMP_STMT;
+    node->stmts = new_vec();
+    while (!consume('}'))
+      vec_push(node->stmts, stmt());
+    return node;
   default:
     node->ty = ND_EXPR_STMT;
     node->expr = assign();
