@@ -2,6 +2,14 @@
 
 static Vector *tokens;
 static int pos;
+static Type int_ty = {INT, NULL};
+
+static Type *ptr_of(Type *base) {
+  Type *ty = calloc(1, sizeof(Type));
+  ty->ty = PTR;
+  ty->ptr_of = base;
+  return ty;
+}
 
 static Node *assign();
 
@@ -27,7 +35,7 @@ static bool is_typename() {
 
 static Node *new_node(int op, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
-  node->ty = op;
+  node->op = op;
   node->lhs = lhs;
   node->rhs = rhs;
   return node;
@@ -45,7 +53,8 @@ static Node *term() {
   Node *node = calloc(1, sizeof(Node));
 
   if (t->ty == TK_NUM) {
-    node->ty = ND_NUM;
+    node->ty = &int_ty;
+    node->op = ND_NUM;
     node->val = t->val;
     return node;
   }
@@ -54,11 +63,11 @@ static Node *term() {
     node->name = t->name;
 
     if (!consume('(')) {
-      node->ty = ND_IDENT;
+      node->op = ND_IDENT;
       return node;
     }
 
-    node->ty = ND_CALL;
+    node->op = ND_CALL;
     node->args = new_vec();
     if (consume(')'))
       return node;
@@ -73,14 +82,26 @@ static Node *term() {
   error("number expected, but got %s", t->input);
 }
 
+static Node *mul();
+
+static Node *unary() {
+  if (consume('*')) {
+    Node *node = calloc(1, sizeof(Node));
+    node->op = ND_DEREF;
+    node->expr = mul();
+    return node;
+  }
+  return term();
+}
+
 static Node *mul() {
-  Node *lhs = term();
+  Node *lhs = unary();
   for (;;) {
     Token *t = tokens->data[pos];
     if (t->ty != '*' && t->ty != '/')
       return lhs;
     pos++;
-    lhs = new_node(t->ty, lhs, term());
+    lhs = new_node(t->ty, lhs, unary());
   }
 }
 
@@ -142,10 +163,22 @@ static Node *assign() {
   return lhs;
 }
 
+static Type *type() {
+  Token *t = tokens->data[pos];
+  if (t->ty != TK_INT)
+    error("typename expected, but got %s", t->input);
+  pos++;
+
+  Type *ty = &int_ty;
+  while (consume('*'))
+    ty = ptr_of(ty);
+  return ty;
+}
+
 static Node *decl() {
   Node *node = calloc(1, sizeof(Node));
-  node->ty = ND_VARDEF;
-  pos++;
+  node->op = ND_VARDEF;
+  node->ty = type();
 
   Token *t = tokens->data[pos];
   if (t->ty != TK_IDENT)
@@ -161,8 +194,8 @@ static Node *decl() {
 
 static Node *param() {
   Node *node = calloc(1, sizeof(Node));
-  node->ty = ND_VARDEF;
-  pos++;
+  node->op = ND_VARDEF;
+  node->ty = type();
 
   Token *t = tokens->data[pos];
   if (t->ty != TK_IDENT)
@@ -174,7 +207,7 @@ static Node *param() {
 
 static Node *expr_stmt() {
   Node *node = calloc(1, sizeof(Node));
-  node->ty = ND_EXPR_STMT;
+  node->op = ND_EXPR_STMT;
   node->expr = assign();
   expect(';');
   return node;
@@ -189,7 +222,7 @@ static Node *stmt() {
     return decl();
   case TK_IF:
     pos++;
-    node->ty = ND_IF;
+    node->op = ND_IF;
     expect('(');
     node->cond = assign();
     expect(')');
@@ -201,7 +234,7 @@ static Node *stmt() {
     return node;
   case TK_FOR:
     pos++;
-    node->ty = ND_FOR;
+    node->op = ND_FOR;
     expect('(');
     if (is_typename())
       node->init = decl();
@@ -215,13 +248,13 @@ static Node *stmt() {
     return node;
   case TK_RETURN:
     pos++;
-    node->ty = ND_RETURN;
+    node->op = ND_RETURN;
     node->expr = assign();
     expect(';');
     return node;
   case '{':
     pos++;
-    node->ty = ND_COMP_STMT;
+    node->op = ND_COMP_STMT;
     node->stmts = new_vec();
     while (!consume('}'))
       vec_push(node->stmts, stmt());
@@ -233,7 +266,7 @@ static Node *stmt() {
 
 static Node *compound_stmt() {
   Node *node = calloc(1, sizeof(Node));
-  node->ty = ND_COMP_STMT;
+  node->op = ND_COMP_STMT;
   node->stmts = new_vec();
 
   while (!consume('}'))
@@ -243,7 +276,7 @@ static Node *compound_stmt() {
 
 static Node *function() {
   Node *node = calloc(1, sizeof(Node));
-  node->ty = ND_FUNC;
+  node->op = ND_FUNC;
   node->args = new_vec();
 
   Token *t = tokens->data[pos];
