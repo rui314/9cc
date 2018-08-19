@@ -34,9 +34,8 @@ static void visit(Vector *irv) {
 
   for (int i = 0; i < irv->len; i++) {
     IR *ir = irv->data[i];
-    IRInfo *info = get_irinfo(ir);
 
-    switch (info->ty) {
+    switch (irinfo[ir->op].ty) {
     case IR_TY_REG:
     case IR_TY_REG_IMM:
     case IR_TY_REG_LABEL:

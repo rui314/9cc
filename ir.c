@@ -4,15 +4,23 @@
 // Base pointer is always assigned to r0.
 
 IRInfo irinfo[] = {
-    {IR_ADD, "ADD", IR_TY_REG_REG},   {IR_SUB, "SUB", IR_TY_REG_REG},
-    {IR_MUL, "MUL", IR_TY_REG_REG},   {IR_DIV, "DIV", IR_TY_REG_REG},
-    {IR_IMM, "MOV", IR_TY_REG_IMM},   {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
-    {IR_MOV, "MOV", IR_TY_REG_REG},   {IR_LABEL, "", IR_TY_LABEL},
-    {IR_JMP, "JMP", IR_TY_LABEL},     {IR_UNLESS, "UNLESS", IR_TY_REG_LABEL},
-    {IR_CALL, "CALL", IR_TY_CALL},    {IR_RETURN, "RET", IR_TY_REG},
-    {IR_LOAD, "LOAD", IR_TY_REG_REG}, {IR_STORE, "STORE", IR_TY_REG_REG},
-    {IR_KILL, "KILL", IR_TY_REG},     {IR_SAVE_ARGS, "SAVE_ARGS", IR_TY_IMM},
-    {IR_NOP, "NOP", IR_TY_NOARG},     {0, NULL, 0},
+        [IR_ADD] = {"ADD", IR_TY_REG_REG},
+        [IR_CALL] = {"CALL", IR_TY_CALL},
+        [IR_DIV] = {"DIV", IR_TY_REG_REG},
+        [IR_IMM] = {"MOV", IR_TY_REG_IMM},
+        [IR_JMP] = {"JMP", IR_TY_LABEL},
+        [IR_KILL] = {"KILL", IR_TY_REG},
+        [IR_LABEL] = {"", IR_TY_LABEL},
+        [IR_LOAD] = {"LOAD", IR_TY_REG_REG},
+        [IR_MOV] = {"MOV", IR_TY_REG_REG},
+        [IR_MUL] = {"MUL", IR_TY_REG_REG},
+        [IR_NOP] = {"NOP", IR_TY_NOARG},
+        [IR_RETURN] = {"RET", IR_TY_REG},
+        [IR_SAVE_ARGS] = {"SAVE_ARGS", IR_TY_IMM},
+        [IR_STORE] = {"STORE", IR_TY_REG_REG},
+        [IR_SUB] = {"SUB", IR_TY_REG_REG},
+        [IR_SUB_IMM] = {"SUB", IR_TY_REG_IMM},
+        [IR_UNLESS] = {"UNLESS", IR_TY_REG_LABEL},
 };
 
 static Vector *code;
@@ -21,29 +29,22 @@ static int regno;
 static int stacksize;
 static int label;
 
-IRInfo *get_irinfo(IR *ir) {
-  for (IRInfo *info = irinfo; info->name; info++)
-    if (info->op == ir->op)
-      return info;
-  assert(0 && "invalid instruction");
-}
-
 static char *tostr(IR *ir) {
-  IRInfo *info = get_irinfo(ir);
+  IRInfo info = irinfo[ir->op];
 
-  switch (info->ty) {
+  switch (info.ty) {
   case IR_TY_LABEL:
     return format(".L%d:\n", ir->lhs);
   case IR_TY_IMM:
-    return format("%s %d\n", info->name, ir->lhs);
+    return format("%s %d\n", info.name, ir->lhs);
   case IR_TY_REG:
-    return format("%s r%d\n", info->name, ir->lhs);
+    return format("%s r%d\n", info.name, ir->lhs);
   case IR_TY_REG_REG:
-    return format("%s r%d, r%d\n", info->name, ir->lhs, ir->rhs);
+    return format("%s r%d, r%d\n", info.name, ir->lhs, ir->rhs);
   case IR_TY_REG_IMM:
-    return format("%s r%d, %d\n", info->name, ir->lhs, ir->rhs);
+    return format("%s r%d, %d\n", info.name, ir->lhs, ir->rhs);
   case IR_TY_REG_LABEL:
-    return format("%s r%d, .L%d\n", info->name, ir->lhs, ir->rhs);
+    return format("%s r%d, .L%d\n", info.name, ir->lhs, ir->rhs);
   case IR_TY_CALL: {
     StringBuilder *sb = new_sb();
     sb_append(sb, format("r%d = %s(", ir->lhs, ir->name));
@@ -53,8 +54,8 @@ static char *tostr(IR *ir) {
     return sb_get(sb);
   }
   default:
-    assert(info->ty == IR_TY_NOARG);
-    return format("%s\n", info->name);
+    assert(info.ty == IR_TY_NOARG);
+    return format("%s\n", info.name);
   }
 }
 
