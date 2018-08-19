@@ -229,7 +229,7 @@ static void gen_stmt(Node *node) {
     int x = label++;
     int y = label++;
 
-    add(IR_KILL, gen_expr(node->init), -1);
+    gen_stmt(node->init);
     add(IR_LABEL, x, -1);
     int r = gen_expr(node->cond);
     add(IR_UNLESS, r, y);
