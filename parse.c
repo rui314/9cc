@@ -20,6 +20,11 @@ static bool consume(int ty) {
   return true;
 }
 
+static bool is_typename() {
+  Token *t = tokens->data[pos];
+  return t->ty == TK_INT;
+}
+
 static Node *new_node(int op, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->ty = op;
@@ -137,26 +142,38 @@ static Node *assign() {
   return lhs;
 }
 
+static Node *decl() {
+  Node *node = calloc(1, sizeof(Node));
+  node->ty = ND_VARDEF;
+  pos++;
+
+  Token *t = tokens->data[pos];
+  if (t->ty != TK_IDENT)
+    error("variable name expected, but got %s", t->input);
+  node->name = t->name;
+  pos++;
+
+  if (consume('='))
+    node->init = assign();
+  expect(';');
+  return node;
+}
+
+static Node *expr_stmt() {
+  Node *node = calloc(1, sizeof(Node));
+  node->ty = ND_EXPR_STMT;
+  node->expr = assign();
+  expect(';');
+  return node;
+}
+
 static Node *stmt() {
   Node *node = calloc(1, sizeof(Node));
   Token *t = tokens->data[pos];
 
   switch (t->ty) {
-  case TK_INT: {
-    pos++;
-    node->ty = ND_VARDEF;
-
-    t = tokens->data[pos];
-    if (t->ty != TK_IDENT)
-      error("variable name expected, but got %s", t->input);
-    node->name = t->name;
-    pos++;
-
-    if (consume('='))
-      node->init = assign();
-    expect(';');
-    return node;
-  }
+  case TK_INT:
+    return decl();
   case TK_IF:
     pos++;
     node->ty = ND_IF;
@@ -173,8 +190,10 @@ static Node *stmt() {
     pos++;
     node->ty = ND_FOR;
     expect('(');
-    node->init = assign();
-    expect(';');
+    if (is_typename())
+      node->init = decl();
+    else
+      node->init = expr_stmt();
     node->cond = assign();
     expect(';');
     node->inc = assign();
@@ -195,10 +214,7 @@ static Node *stmt() {
       vec_push(node->stmts, stmt());
     return node;
   default:
-    node->ty = ND_EXPR_STMT;
-    node->expr = assign();
-    expect(';');
-    return node;
+    return expr_stmt();
   }
 }
 
