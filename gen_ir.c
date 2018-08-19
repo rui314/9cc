@@ -66,8 +66,8 @@ void dump_ir(Vector *irv) {
 }
 
 static Vector *code;
-static int regno;
-static int label;
+static int nreg;
+static int nlabel;
 
 static IR *add(int op, int lhs, int rhs) {
   IR *ir = calloc(1, sizeof(IR));
@@ -78,10 +78,14 @@ static IR *add(int op, int lhs, int rhs) {
   return ir;
 }
 
+static void kill(int r) { add(IR_KILL, r, -1); }
+
+static void label(int x) { add(IR_LABEL, x, -1); }
+
 static int gen_lval(Node *node) {
   if (node->ty != ND_LVAR)
     error("not an lvalue: %d (%s)", node->ty, node->name);
-  int r = regno++;
+  int r = nreg++;
   add(IR_MOV, r, 0);
   add(IR_SUB_IMM, r, node->offset);
   return r;
@@ -93,46 +97,46 @@ static int gen_binop(int ty, Node *lhs, Node *rhs) {
   int r1 = gen_expr(lhs);
   int r2 = gen_expr(rhs);
   add(ty, r1, r2);
-  add(IR_KILL, r2, -1);
+  kill(r2);
   return r1;
 }
 
 static int gen_expr(Node *node) {
   switch (node->ty) {
   case ND_NUM: {
-    int r = regno++;
+    int r = nreg++;
     add(IR_IMM, r, node->val);
     return r;
   }
   case ND_LOGAND: {
-    int x = label++;
+    int x = nlabel++;
 
     int r1 = gen_expr(node->lhs);
     add(IR_UNLESS, r1, x);
     int r2 = gen_expr(node->rhs);
     add(IR_MOV, r1, r2);
-    add(IR_KILL, r2, -1);
+    kill(r2);
     add(IR_UNLESS, r1, x);
     add(IR_IMM, r1, 1);
-    add(IR_LABEL, x, -1);
+    label(x);
     return r1;
   }
   case ND_LOGOR: {
-    int x = label++;
-    int y = label++;
+    int x = nlabel++;
+    int y = nlabel++;
 
     int r1 = gen_expr(node->lhs);
     add(IR_UNLESS, r1, x);
     add(IR_IMM, r1, 1);
     add(IR_JMP, y, -1);
-    add(IR_LABEL, x, -1);
+    label(x);
 
     int r2 = gen_expr(node->rhs);
     add(IR_MOV, r1, r2);
-    add(IR_KILL, r2, -1);
+    kill(r2);
     add(IR_UNLESS, r1, y);
     add(IR_IMM, r1, 1);
-    add(IR_LABEL, y, -1);
+    label(y);
     return r1;
   }
   case ND_LVAR: {
@@ -145,7 +149,7 @@ static int gen_expr(Node *node) {
     for (int i = 0; i < node->args->len; i++)
       args[i] = gen_expr(node->args->data[i]);
 
-    int r = regno++;
+    int r = nreg++;
 
     IR *ir = add(IR_CALL, r, -1);
     ir->name = node->name;
@@ -153,14 +157,14 @@ static int gen_expr(Node *node) {
     memcpy(ir->args, args, sizeof(args));
 
     for (int i = 0; i < ir->nargs; i++)
-      add(IR_KILL, ir->args[i], -1);
+      kill(ir->args[i]);
     return r;
   }
   case '=': {
     int rhs = gen_expr(node->rhs);
     int lhs = gen_lval(node->lhs);
     add(IR_STORE, lhs, rhs);
-    add(IR_KILL, rhs, -1);
+    kill(rhs);
     return lhs;
   }
   case '+':
@@ -183,64 +187,63 @@ static void gen_stmt(Node *node) {
     if (!node->init)
       return;
     int rhs = gen_expr(node->init);
-    int lhs = regno++;
+    int lhs = nreg++;
     add(IR_MOV, lhs, 0);
     add(IR_SUB_IMM, lhs, node->offset);
     add(IR_STORE, lhs, rhs);
-    add(IR_KILL, lhs, -1);
-    add(IR_KILL, rhs, -1);
+    kill(lhs);
+    kill(rhs);
     return;
   }
 
   if (node->ty == ND_IF) {
     if (node->els) {
-      int x = label++;
-      int y = label++;
+      int x = nlabel++;
+      int y = nlabel++;
       int r = gen_expr(node->cond);
       add(IR_UNLESS, r, x);
-      add(IR_KILL, r, -1);
+      kill(r);
       gen_stmt(node->then);
       add(IR_JMP, y, -1);
-      add(IR_LABEL, x, -1);
+      label(x);
       gen_stmt(node->els);
-      add(IR_LABEL, y, -1);
+      label(y);
     }
 
-    int x = label++;
+    int x = nlabel++;
     int r = gen_expr(node->cond);
     add(IR_UNLESS, r, x);
-    add(IR_KILL, r, -1);
+    kill(r);
     gen_stmt(node->then);
-    add(IR_LABEL, x, -1);
+    label(x);
     return;
   }
 
   if (node->ty == ND_FOR) {
-    int x = label++;
-    int y = label++;
+    int x = nlabel++;
+    int y = nlabel++;
 
     gen_stmt(node->init);
-    add(IR_LABEL, x, -1);
+    label(x);
     int r = gen_expr(node->cond);
     add(IR_UNLESS, r, y);
-    add(IR_KILL, r, -1);
+    kill(r);
     gen_stmt(node->body);
-    add(IR_KILL, gen_expr(node->inc), -1);
+    kill(gen_expr(node->inc));
     add(IR_JMP, x, -1);
-    add(IR_LABEL, y, -1);
+    label(y);
     return;
   }
 
   if (node->ty == ND_RETURN) {
     int r = gen_expr(node->expr);
     add(IR_RETURN, r, -1);
-    add(IR_KILL, r, -1);
+    kill(r);
     return;
   }
 
   if (node->ty == ND_EXPR_STMT) {
-    int r = gen_expr(node->expr);
-    add(IR_KILL, r, -1);
+    kill(gen_expr(node->expr));
     return;
   }
 
@@ -261,7 +264,7 @@ Vector *gen_ir(Vector *nodes) {
     assert(node->ty == ND_FUNC);
 
     code = new_vec();
-    regno = 1;
+    nreg = 1;
 
     if (nodes->len > 0)
       add(IR_SAVE_ARGS, node->args->len, -1);
