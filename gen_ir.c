@@ -204,24 +204,25 @@ static void gen_stmt(Node *node) {
   }
 
   if (node->ty == ND_IF) {
-    int r = gen_expr(node->cond);
-    int x = label++;
-
-    add(IR_UNLESS, r, x);
-    add(IR_KILL, r, -1);
-
-    gen_stmt(node->then);
-
-    if (!node->els) {
+    if (node->els) {
+      int x = label++;
+      int y = label++;
+      int r = gen_expr(node->cond);
+      add(IR_UNLESS, r, x);
+      add(IR_KILL, r, -1);
+      gen_stmt(node->then);
+      add(IR_JMP, y, -1);
       add(IR_LABEL, x, -1);
-      return;
+      gen_stmt(node->els);
+      add(IR_LABEL, y, -1);
     }
 
-    int y = label++;
-    add(IR_JMP, y, -1);
+    int x = label++;
+    int r = gen_expr(node->cond);
+    add(IR_UNLESS, r, x);
+    add(IR_KILL, r, -1);
+    gen_stmt(node->then);
     add(IR_LABEL, x, -1);
-    gen_stmt(node->els);
-    add(IR_LABEL, y, -1);
     return;
   }
 
