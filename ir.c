@@ -4,10 +4,10 @@
 // Base pointer is always assigned to r0.
 
 IRInfo irinfo[] = {
-  {'+', "ADD", IR_TY_REG_REG},
-  {'-', "SUB", IR_TY_REG_REG},
-  {'*', "MUL", IR_TY_REG_REG},
-  {'/', "DIV", IR_TY_REG_REG},
+  {IR_ADD, "ADD", IR_TY_REG_REG},
+  {IR_SUB, "SUB", IR_TY_REG_REG},
+  {IR_MUL, "MUL", IR_TY_REG_REG},
+  {IR_DIV, "DIV", IR_TY_REG_REG},
   {IR_IMM, "MOV", IR_TY_REG_IMM},
   {IR_SUB_IMM, "SUB", IR_TY_REG_IMM},
   {IR_MOV, "MOV", IR_TY_REG_REG},
@@ -31,7 +31,7 @@ static int stacksize;
 static int label;
 
 IRInfo *get_irinfo(IR *ir) {
-  for (IRInfo *info = irinfo; info->op; info++)
+  for (IRInfo *info = irinfo; info->name; info++)
     if (info->op == ir->op)
       return info;
   assert(0 && "invalid instruction");
@@ -141,10 +141,19 @@ static int gen_expr(Node *node) {
 
   assert(strchr("+-*/", node->ty));
 
+  int ty;
+  if (node->ty == '+')
+    ty = IR_ADD;
+  else if (node->ty == '-')
+    ty = IR_SUB;
+  else if (node->ty == '*')
+    ty = IR_MUL;
+  else
+    ty = IR_DIV;
+
   int lhs = gen_expr(node->lhs);
   int rhs = gen_expr(node->rhs);
-
-  add(node->ty, lhs, rhs);
+  add(ty, lhs, rhs);
   add(IR_KILL, rhs, -1);
   return lhs;
 }

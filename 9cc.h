@@ -108,7 +108,11 @@ Vector *parse(Vector *tokens);
 /// ir.c
 
 enum {
-  IR_IMM = 256,
+  IR_ADD,
+  IR_SUB,
+  IR_MUL,
+  IR_DIV,
+  IR_IMM,
   IR_SUB_IMM,
   IR_MOV,
   IR_RETURN,
