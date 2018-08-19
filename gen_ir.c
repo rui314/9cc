@@ -83,8 +83,8 @@ static void kill(int r) { add(IR_KILL, r, -1); }
 static void label(int x) { add(IR_LABEL, x, -1); }
 
 static int gen_lval(Node *node) {
-  if (node->ty != ND_LVAR)
-    error("not an lvalue: %d (%s)", node->ty, node->name);
+  if (node->op != ND_LVAR)
+    error("not an lvalue: %d (%s)", node->op, node->name);
   int r = nreg++;
   add(IR_MOV, r, 0);
   add(IR_SUB_IMM, r, node->offset);
@@ -102,7 +102,7 @@ static int gen_binop(int ty, Node *lhs, Node *rhs) {
 }
 
 static int gen_expr(Node *node) {
-  switch (node->ty) {
+  switch (node->op) {
   case ND_NUM: {
     int r = nreg++;
     add(IR_IMM, r, node->val);
@@ -160,6 +160,11 @@ static int gen_expr(Node *node) {
       kill(ir->args[i]);
     return r;
   }
+  case ND_DEREF: {
+    int r = gen_expr(node->expr);
+    add(IR_LOAD, r, r);
+    return r;
+  }
   case '=': {
     int rhs = gen_expr(node->rhs);
     int lhs = gen_lval(node->lhs);
@@ -183,7 +188,7 @@ static int gen_expr(Node *node) {
 }
 
 static void gen_stmt(Node *node) {
-  if (node->ty == ND_VARDEF) {
+  if (node->op == ND_VARDEF) {
     if (!node->init)
       return;
     int rhs = gen_expr(node->init);
@@ -196,7 +201,7 @@ static void gen_stmt(Node *node) {
     return;
   }
 
-  if (node->ty == ND_IF) {
+  if (node->op == ND_IF) {
     if (node->els) {
       int x = nlabel++;
       int y = nlabel++;
@@ -219,7 +224,7 @@ static void gen_stmt(Node *node) {
     return;
   }
 
-  if (node->ty == ND_FOR) {
+  if (node->op == ND_FOR) {
     int x = nlabel++;
     int y = nlabel++;
 
@@ -235,25 +240,25 @@ static void gen_stmt(Node *node) {
     return;
   }
 
-  if (node->ty == ND_RETURN) {
+  if (node->op == ND_RETURN) {
     int r = gen_expr(node->expr);
     add(IR_RETURN, r, -1);
     kill(r);
     return;
   }
 
-  if (node->ty == ND_EXPR_STMT) {
+  if (node->op == ND_EXPR_STMT) {
     kill(gen_expr(node->expr));
     return;
   }
 
-  if (node->ty == ND_COMP_STMT) {
+  if (node->op == ND_COMP_STMT) {
     for (int i = 0; i < node->stmts->len; i++)
       gen_stmt(node->stmts->data[i]);
     return;
   }
 
-  error("unknown node: %d", node->ty);
+  error("unknown node: %d", node->op);
 }
 
 Vector *gen_ir(Vector *nodes) {
@@ -261,7 +266,7 @@ Vector *gen_ir(Vector *nodes) {
 
   for (int i = 0; i < nodes->len; i++) {
     Node *node = nodes->data[i];
-    assert(node->ty == ND_FUNC);
+    assert(node->op == ND_FUNC);
 
     code = new_vec();
     nreg = 1;

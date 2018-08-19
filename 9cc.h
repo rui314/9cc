@@ -81,6 +81,7 @@ enum {
   ND_LVAR,      // Variable reference
   ND_IF,        // "if"
   ND_FOR,       // "for"
+  ND_DEREF,     // pointer dereference ("*")
   ND_LOGAND,    // &&
   ND_LOGOR,     // ||
   ND_RETURN,    // "return"
@@ -90,8 +91,19 @@ enum {
   ND_EXPR_STMT, // Expressions tatement
 };
 
+enum {
+  INT,
+  PTR,
+};
+
+typedef struct Type {
+  int ty;
+  struct Type *ptr_of;
+} Type;
+
 typedef struct Node {
-  int ty;            // Node type
+  int op;            // Node type
+  Type *ty;          // C type
   struct Node *lhs;  // left-hand side
   struct Node *rhs;  // right-hand side
   int val;           // Number literal
