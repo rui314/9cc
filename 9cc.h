@@ -54,6 +54,7 @@ enum {
   TK_IDENT,     // Identifier
   TK_IF,        // "if"
   TK_ELSE,      // "else"
+  TK_FOR,       // "for"
   TK_LOGOR,     // ||
   TK_LOGAND,    // &&
   TK_RETURN,    // "return"
@@ -76,6 +77,7 @@ enum {
   ND_NUM = 256, // Number literal
   ND_IDENT,     // Identifier
   ND_IF,        // "if"
+  ND_FOR,       // "for"
   ND_LOGAND,    // &&
   ND_LOGOR,     // ||
   ND_RETURN,    // "return"
@@ -95,12 +97,13 @@ typedef struct Node {
 
   char *name;
 
-  // "if"
+  // "if" ( cond ) then "else" els
+  // "for" ( init; cond; inc ) body
   struct Node *cond;
   struct Node *then;
   struct Node *els;
-
-  // Function definition
+  struct Node *init;
+  struct Node *inc;
   struct Node *body;
 
   // Function call
