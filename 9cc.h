@@ -43,6 +43,21 @@ StringBuilder *new_sb(void);
 void sb_append(StringBuilder *sb, char *s);
 char *sb_get(StringBuilder *sb);
 
+typedef struct Type {
+  int ty;
+
+  // Pointer
+  struct Type *ptr_of;
+
+  // Array
+  struct Type *ary_of;
+  int len;
+} Type;
+
+Type *ptr_of(Type *base);
+Type *ary_of(Type *base, int len);
+int size_of(Type *ty);
+
 /// util_test.c
 
 void util_test();
@@ -81,6 +96,7 @@ enum {
   ND_LVAR,      // Variable reference
   ND_IF,        // "if"
   ND_FOR,       // "for"
+  ND_ADDR,      // address-of operator ("&")
   ND_DEREF,     // pointer dereference ("*")
   ND_LOGAND,    // &&
   ND_LOGOR,     // ||
@@ -94,12 +110,8 @@ enum {
 enum {
   INT,
   PTR,
+  ARY,
 };
-
-typedef struct Type {
-  int ty;
-  struct Type *ptr_of;
-} Type;
 
 typedef struct Node {
   int op;            // Node type
@@ -154,10 +166,13 @@ enum {
   IR_LT,
   IR_JMP,
   IR_UNLESS,
-  IR_LOAD,
-  IR_STORE,
+  IR_LOAD32,
+  IR_LOAD64,
+  IR_STORE32,
+  IR_STORE64,
+  IR_STORE32_ARG,
+  IR_STORE64_ARG,
   IR_KILL,
-  IR_SAVE_ARGS,
   IR_NOP,
 };
 
@@ -180,6 +195,7 @@ enum {
   IR_TY_LABEL,
   IR_TY_REG_REG,
   IR_TY_REG_IMM,
+  IR_TY_IMM_IMM,
   IR_TY_REG_LABEL,
   IR_TY_CALL,
 };
@@ -204,6 +220,7 @@ void dump_ir(Vector *irv);
 
 extern char *regs[];
 extern char *regs8[];
+extern char *regs32[];
 void alloc_regs(Vector *irv);
 
 /// gen_x86.c

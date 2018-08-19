@@ -30,7 +30,7 @@ loop:
     }
 
     // Single-letter token
-    if (strchr("+-*/;=(),{}<>", *p)) {
+    if (strchr("+-*/;=(),{}<>[]", *p)) {
       add_token(v, *p, p);
       p++;
       continue;
@@ -64,7 +64,7 @@ loop:
     if (isdigit(*p)) {
       Token *t = add_token(v, TK_NUM, p);
       for (; isdigit(*p); p++)
-	t->val = t->val * 10 + *p - '0';
+        t->val = t->val * 10 + *p - '0';
       continue;
     }
 

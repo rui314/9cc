@@ -4,13 +4,6 @@ static Vector *tokens;
 static int pos;
 static Type int_ty = {INT, NULL};
 
-static Type *ptr_of(Type *base) {
-  Type *ty = calloc(1, sizeof(Type));
-  ty->ty = PTR;
-  ty->ptr_of = base;
-  return ty;
-}
-
 static Node *assign();
 
 static void expect(int ty) {
@@ -178,14 +171,32 @@ static Type *type() {
 static Node *decl() {
   Node *node = calloc(1, sizeof(Node));
   node->op = ND_VARDEF;
+
+  // Read the first half of type name (e.g. `int *`).
   node->ty = type();
 
+  // Read an identifier.
   Token *t = tokens->data[pos];
   if (t->ty != TK_IDENT)
     error("variable name expected, but got %s", t->input);
   node->name = t->name;
   pos++;
 
+  // Read the second half of type name (e.g. `[3][5]`).
+  Vector *ary_size = new_vec();
+  while (consume('[')) {
+    Node *len = term();
+    if (len->op != ND_NUM)
+      error("number expected");
+    vec_push(ary_size, len);
+    expect(']');
+  }
+  for (int i = ary_size->len - 1; i >= 0; i--) {
+    Node *len = ary_size->data[i];
+    node->ty = ary_of(node->ty, len->val);
+  }
+
+  // Read an initializer.
   if (consume('='))
     node->init = assign();
   expect(';');
