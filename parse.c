@@ -159,6 +159,19 @@ static Node *decl() {
   return node;
 }
 
+static Node *param() {
+  Node *node = calloc(1, sizeof(Node));
+  node->ty = ND_VARDEF;
+  pos++;
+
+  Token *t = tokens->data[pos];
+  if (t->ty != TK_IDENT)
+    error("parameter name expected, but got %s", t->input);
+  node->name = t->name;
+  pos++;
+  return node;
+}
+
 static Node *expr_stmt() {
   Node *node = calloc(1, sizeof(Node));
   node->ty = ND_EXPR_STMT;
@@ -246,9 +259,9 @@ static Node *function() {
 
   expect('(');
   if (!consume(')')) {
-    vec_push(node->args, term());
+    vec_push(node->args, param());
     while (consume(','))
-      vec_push(node->args, term());
+      vec_push(node->args, param());
     expect(')');
   }
 
