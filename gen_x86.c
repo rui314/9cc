@@ -51,6 +51,11 @@ void gen(Function *fn) {
     case IR_LABEL:
       printf(".L%d:\n", ir->lhs);
       break;
+    case IR_LT:
+      printf("  cmp %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  setl %s\n", regs8[ir->lhs]);
+      printf("  movzb %s, %s\n", regs[ir->lhs], regs8[ir->lhs]);
+      break;
     case IR_JMP:
       printf("  jmp .L%d\n", ir->lhs);
       break;
