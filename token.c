@@ -82,6 +82,27 @@ loop:
       continue;
     }
 
+    // Line comment
+    if (!strncmp(p, "//", 2)) {
+      while (*p && *p != '\n')
+        p++;
+      continue;
+    }
+
+    // Block comment
+    if (!strncmp(p, "/*", 2)) {
+      p += 2;
+      for (;;) {
+        if (*p == '\0')
+          error("premature end of input");
+        if (!strncmp(p, "*/", 2)) {
+          p += 2;
+          break;
+        }
+      }
+      continue;
+    }
+
     // Character literal
     if (*p == '\'') {
       Token *t = add_token(v, TK_NUM, p);
