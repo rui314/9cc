@@ -114,4 +114,6 @@ try 98 'int main() { char *p = "abc"; return p[1]; }'
 try 99 'int main() { char *p = "abc"; return p[2]; }'
 try 0 'int main() { char *p = "abc"; return p[3]; }'
 
+try 1 'int main() { int x = 1; { int x = 2; } return x; }'
+
 echo OK
