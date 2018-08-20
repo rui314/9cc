@@ -105,6 +105,15 @@ static Node *walk(Node *node, bool decay) {
   case ND_RETURN:
     node->expr = walk(node->expr, true);
     return node;
+  case ND_SIZEOF: {
+    Node *expr = walk(node->expr, false);
+
+    Node *ret = calloc(1, sizeof(Node));
+    ret->op = ND_NUM;
+    ret->ty = INT;
+    ret->val = size_of(expr->ty);
+    return ret;
+  }
   case ND_CALL:
     for (int i = 0; i < node->args->len; i++)
       node->args->data[i] = walk(node->args->data[i], true);
