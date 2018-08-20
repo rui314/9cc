@@ -351,6 +351,9 @@ static Node *stmt() {
     while (!consume('}'))
       vec_push(node->stmts, stmt());
     return node;
+  case ';':
+    pos++;
+    return &null_stmt;
   default:
     return expr_stmt();
   }
