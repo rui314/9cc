@@ -200,7 +200,7 @@ enum {
   IR_MUL,
   IR_DIV,
   IR_IMM,
-  IR_SUB_IMM,
+  IR_BPREL,
   IR_MOV,
   IR_RETURN,
   IR_CALL,

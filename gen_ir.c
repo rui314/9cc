@@ -37,7 +37,7 @@ IRInfo irinfo[] = {
         [IR_STORE32_ARG] = {"STORE32_ARG", IR_TY_IMM_IMM},
         [IR_STORE64_ARG] = {"STORE64_ARG", IR_TY_IMM_IMM},
         [IR_SUB] = {"SUB", IR_TY_REG_REG},
-        [IR_SUB_IMM] = {"SUB", IR_TY_REG_IMM},
+        [IR_BPREL] = {"BPREL", IR_TY_REG_IMM},
         [IR_IF] = {"IF", IR_TY_REG_LABEL},
         [IR_UNLESS] = {"UNLESS", IR_TY_REG_LABEL},
 };
@@ -134,8 +134,7 @@ static int gen_lval(Node *node) {
 
   if (node->op == ND_LVAR) {
     int r = nreg++;
-    add(IR_MOV, r, 0);
-    add(IR_SUB_IMM, r, node->offset);
+    add(IR_BPREL, r, node->offset);
     return r;
   }
 
@@ -311,8 +310,7 @@ static void gen_stmt(Node *node) {
       return;
     int rhs = gen_expr(node->init);
     int lhs = nreg++;
-    add(IR_MOV, lhs, 0);
-    add(IR_SUB_IMM, lhs, node->offset);
+    add(IR_BPREL, lhs, node->offset);
     if (node->ty->ty == CHAR)
       add(IR_STORE8, lhs, rhs);
     else if (node->ty->ty == INT)
