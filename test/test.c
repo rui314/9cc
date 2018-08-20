@@ -90,9 +90,9 @@ int main() {
   EXPECT(5, ({ char x = 5; return x; }));
   EXPECT(42, ({ int x = 0; char *p = &x; p[0] = 42; return x; }));
 
-  EXPECT(97, ({ char *p = "abc"; return p[0]; }));
-  EXPECT(98, ({ char *p = "abc"; return p[1]; }));
-  EXPECT(99, ({ char *p = "abc"; return p[2]; }));
+  EXPECT('a', ({ char *p = "abc"; return p[0]; }));
+  EXPECT('b', ({ char *p = "abc"; return p[1]; }));
+  EXPECT('c', ({ char *p = "abc"; return p[2]; }));
   EXPECT(0, ({ char *p = "abc"; return p[3]; }));
 
   EXPECT(1, ({ int x = 1; { int x = 2; } return x; }));
