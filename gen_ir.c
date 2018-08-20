@@ -27,10 +27,30 @@ static IR *add(int op, int lhs, int rhs) {
 }
 
 static void kill(int r) { add(IR_KILL, r, -1); }
-
 static void label(int x) { add(IR_LABEL, x, -1); }
-
 static int gen_expr(Node *node);
+
+static int choose_insn(Node *node, int op8, int op32, int op64) {
+  int sz = size_of(node->ty);
+  if (sz == 1)
+    return op8;
+  if (sz == 4)
+    return op32;
+  assert(sz == 8);
+  return op64;
+}
+
+static int load_insn(Node *node) {
+  return choose_insn(node, IR_LOAD8, IR_LOAD32, IR_LOAD64);
+}
+
+static int store_insn(Node *node) {
+  return choose_insn(node, IR_STORE8, IR_STORE32, IR_STORE64);
+}
+
+static int store_arg_insn(Node *node) {
+  return choose_insn(node, IR_STORE8_ARG, IR_STORE32_ARG, IR_STORE64_ARG);
+}
 
 // In C, all expressions that can be written on the left-hand side of
 // the '=' operator must have an address in memory. In other words, if
@@ -131,12 +151,7 @@ static int gen_expr(Node *node) {
   case ND_GVAR:
   case ND_LVAR: {
     int r = gen_lval(node);
-    if (node->ty->ty == CHAR)
-      add(IR_LOAD8, r, r);
-    else if (node->ty->ty == INT)
-      add(IR_LOAD32, r, r);
-    else
-      add(IR_LOAD64, r, r);
+    add(load_insn(node), r, r);
     return r;
   }
   case ND_CALL: {
@@ -159,12 +174,7 @@ static int gen_expr(Node *node) {
     return gen_lval(node->expr);
   case ND_DEREF: {
     int r = gen_expr(node->expr);
-    if (node->expr->ty->ptr_to->ty == CHAR)
-      add(IR_LOAD8, r, r);
-    else if (node->expr->ty->ptr_to->ty == INT)
-      add(IR_LOAD32, r, r);
-    else
-      add(IR_LOAD64, r, r);
+    add(load_insn(node), r, r);
     return r;
   }
   case ND_STMT_EXPR: {
@@ -184,12 +194,7 @@ static int gen_expr(Node *node) {
   case '=': {
     int rhs = gen_expr(node->rhs);
     int lhs = gen_lval(node->lhs);
-    if (node->lhs->ty->ty == CHAR)
-      add(IR_STORE8, lhs, rhs);
-    else if (node->lhs->ty->ty == INT)
-      add(IR_STORE32, lhs, rhs);
-    else
-      add(IR_STORE64, lhs, rhs);
+    add(store_insn(node), lhs, rhs);
     kill(rhs);
     return lhs;
   }
@@ -232,12 +237,7 @@ static void gen_stmt(Node *node) {
     int rhs = gen_expr(node->init);
     int lhs = nreg++;
     add(IR_BPREL, lhs, node->offset);
-    if (node->ty->ty == CHAR)
-      add(IR_STORE8, lhs, rhs);
-    else if (node->ty->ty == INT)
-      add(IR_STORE32, lhs, rhs);
-    else
-      add(IR_STORE64, lhs, rhs);
+    add(store_insn(node), lhs, rhs);
     kill(lhs);
     kill(rhs);
     return;
@@ -340,12 +340,7 @@ Vector *gen_ir(Vector *nodes) {
 
     for (int i = 0; i < node->args->len; i++) {
       Node *arg = node->args->data[i];
-      if (arg->ty->ty == CHAR)
-        add(IR_STORE8_ARG, arg->offset, i);
-      else if (arg->ty->ty == INT)
-        add(IR_STORE32_ARG, arg->offset, i);
-      else
-        add(IR_STORE64_ARG, arg->offset, i);
+      add(store_arg_insn(arg), arg->offset, i);
     }
 
     gen_stmt(node->body);
