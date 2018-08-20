@@ -40,6 +40,7 @@ typedef struct {
 } StringBuilder;
 
 StringBuilder *new_sb(void);
+void sb_add(StringBuilder *sb, char s);
 void sb_append(StringBuilder *sb, char *s);
 char *sb_get(StringBuilder *sb);
 
@@ -84,9 +85,12 @@ enum {
 typedef struct {
   int ty;      // Token type
   int val;     // Number literal
-  char *str;   // String literal
   char *name;  // Identifier
   char *input; // Token string (for error reporting)
+
+  // String literal
+  char *str;
+  char len;
 } Token;
 
 Vector *tokenize(char *p);

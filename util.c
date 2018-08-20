@@ -76,6 +76,11 @@ static void sb_grow(StringBuilder *sb, int len) {
   sb->data = realloc(sb->data, sb->capacity);
 }
 
+void sb_add(StringBuilder *sb, char s) {
+  sb_grow(sb, 1);
+  sb->data[sb->len++] = s;
+}
+
 void sb_append(StringBuilder *sb, char *s) {
   int len = strlen(s);
   sb_grow(sb, len);
@@ -84,8 +89,7 @@ void sb_append(StringBuilder *sb, char *s) {
 }
 
 char *sb_get(StringBuilder *sb) {
-  sb_grow(sb, 1);
-  sb->data[sb->len] = '\0';
+  sb_add(sb, '\0');
   return sb->data;
 }
 
