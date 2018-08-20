@@ -130,6 +130,4 @@ int align_of(Type *ty) {
   return align_of(ty->ary_of);
 }
 
-int roundup(int x, int align) {
-  return (x + align - 1) & ~(align - 1);
-}
+int roundup(int x, int align) { return (x + align - 1) & ~(align - 1); }

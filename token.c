@@ -17,11 +17,22 @@ static struct {
   char *name;
   int ty;
 } symbols[] = {
-    {"char", TK_CHAR},     {"do", TK_DO},         {"else", TK_ELSE},
-    {"extern", TK_EXTERN}, {"for", TK_FOR},       {"if", TK_IF},
-    {"int", TK_INT},       {"return", TK_RETURN}, {"sizeof", TK_SIZEOF},
-    {"while", TK_WHILE},   {"&&", TK_LOGAND},     {"||", TK_LOGOR},
-    {"==", TK_EQ},         {"!=", TK_NE},         {NULL, 0},
+    {"_Alignof", TK_ALIGNOF},
+    {"char", TK_CHAR},
+    {"do", TK_DO},
+    {"else", TK_ELSE},
+    {"extern", TK_EXTERN},
+    {"for", TK_FOR},
+    {"if", TK_IF},
+    {"int", TK_INT},
+    {"return", TK_RETURN},
+    {"sizeof", TK_SIZEOF},
+    {"while", TK_WHILE},
+    {"&&", TK_LOGAND},
+    {"||", TK_LOGOR},
+    {"==", TK_EQ},
+    {"!=", TK_NE},
+    {NULL, 0},
 };
 
 static char escaped[256] = {

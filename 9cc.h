@@ -85,6 +85,7 @@ enum {
   TK_LOGAND,    // &&
   TK_RETURN,    // "return"
   TK_SIZEOF,    // "sizeof"
+  TK_ALIGNOF,   // "_Alignof"
   TK_EOF,       // End marker
 };
 
@@ -122,6 +123,7 @@ enum {
   ND_LOGOR,     // ||
   ND_RETURN,    // "return"
   ND_SIZEOF,    // "sizeof"
+  ND_ALIGNOF,   // "_Alignof"
   ND_CALL,      // Function call
   ND_FUNC,      // Function definition
   ND_COMP_STMT, // Compound statement
