@@ -33,10 +33,13 @@ static void swap(Node **p, Node **q) {
   *q = r;
 }
 
-static Node *addr_of(Node *base, Type *ty) {
+static Node *maybe_decay(Node *base, bool decay) {
+  if (!decay || base->ty->ty != ARY)
+    return base;
+
   Node *node = calloc(1, sizeof(Node));
   node->op = ND_ADDR;
-  node->ty = ptr_of(ty);
+  node->ty = ptr_of(base->ty->ary_of);
   node->expr = base;
   return node;
 }
@@ -58,25 +61,19 @@ static Node *walk(Env *env, Node *node, bool decay) {
     ret->op = ND_GVAR;
     ret->ty = node->ty;
     ret->name = var->name;
-    return walk(env, ret, decay);
+    return maybe_decay(ret, decay);
   }
   case ND_IDENT: {
     Var *var = find(env, node->name);
     if (!var)
       error("undefined variable: %s", node->name);
 
-    node->op = ND_LVAR;
-    node->offset = var->offset;
-
-    if (decay && var->ty->ty == ARY)
-      return addr_of(node, var->ty->ary_of);
-    node->ty = var->ty;
-    return node;
+    Node *ret = calloc(1, sizeof(Node));
+    ret->op = ND_LVAR;
+    ret->offset = var->offset;
+    ret->ty = var->ty;
+    return maybe_decay(ret, decay);
   }
-  case ND_GVAR:
-    if (decay && node->ty->ty == ARY)
-      return addr_of(node, node->ty->ary_of);
-    return node;
   case ND_VARDEF: {
     stacksize += size_of(node->ty);
     node->offset = stacksize;
