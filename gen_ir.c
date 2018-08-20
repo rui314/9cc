@@ -93,14 +93,11 @@ static int gen_lval(Node *node) {
   if (node->op == ND_DEREF)
     return gen_expr(node->expr);
 
-  if (node->op == ND_LVAR) {
-    int r = nreg++;
-    add(IR_MOV, r, 0);
-    add(IR_SUB_IMM, r, node->offset);
-    return r;
-  }
-
-  error("not an lvalue: %d (%s)", node->op, node->name);
+  assert(node->op == ND_LVAR);
+  int r = nreg++;
+  add(IR_MOV, r, 0);
+  add(IR_SUB_IMM, r, node->offset);
+  return r;
 }
 
 static int gen_binop(int ty, Node *lhs, Node *rhs) {
