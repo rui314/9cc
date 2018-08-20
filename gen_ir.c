@@ -30,6 +30,7 @@ IRInfo irinfo[] = {
         [IR_STORE64_ARG] = {"STORE64_ARG", IR_TY_IMM_IMM},
         [IR_SUB] = {"SUB", IR_TY_REG_REG},
         [IR_SUB_IMM] = {"SUB", IR_TY_REG_IMM},
+        [IR_IF] = {"IF", IR_TY_REG_LABEL},
         [IR_UNLESS] = {"UNLESS", IR_TY_REG_LABEL},
 };
 
@@ -310,6 +311,16 @@ static void gen_stmt(Node *node) {
     kill(gen_expr(node->inc));
     add(IR_JMP, x, -1);
     label(y);
+    return;
+  }
+
+  if (node->op == ND_DO_WHILE) {
+    int x = nlabel++;
+    label(x);
+    gen_stmt(node->body);
+    int r = gen_expr(node->cond);
+    add(IR_IF, r, x);
+    kill(r);
     return;
   }
 

@@ -126,4 +126,6 @@ try 1 'int main() { return 5 == 5; }'
 try 1 'int main() { return 4 != 5; }'
 try 0 'int main() { return 5 != 5; }'
 
+try 45 'int main() { int x=0; int y=0; do { y=y+x; x=x+1; } while (x < 10); return y; }'
+
 echo OK

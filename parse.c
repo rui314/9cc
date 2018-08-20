@@ -308,6 +308,16 @@ static Node *stmt() {
     expect(')');
     node->body = stmt();
     return node;
+  case TK_DO:
+    pos++;
+    node->op = ND_DO_WHILE;
+    node->body = stmt();
+    expect(TK_WHILE);
+    expect('(');
+    node->cond = assign();
+    expect(')');
+    expect(';');
+    return node;
   case TK_RETURN:
     pos++;
     node->op = ND_RETURN;

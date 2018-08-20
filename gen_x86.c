@@ -92,6 +92,10 @@ void gen(Function *fn) {
     case IR_JMP:
       printf("  jmp .L%d\n", ir->lhs);
       break;
+    case IR_IF:
+      printf("  cmp %s, 0\n", regs[ir->lhs]);
+      printf("  jne .L%d\n", ir->rhs);
+      break;
     case IR_UNLESS:
       printf("  cmp %s, 0\n", regs[ir->lhs]);
       printf("  je .L%d\n", ir->rhs);

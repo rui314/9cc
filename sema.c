@@ -121,6 +121,10 @@ static Node *walk(Env *env, Node *node, bool decay) {
     node->inc = walk(env, node->inc, true);
     node->body = walk(env, node->body, true);
     return node;
+  case ND_DO_WHILE:
+    node->cond = walk(env, node->cond, true);
+    node->body = walk(env, node->body, true);
+    return node;
   case '+':
   case '-':
     node->lhs = walk(env, node->lhs, true);
