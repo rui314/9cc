@@ -46,10 +46,19 @@ static Node *new_expr(int op, Node *expr) {
   return node;
 }
 
+static Node *compound_stmt();
+
 static Node *primary() {
   Token *t = tokens->data[pos++];
 
   if (t->ty == '(') {
+    if (consume('{')) {
+      Node *node = calloc(1, sizeof(Node));
+      node->op = ND_STMT_EXPR;
+      node->stmt = compound_stmt();
+      expect(')');
+      return node;
+    }
     Node *node = assign();
     expect(')');
     return node;

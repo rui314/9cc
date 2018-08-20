@@ -82,6 +82,8 @@ void dump_ir(Vector *irv) {
 static Vector *code;
 static int nreg;
 static int nlabel;
+static int return_label;
+static int return_reg;
 
 static IR *add(int op, int lhs, int rhs) {
   IR *ir = calloc(1, sizeof(IR));
@@ -123,6 +125,8 @@ static int gen_binop(int ty, Node *lhs, Node *rhs) {
   kill(r2);
   return r1;
 }
+
+static void gen_stmt(Node *node);
 
 static int gen_expr(Node *node) {
   switch (node->op) {
@@ -213,6 +217,20 @@ static int gen_expr(Node *node) {
       add(IR_LOAD32, r, r);
     else
       add(IR_LOAD64, r, r);
+    return r;
+  }
+  case ND_STMT_EXPR: {
+    int orig_label = return_label;
+    int orig_reg = return_reg;
+    return_label = nlabel++;
+    int r = nreg++;
+    return_reg = r;
+
+    gen_stmt(node->stmt);
+    label(return_label);
+
+    return_label = orig_label;
+    return_reg = orig_reg;
     return r;
   }
   case '=': {
@@ -326,6 +344,15 @@ static void gen_stmt(Node *node) {
 
   if (node->op == ND_RETURN) {
     int r = gen_expr(node->expr);
+
+    // Statement expression (GNU extension)
+    if (return_label) {
+      add(IR_MOV, return_reg, r);
+      kill(r);
+      add(IR_JMP, return_label, -1);
+      return;
+    }
+
     add(IR_RETURN, r, -1);
     kill(r);
     return;
@@ -347,6 +374,7 @@ static void gen_stmt(Node *node) {
 
 Vector *gen_ir(Vector *nodes) {
   Vector *v = new_vec();
+  nlabel = 1;
 
   for (int i = 0; i < nodes->len; i++) {
     Node *node = nodes->data[i];
