@@ -18,6 +18,16 @@ static Env *new_env(Env *next) {
   return env;
 }
 
+static Var *new_global(Type *ty, char *name, char *data, int len) {
+  Var *var = calloc(1, sizeof(Var));
+  var->ty = ty;
+  var->is_local = false;
+  var->name = format(".L.str%d", str_label++);
+  var->data = data;
+  var->len = len;
+  return var;
+}
+
 static Var *find(Env *env, char *name) {
   for (; env; env = env->next) {
     Var *var = map_get(env->vars, name);
@@ -44,18 +54,21 @@ static Node *maybe_decay(Node *base, bool decay) {
   return node;
 }
 
+static void check_lval(Node *node) {
+  int op = node->op;
+  if (op == ND_LVAR || op == ND_GVAR || op == ND_DEREF)
+    return;
+  error("not an lvalue: %d (%s)", op, node->name);
+}
+
 static Node *walk(Env *env, Node *node, bool decay) {
   switch (node->op) {
   case ND_NUM:
     return node;
   case ND_STR: {
-    Var *var = calloc(1, sizeof(Var));
+    Var *var = new_global(node->ty, format(".L.str%d", str_label++), node->data,
+                          node->len);
     vec_push(globals, var);
-    var->ty = node->ty;
-    var->is_local = false;
-    var->name = format(".L.str%d", str_label++);
-    var->data = node->str;
-    var->len = strlen(node->str) + 1;
 
     Node *ret = calloc(1, sizeof(Node));
     ret->op = ND_GVAR;
@@ -68,10 +81,18 @@ static Node *walk(Env *env, Node *node, bool decay) {
     if (!var)
       error("undefined variable: %s", node->name);
 
+    if (var->is_local) {
+      Node *ret = calloc(1, sizeof(Node));
+      ret->op = ND_LVAR;
+      ret->ty = var->ty;
+      ret->offset = var->offset;
+      return maybe_decay(ret, decay);
+    }
+
     Node *ret = calloc(1, sizeof(Node));
-    ret->op = ND_LVAR;
-    ret->offset = var->offset;
+    ret->op = ND_GVAR;
     ret->ty = var->ty;
+    ret->name = var->name;
     return maybe_decay(ret, decay);
   }
   case ND_VARDEF: {
@@ -114,9 +135,7 @@ static Node *walk(Env *env, Node *node, bool decay) {
     return node;
   case '=':
     node->lhs = walk(env, node->lhs, false);
-    if (node->lhs->op != ND_LVAR && node->lhs->op != ND_DEREF)
-      error("not an lvalue: %d (%s)", node->op, node->name);
-
+    check_lval(node->lhs);
     node->rhs = walk(env, node->rhs, true);
     node->ty = node->lhs->ty;
     return node;
@@ -131,6 +150,7 @@ static Node *walk(Env *env, Node *node, bool decay) {
     return node;
   case ND_ADDR:
     node->expr = walk(env, node->expr, true);
+    check_lval(node->expr);
     node->ty = ptr_of(node->expr->ty);
     return node;
   case ND_DEREF:
@@ -175,16 +195,26 @@ static Node *walk(Env *env, Node *node, bool decay) {
   }
 }
 
-void sema(Vector *nodes) {
+Vector *sema(Vector *nodes) {
+  globals = new_vec();
+  Env *topenv = new_env(NULL);
+
   for (int i = 0; i < nodes->len; i++) {
     Node *node = nodes->data[i];
+
+    if (node->op == ND_VARDEF) {
+      Var *var = new_global(node->ty, node->name, node->data, node->len);
+      vec_push(globals, var);
+      map_put(topenv->vars, node->name, var);
+      continue;
+    }
+
     assert(node->op == ND_FUNC);
 
-    globals = new_vec();
     stacksize = 0;
-
-    walk(new_env(NULL), node, true);
+    walk(topenv, node, true);
     node->stacksize = stacksize;
-    node->globals = globals;
   }
+
+  return globals;
 }

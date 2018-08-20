@@ -323,6 +323,10 @@ Vector *gen_ir(Vector *nodes) {
 
   for (int i = 0; i < nodes->len; i++) {
     Node *node = nodes->data[i];
+
+    if (node->op == ND_VARDEF)
+      continue;
+
     assert(node->op == ND_FUNC);
 
     code = new_vec();
