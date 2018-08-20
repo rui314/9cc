@@ -41,8 +41,7 @@ static char escaped[256] = {
         ['v'] = '\v', ['e'] = '\033', ['E'] = '\033',
 };
 
-static int read_char(int *result, char *p) {
-  char *start = p;
+static char *read_char(int *result, char *p) {
   if (!*p)
     error("premature end of input");
 
@@ -59,13 +58,10 @@ static int read_char(int *result, char *p) {
 
   if (*p != '\'')
     error("unclosed character literal");
-  p++;
-  return p - start;
+  return p + 1;
 }
 
-static int read_string(StringBuilder *sb, char *p) {
-  char *start = p;
-
+static char *read_string(StringBuilder *sb, char *p) {
   while (*p != '"') {
     if (!*p)
       error("premature end of input");
@@ -82,7 +78,7 @@ static int read_string(StringBuilder *sb, char *p) {
     sb_add(sb, esc ? esc : *p);
     p++;
   }
-  return p - start + 1;
+  return p + 1;
 }
 
 // Tokenized input is stored to this array.
@@ -122,7 +118,7 @@ loop:
     if (*p == '\'') {
       Token *t = add_token(v, TK_NUM, p);
       p++;
-      p += read_char(&t->val, p);
+      p = read_char(&t->val, p);
       continue;
     }
 
@@ -132,7 +128,7 @@ loop:
       p++;
 
       StringBuilder *sb = new_sb();
-      p += read_string(sb, p);
+      p = read_string(sb, p);
       t->str = sb_get(sb);
       t->len = sb->len;
       continue;
