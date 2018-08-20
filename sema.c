@@ -80,6 +80,9 @@ static Node *walk(Node *node, bool decay) {
     return node;
   case '=':
     node->lhs = walk(node->lhs, false);
+    if (node->lhs->op != ND_LVAR && node->lhs->op != ND_DEREF)
+      error("not an lvalue: %d (%s)", node->op, node->name);
+
     node->rhs = walk(node->rhs, true);
     node->ty = node->lhs->ty;
     return node;
