@@ -99,7 +99,7 @@ static Node *mul();
 static Node *postfix() {
   Node *lhs = primary();
   while (consume('[')) {
-    lhs = new_expr(ND_DEREF, new_binop('+', lhs, primary()));
+    lhs = new_expr(ND_DEREF, new_binop('+', lhs, assign()));
     expect(']');
   }
   return lhs;
