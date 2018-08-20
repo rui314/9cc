@@ -59,8 +59,11 @@ static char *tostr(IR *ir) {
   case IR_TY_CALL: {
     StringBuilder *sb = new_sb();
     sb_append(sb, format("  r%d = %s(", ir->lhs, ir->name));
-    for (int i = 0; i < ir->nargs; i++)
-      sb_append(sb, format(", r%d", ir->args));
+    for (int i = 0; i < ir->nargs; i++) {
+      if (i != 0)
+        sb_append(sb, ", ");
+      sb_append(sb, format("r%d", ir->args[i]));
+    }
     sb_append(sb, ")");
     return sb_get(sb);
   }
@@ -305,6 +308,7 @@ static void gen_stmt(Node *node) {
       label(x);
       gen_stmt(node->els);
       label(y);
+      return;
     }
 
     int x = nlabel++;

@@ -10,9 +10,9 @@ static char *escape(char *s, int len) {
   char *buf = malloc(len * 4);
   char *p = buf;
   for (int i = 0; i < len; i++) {
-    if (s[i] == '\\') {
+    if (s[i] == '\\' || s[i] == '"') {
       *p++ = '\\';
-      *p++ = '\\';
+      *p++ = s[i];
     } else if (isgraph(s[i]) || s[i] == ' ') {
       *p++ = s[i];
     } else {
