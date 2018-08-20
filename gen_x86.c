@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+// This pass generates x86-64 assembly from IR.
+
 static int label;
 
 const char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
