@@ -12,9 +12,9 @@
 // practically we don't have to think about the case in which
 // registers are exhausted and need to be spilled to memory.
 
-char *regs[] = {"rbp", "r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
-char *regs8[] = {"bpl", "r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
-char *regs32[] = {"ebp", "r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
+char *regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
+char *regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
+char *regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
 
 static bool used[sizeof(regs) / sizeof(*regs)];
 static int *reg_map;
@@ -37,10 +37,6 @@ static int alloc(int ir_reg) {
 }
 
 static void visit(Vector *irv) {
-  // r0 is a reserved register that is always mapped to rbp.
-  reg_map[0] = 0;
-  used[0] = true;
-
   for (int i = 0; i < irv->len; i++) {
     IR *ir = irv->data[i];
 
