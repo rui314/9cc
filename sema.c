@@ -1,5 +1,22 @@
 #include "9cc.h"
 
+// Semantics analyzer. This pass plays a few important roles as shown
+// below:
+//
+// - Add types to nodes. For example, a tree that represents "1+2" is
+//   typed as INT because the result type of an addition of two
+//   integers is integer.
+//
+// - Resolve variable names based on the C scope rules.
+//   Local variables are resolved to offsets from the base pointer.
+//   Global variables are resolved to their names.
+//
+// - Insert nodes to make array-to-pointer conversion explicit.
+//   Recall that, in C, "array of T" is automatically converted to
+//   "pointer to T" in most contexts.
+//
+// - Reject bad assignments, such as `1=2+3`.
+
 static Type int_ty = {INT, NULL};
 
 typedef struct Env {

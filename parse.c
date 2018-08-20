@@ -1,5 +1,13 @@
 #include "9cc.h"
 
+// This is a recursive-descendent parser which constructs abstract
+// syntax tree from input tokens.
+//
+// This parser knows only about BNF of the C grammer and doesn't care
+// about its semantics. Therefore, some invalid expressions, such as
+// `1+2=3`, are accepted by this parser, but that's intentional.
+// Semantic errors are detected in a later pass.
+
 static Vector *tokens;
 static int pos;
 static Type int_ty = {INT, NULL};

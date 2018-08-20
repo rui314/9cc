@@ -1,6 +1,10 @@
 #include "9cc.h"
 
-// Tokenizer
+// Atomic unit in the grammar is called "token".
+// For example, `123`, `"abc"` and `while` are tokens.
+// The tokenizer splits an input string into tokens.
+// Spaces and comments are removed by the tokenizer.
+
 static Token *add_token(Vector *v, int ty, char *input) {
   Token *t = calloc(1, sizeof(Token));
   t->ty = ty;

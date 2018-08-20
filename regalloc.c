@@ -1,5 +1,17 @@
 #include "9cc.h"
 
+// Register allocator.
+//
+// Before this pass, it is assumed that we have infinite number of
+// registers. This pass maps them to a finite number of registers.
+// We actually have only 7 registers.
+//
+// We allocate registers only within a single expression. In other
+// words, there are no registers that live beyond semicolons.
+// This design choice simplifies the implementation a lot, since
+// practically we don't have to think about the case in which
+// registers are exhausted and need to be spilled to memory.
+
 char *regs[] = {"rbp", "r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
 char *regs8[] = {"bpl", "r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
 char *regs32[] = {"ebp", "r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
