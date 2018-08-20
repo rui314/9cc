@@ -118,3 +118,18 @@ int size_of(Type *ty) {
   assert(ty->ty == ARY);
   return size_of(ty->ary_of) * ty->len;
 }
+
+int align_of(Type *ty) {
+  if (ty->ty == CHAR)
+    return 1;
+  if (ty->ty == INT)
+    return 4;
+  if (ty->ty == PTR)
+    return 8;
+  assert(ty->ty == ARY);
+  return align_of(ty->ary_of);
+}
+
+int roundup(int x, int align) {
+  return (x + align - 1) & ~(align - 1);
+}

@@ -58,6 +58,8 @@ typedef struct Type {
 Type *ptr_to(Type *base);
 Type *ary_of(Type *base, int len);
 int size_of(Type *ty);
+int align_of(Type *ty);
+int roundup(int x, int align);
 
 /// util_test.c
 
