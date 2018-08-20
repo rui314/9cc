@@ -93,10 +93,10 @@ char *sb_get(StringBuilder *sb) {
   return sb->data;
 }
 
-Type *ptr_of(Type *base) {
+Type *ptr_to(Type *base) {
   Type *ty = calloc(1, sizeof(Type));
   ty->ty = PTR;
-  ty->ptr_of = base;
+  ty->ptr_to = base;
   return ty;
 }
 

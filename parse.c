@@ -229,7 +229,7 @@ static Type *type() {
   pos++;
 
   while (consume('*'))
-    ty = ptr_of(ty);
+    ty = ptr_to(ty);
   return ty;
 }
 
