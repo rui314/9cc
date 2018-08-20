@@ -98,6 +98,9 @@ try 2 'int main() { int **p = alloc_ptr_ptr(2); return **p; }'
 try 3 'int main() { int ary[2]; *ary=1; *(ary+1)=2; return *ary + *(ary+1);}'
 try 5 'int main() { int x; int *p = &x; x = 5; return *p;}'
 
+try 3 'int main() { int ary[2]; ary[0]=1; ary[1]=2; return ary[0] + ary[1];}'
+try 5 'int main() { int x; int *p = &x; x = 5; return p[0];}'
+
 try 4 'int main() { int x; return sizeof(x); }'
 try 8 'int main() { int *x; return sizeof x; }'
 try 16 'int main() { int x[4]; return sizeof x; }'
