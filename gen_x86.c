@@ -25,16 +25,8 @@ static char *escape(char *s, int len) {
 }
 
 void gen(Function *fn) {
-  printf(".data\n");
-  for (int i = 0; i < fn->globals->len; i++) {
-    Var *var = fn->globals->data[i];
-    printf("%s:\n", var->name);
-    printf("  .ascii \"%s\"\n", escape(var->data, var->len));
-  }
-
   char *ret = format(".Lend%d", label++);
 
-  printf(".text\n");
   printf(".global %s\n", fn->name);
   printf("%s:\n", fn->name);
   printf("  push rbp\n");
@@ -155,9 +147,17 @@ void gen(Function *fn) {
   printf("  ret\n");
 }
 
-void gen_x86(Vector *fns) {
+void gen_x86(Vector *globals, Vector *fns) {
   printf(".intel_syntax noprefix\n");
 
+  printf(".data\n");
+  for (int i = 0; i < globals->len; i++) {
+    Var *var = globals->data[i];
+    printf("%s:\n", var->name);
+    printf("  .ascii \"%s\"\n", escape(var->data, var->len));
+  }
+
+  printf(".text\n");
   for (int i = 0; i < fns->len; i++)
     gen(fns->data[i]);
 }
