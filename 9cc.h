@@ -125,6 +125,7 @@ enum {
   ND_COMP_STMT, // Compound statement
   ND_EXPR_STMT, // Expression statement
   ND_STMT_EXPR, // Statement expression (GNU extn.)
+  ND_NULL,      // Null statement
 };
 
 enum {
@@ -141,7 +142,6 @@ typedef struct Node {
   struct Node *rhs;  // right-hand side
   int val;           // Number literal
   struct Node *expr; // "return" or expresson stmt
-  struct Node *stmt; // Statement expression
   Vector *stmts;     // Compound statement
 
   char *name;

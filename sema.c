@@ -197,8 +197,10 @@ static Node *walk(Env *env, Node *node, bool decay) {
     node->expr = walk(env, node->expr, true);
     return node;
   case ND_STMT_EXPR:
-    node->stmt = walk(env, node->stmt, true);
+    node->body = walk(env, node->body, true);
     node->ty = &int_ty;
+    return node;
+  case ND_NULL:
     return node;
   default:
     assert(0 && "unknown node type");

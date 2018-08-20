@@ -4,6 +4,7 @@ static Vector *tokens;
 static int pos;
 static Type int_ty = {INT, NULL};
 static Type char_ty = {CHAR, NULL};
+static Node null_stmt = {ND_NULL};
 
 static Node *assign();
 
@@ -55,7 +56,7 @@ static Node *primary() {
     if (consume('{')) {
       Node *node = calloc(1, sizeof(Node));
       node->op = ND_STMT_EXPR;
-      node->stmt = compound_stmt();
+      node->body = compound_stmt();
       expect(')');
       return node;
     }
@@ -313,7 +314,17 @@ static Node *stmt() {
       node->init = expr_stmt();
     node->cond = assign();
     expect(';');
-    node->inc = assign();
+    node->inc = new_expr(ND_EXPR_STMT, assign());
+    expect(')');
+    node->body = stmt();
+    return node;
+  case TK_WHILE:
+    pos++;
+    node->op = ND_FOR;
+    node->init = &null_stmt;
+    node->inc = &null_stmt;
+    expect('(');
+    node->cond = assign();
     expect(')');
     node->body = stmt();
     return node;
