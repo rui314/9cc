@@ -7,8 +7,17 @@ const char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 const char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 void gen(Function *fn) {
+  printf(".data\n");
+  for (int i = 0; i < fn->strings->len; i++) {
+    Node *node = fn->strings->data[i];
+    assert(node->op == ND_STR);
+    printf("%s:\n", node->name);
+    printf("  .asciz \"%s\"\n", node->str);
+  }
+
   char *ret = format(".Lend%d", label++);
 
+  printf(".text\n");
   printf(".global %s\n", fn->name);
   printf("%s:\n", fn->name);
   printf("  push rbp\n");
@@ -53,6 +62,9 @@ void gen(Function *fn) {
     case IR_LABEL:
       printf(".L%d:\n", ir->lhs);
       break;
+    case IR_LABEL_ADDR:
+      printf("  lea %s, %s\n", regs[ir->lhs], ir->name);
+      break;
     case IR_LT:
       printf("  cmp %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
       printf("  setl %s\n", regs8[ir->lhs]);
@@ -67,6 +79,7 @@ void gen(Function *fn) {
       break;
     case IR_LOAD8:
       printf("  mov %s, [%s]\n", regs8[ir->lhs], regs[ir->rhs]);
+      printf("  movzb %s, %s\n", regs[ir->lhs], regs8[ir->lhs]);
       break;
     case IR_LOAD32:
       printf("  mov %s, [%s]\n", regs32[ir->lhs], regs[ir->rhs]);
