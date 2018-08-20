@@ -13,11 +13,10 @@ static struct {
   char *name;
   int ty;
 } symbols[] = {
-    {"char", TK_CHAR},     {"else", TK_ELSE},
-    {"for", TK_FOR},       {"if", TK_IF},
-    {"int", TK_INT},       {"return", TK_RETURN},
-    {"sizeof", TK_SIZEOF}, {"&&", TK_LOGAND},
-    {"||", TK_LOGOR},      {NULL, 0},
+    {"char", TK_CHAR},     {"else", TK_ELSE}, {"for", TK_FOR},
+    {"if", TK_IF},         {"int", TK_INT},   {"return", TK_RETURN},
+    {"sizeof", TK_SIZEOF}, {"&&", TK_LOGAND}, {"||", TK_LOGOR},
+    {"==", TK_EQ},         {"!=", TK_NE},     {NULL, 0},
 };
 
 static int read_string(StringBuilder *sb, char *p) {
