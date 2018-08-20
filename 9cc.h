@@ -144,7 +144,7 @@ typedef struct Node {
 
   // Function definition
   int stacksize;
-  Vector *strings;
+  Vector *globals;
 
   // Local variable
   int offset;
@@ -157,6 +157,19 @@ Vector *parse(Vector *tokens);
 int size_of(Type *ty);
 
 /// sema.c
+
+typedef struct {
+  Type *ty;
+  bool is_local;
+
+  // local
+  int offset;
+
+  // global
+  char *name;
+  char *data;
+  int len;
+} Var;
 
 void sema(Vector *nodes);
 
@@ -223,8 +236,8 @@ typedef struct {
 typedef struct {
   char *name;
   int stacksize;
-  Vector *strings;
   Vector *ir;
+  Vector *globals;
 } Function;
 
 extern IRInfo irinfo[];

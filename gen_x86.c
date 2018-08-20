@@ -6,13 +6,30 @@ const char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 const char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 const char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
+static char *escape(char *s, int len) {
+  char *buf = malloc(len * 4);
+  char *p = buf;
+  for (int i = 0; i < len; i++) {
+    if (s[i] == '\\') {
+      *p++ = '\\';
+      *p++ = '\\';
+    } else if (isgraph(s[i]) || s[i] == ' ') {
+      *p++ = s[i];
+    } else {
+      sprintf(p, "\\%03o", s[i]);
+      p += 4;
+    }
+  }
+  *p = '\0';
+  return buf;
+}
+
 void gen(Function *fn) {
   printf(".data\n");
-  for (int i = 0; i < fn->strings->len; i++) {
-    Node *node = fn->strings->data[i];
-    assert(node->op == ND_STR);
-    printf("%s:\n", node->name);
-    printf("  .asciz \"%s\"\n", node->str);
+  for (int i = 0; i < fn->globals->len; i++) {
+    Var *var = fn->globals->data[i];
+    printf("%s:\n", var->name);
+    printf("  .ascii \"%s\"\n", escape(var->data, var->len));
   }
 
   char *ret = format(".Lend%d", label++);
