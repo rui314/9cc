@@ -45,7 +45,7 @@ void gen(Function *fn) {
   printf("%s:\n", fn->name);
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", fn->stacksize);
+  printf("  sub rsp, %d\n", roundup(fn->stacksize, 16));
   printf("  push r12\n");
   printf("  push r13\n");
   printf("  push r14\n");

@@ -113,6 +113,7 @@ static Node *walk(Node *node, Env *env, bool decay) {
     return maybe_decay(ret, decay);
   }
   case ND_VARDEF: {
+    stacksize = roundup(stacksize, align_of(node->ty));
     stacksize += size_of(node->ty);
     node->offset = stacksize;
 
