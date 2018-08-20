@@ -42,6 +42,7 @@ typedef struct {
 StringBuilder *new_sb(void);
 void sb_add(StringBuilder *sb, char s);
 void sb_append(StringBuilder *sb, char *s);
+void sb_lappend(StringBuilder *sb, char *s, int len);
 char *sb_get(StringBuilder *sb);
 
 typedef struct Type {

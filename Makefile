@@ -10,7 +10,8 @@ $(OBJS): 9cc.h
 test: 9cc test/test.c
 	./9cc -test
 
-	@./9cc "$$(gcc -E -P test/test.c)" > tmp-test.s
+	@gcc -E -P test/test.c > tmp-test.tmp
+	@./9cc tmp-test.tmp > tmp-test.s
 	@echo 'int global_arr[1] = {5};' | gcc -xc -c -o tmp-test2.o -
 	@gcc -static -o tmp-test tmp-test.s tmp-test2.o
 	@./tmp-test
