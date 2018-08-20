@@ -105,10 +105,12 @@ Type *ary_of(Type *base, int len) {
 }
 
 int size_of(Type *ty) {
+  if (ty->ty == CHAR)
+    return 1;
   if (ty->ty == INT)
     return 4;
-  if (ty->ty == ARY)
-    return size_of(ty->ary_of) * ty->len;
-  assert(ty->ty == PTR);
-  return 8;
+  if (ty->ty == PTR)
+    return 8;
+  assert(ty->ty == ARY);
+  return size_of(ty->ary_of) * ty->len;
 }

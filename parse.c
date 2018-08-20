@@ -3,6 +3,7 @@
 static Vector *tokens;
 static int pos;
 static Type int_ty = {INT, NULL};
+static Type char_ty = {CHAR, NULL};
 
 static Node *assign();
 
@@ -21,9 +22,13 @@ static bool consume(int ty) {
   return true;
 }
 
-static bool is_typename() {
+static Type *get_type() {
   Token *t = tokens->data[pos];
-  return t->ty == TK_INT;
+  if (t->ty == TK_INT)
+    return &int_ty;
+  if (t->ty == TK_CHAR)
+    return &char_ty;
+  return NULL;
 }
 
 static Node *new_binop(int op, Node *lhs, Node *rhs) {
@@ -174,11 +179,11 @@ static Node *assign() {
 
 static Type *type() {
   Token *t = tokens->data[pos];
-  if (t->ty != TK_INT)
+  Type *ty = get_type();
+  if (!ty)
     error("typename expected, but got %s", t->input);
   pos++;
 
-  Type *ty = &int_ty;
   while (consume('*'))
     ty = ptr_of(ty);
   return ty;
@@ -249,6 +254,7 @@ static Node *stmt() {
 
   switch (t->ty) {
   case TK_INT:
+  case TK_CHAR:
     return decl();
   case TK_IF:
     pos++;
@@ -266,7 +272,7 @@ static Node *stmt() {
     pos++;
     node->op = ND_FOR;
     expect('(');
-    if (is_typename())
+    if (get_type())
       node->init = decl();
     else
       node->init = expr_stmt();
