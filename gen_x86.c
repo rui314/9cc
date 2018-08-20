@@ -167,6 +167,8 @@ void gen_x86(Vector *globals, Vector *fns) {
   printf(".data\n");
   for (int i = 0; i < globals->len; i++) {
     Var *var = globals->data[i];
+    if (var->is_extern)
+      continue;
     printf("%s:\n", var->name);
     printf("  .ascii \"%s\"\n", escape(var->data, var->len));
   }

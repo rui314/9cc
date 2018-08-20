@@ -17,6 +17,8 @@ try() {
 }
 
 cat <<EOF | gcc -xc -c -o tmp-test.o -
+int global_arr[1] = {5};
+
 int plus(int x, int y) { return x + y; }
 
 int *alloc1(int x, int y) {
@@ -127,5 +129,7 @@ try 1 'int main() { return 4 != 5; }'
 try 0 'int main() { return 5 != 5; }'
 
 try 45 'int main() { int x=0; int y=0; do { y=y+x; x=x+1; } while (x < 10); return y; }'
+
+try 5 'extern int global_arr[1]; int main() { return global_arr[0]; }'
 
 echo OK
