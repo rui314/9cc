@@ -14,22 +14,19 @@ static char *escape(char *s, int len) {
           ['\t'] = 't', ['\\'] = '\\', ['\''] = '\'', ['"'] = '"',
   };
 
-  char *buf = malloc(len * 4 + 1);
-  char *p = buf;
+  StringBuilder *sb = new_sb();
   for (int i = 0; i < len; i++) {
     char esc = escaped[(unsigned)s[i]];
     if (esc) {
-      *p++ = '\\';
-      *p++ = esc;
+      sb_add(sb, '\\');
+      sb_add(sb, esc);
     } else if (isgraph(s[i]) || s[i] == ' ') {
-      *p++ = s[i];
+      sb_add(sb, s[i]);
     } else {
-      sprintf(p, "\\%03o", s[i]);
-      p += 4;
+      sb_append(sb, format("\\%03o", s[i]));
     }
   }
-  *p = '\0';
-  return buf;
+  return sb_get(sb);
 }
 
 void emit_cmp(IR *ir, char *insn) {
