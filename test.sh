@@ -101,8 +101,12 @@ try 5 'int main() { int x; int *p = &x; x = 5; return *p;}'
 try 3 'int main() { int ary[2]; ary[0]=1; ary[1]=2; return ary[0] + ary[1];}'
 try 5 'int main() { int x; int *p = &x; x = 5; return p[0];}'
 
+try 1 'int main() { char x; return sizeof x; }'
 try 4 'int main() { int x; return sizeof(x); }'
 try 8 'int main() { int *x; return sizeof x; }'
 try 16 'int main() { int x[4]; return sizeof x; }'
+
+try 5 'int main() { char x = 5; return x; }'
+try 42 'int main() { int x = 0; char *p = &x; p[0] = 42; return x; }'
 
 echo OK

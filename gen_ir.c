@@ -12,14 +12,17 @@ IRInfo irinfo[] = {
         [IR_KILL] = {"KILL", IR_TY_REG},
         [IR_LABEL] = {"", IR_TY_LABEL},
         [IR_LT] = {"LT", IR_TY_REG_REG},
+        [IR_LOAD8] = {"LOAD8", IR_TY_REG_REG},
         [IR_LOAD32] = {"LOAD32", IR_TY_REG_REG},
         [IR_LOAD64] = {"LOAD64", IR_TY_REG_REG},
         [IR_MOV] = {"MOV", IR_TY_REG_REG},
         [IR_MUL] = {"MUL", IR_TY_REG_REG},
         [IR_NOP] = {"NOP", IR_TY_NOARG},
         [IR_RETURN] = {"RET", IR_TY_REG},
+        [IR_STORE8] = {"STORE8", IR_TY_REG_REG},
         [IR_STORE32] = {"STORE32", IR_TY_REG_REG},
         [IR_STORE64] = {"STORE64", IR_TY_REG_REG},
+        [IR_STORE8_ARG] = {"STORE8_ARG", IR_TY_IMM_IMM},
         [IR_STORE32_ARG] = {"STORE32_ARG", IR_TY_IMM_IMM},
         [IR_STORE64_ARG] = {"STORE64_ARG", IR_TY_IMM_IMM},
         [IR_SUB] = {"SUB", IR_TY_REG_REG},
@@ -148,10 +151,12 @@ static int gen_expr(Node *node) {
   }
   case ND_LVAR: {
     int r = gen_lval(node);
-    if (node->ty->ty == PTR)
-      add(IR_LOAD64, r, r);
-    else
+    if (node->ty->ty == CHAR)
+      add(IR_LOAD8, r, r);
+    else if (node->ty->ty == INT)
       add(IR_LOAD32, r, r);
+    else
+      add(IR_LOAD64, r, r);
     return r;
   }
   case ND_CALL: {
@@ -180,10 +185,12 @@ static int gen_expr(Node *node) {
   case '=': {
     int rhs = gen_expr(node->rhs);
     int lhs = gen_lval(node->lhs);
-    if (node->lhs->ty->ty == PTR)
-      add(IR_STORE64, lhs, rhs);
-    else
+    if (node->lhs->ty->ty == CHAR)
+      add(IR_STORE8, lhs, rhs);
+    else if (node->lhs->ty->ty == INT)
       add(IR_STORE32, lhs, rhs);
+    else
+      add(IR_STORE64, lhs, rhs);
     kill(rhs);
     return lhs;
   }
@@ -224,10 +231,12 @@ static void gen_stmt(Node *node) {
     int lhs = nreg++;
     add(IR_MOV, lhs, 0);
     add(IR_SUB_IMM, lhs, node->offset);
-    if (node->ty->ty == PTR)
-      add(IR_STORE64, lhs, rhs);
-    else
+    if (node->ty->ty == CHAR)
+      add(IR_STORE8, lhs, rhs);
+    else if (node->ty->ty == INT)
       add(IR_STORE32, lhs, rhs);
+    else
+      add(IR_STORE64, lhs, rhs);
     kill(lhs);
     kill(rhs);
     return;
@@ -305,8 +314,12 @@ Vector *gen_ir(Vector *nodes) {
 
     for (int i = 0; i < node->args->len; i++) {
       Node *arg = node->args->data[i];
-      int op = (arg->ty->ty == PTR) ? IR_STORE64_ARG : IR_STORE32_ARG;
-      add(op, arg->offset, i);
+      if (arg->ty->ty == CHAR)
+        add(IR_STORE8_ARG, arg->offset, i);
+      else if (arg->ty->ty == INT)
+        add(IR_STORE32_ARG, arg->offset, i);
+      else
+        add(IR_STORE64_ARG, arg->offset, i);
     }
 
     gen_stmt(node->body);

@@ -2,6 +2,7 @@
 
 static int label;
 
+const char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 const char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 const char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
@@ -64,17 +65,25 @@ void gen(Function *fn) {
       printf("  cmp %s, 0\n", regs[ir->lhs]);
       printf("  je .L%d\n", ir->rhs);
       break;
+    case IR_LOAD8:
+      printf("  mov %s, [%s]\n", regs8[ir->lhs], regs[ir->rhs]);
+      break;
     case IR_LOAD32:
       printf("  mov %s, [%s]\n", regs32[ir->lhs], regs[ir->rhs]);
       break;
     case IR_LOAD64:
       printf("  mov %s, [%s]\n", regs[ir->lhs], regs[ir->rhs]);
       break;
+    case IR_STORE8:
+      printf("  mov [%s], %s\n", regs[ir->lhs], regs8[ir->rhs]);
     case IR_STORE32:
       printf("  mov [%s], %s\n", regs[ir->lhs], regs32[ir->rhs]);
       break;
     case IR_STORE64:
       printf("  mov [%s], %s\n", regs[ir->lhs], regs[ir->rhs]);
+      break;
+    case IR_STORE8_ARG:
+      printf("  mov [rbp-%d], %s\n", ir->lhs, argreg8[ir->rhs]);
       break;
     case IR_STORE32_ARG:
       printf("  mov [rbp-%d], %s\n", ir->lhs, argreg32[ir->rhs]);
