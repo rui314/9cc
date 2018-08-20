@@ -58,8 +58,8 @@ void gen(Function *fn) {
     case IR_IMM:
       printf("  mov %s, %d\n", regs[ir->lhs], ir->rhs);
       break;
-    case IR_SUB_IMM:
-      printf("  sub %s, %d\n", regs[ir->lhs], ir->rhs);
+    case IR_BPREL:
+      printf("  lea %s, [rbp-%d]\n", regs[ir->lhs], ir->rhs);
       break;
     case IR_MOV:
       printf("  mov %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
