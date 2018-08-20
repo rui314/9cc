@@ -7,12 +7,18 @@ const char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 const char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static char *escape(char *s, int len) {
-  char *buf = malloc(len * 4);
+  static char escaped[256] = {
+          ['\b'] = 'b', ['\f'] = 'f',  ['\n'] = 'n',  ['\r'] = 'r',
+          ['\t'] = 't', ['\\'] = '\\', ['\''] = '\'', ['"'] = '"',
+  };
+
+  char *buf = malloc(len * 4 + 1);
   char *p = buf;
   for (int i = 0; i < len; i++) {
-    if (s[i] == '\\' || s[i] == '"') {
+    char esc = escaped[(unsigned)s[i]];
+    if (esc) {
       *p++ = '\\';
-      *p++ = s[i];
+      *p++ = esc;
     } else if (isgraph(s[i]) || s[i] == ' ') {
       *p++ = s[i];
     } else {
