@@ -156,14 +156,32 @@ static Node *rel() {
   }
 }
 
-static Node *logand() {
+static Node *equality() {
   Node *lhs = rel();
+  for (;;) {
+    Token *t = tokens->data[pos];
+    if (t->ty == TK_EQ) {
+      pos++;
+      lhs = new_binop(ND_EQ, lhs, rel());
+      continue;
+    }
+    if (t->ty == TK_NE) {
+      pos++;
+      lhs = new_binop(ND_NE, lhs, rel());
+      continue;
+    }
+    return lhs;
+  }
+}
+
+static Node *logand() {
+  Node *lhs = equality();
   for (;;) {
     Token *t = tokens->data[pos];
     if (t->ty != TK_LOGAND)
       return lhs;
     pos++;
-    lhs = new_binop(ND_LOGAND, lhs, rel());
+    lhs = new_binop(ND_LOGAND, lhs, equality());
   }
 }
 

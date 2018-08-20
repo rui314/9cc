@@ -12,6 +12,8 @@ IRInfo irinfo[] = {
         [IR_KILL] = {"KILL", IR_TY_REG},
         [IR_LABEL] = {"", IR_TY_LABEL},
         [IR_LABEL_ADDR] = {"LABEL_ADDR", IR_TY_LABEL_ADDR},
+        [IR_EQ] = {"EQ", IR_TY_REG_REG},
+        [IR_NE] = {"NE", IR_TY_REG_REG},
         [IR_LT] = {"LT", IR_TY_REG_REG},
         [IR_LOAD8] = {"LOAD8", IR_TY_REG_REG},
         [IR_LOAD32] = {"LOAD32", IR_TY_REG_REG},
@@ -127,6 +129,20 @@ static int gen_expr(Node *node) {
     int r = nreg++;
     add(IR_IMM, r, node->val);
     return r;
+  }
+  case ND_EQ: {
+    int lhs = gen_expr(node->lhs);
+    int rhs = gen_expr(node->rhs);
+    add(IR_EQ, lhs, rhs);
+    kill(rhs);
+    return lhs;
+  }
+  case ND_NE: {
+    int lhs = gen_expr(node->lhs);
+    int rhs = gen_expr(node->rhs);
+    add(IR_NE, lhs, rhs);
+    kill(rhs);
+    return lhs;
   }
   case ND_LOGAND: {
     int x = nlabel++;
