@@ -208,7 +208,7 @@ static Node *primary() {
   }
 
   if (t->ty == TK_STR) {
-    node->ty = ary_of(char_ty(), strlen(t->str));
+    node->ty = ary_of(char_ty(), t->len);
     node->op = ND_STR;
     node->data = t->str;
     node->len = t->len;
