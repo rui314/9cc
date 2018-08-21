@@ -34,9 +34,11 @@ static struct {
     {"!=", TK_NE},
     {"&&", TK_LOGAND},
     {"->", TK_ARROW},
+    {"<<", TK_SHL},
     {"<=", TK_LE},
     {"==", TK_EQ},
     {">=", TK_GE},
+    {">>", TK_SHR},
     {"||", TK_LOGOR},
     {NULL, 0},
 };

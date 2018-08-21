@@ -270,29 +270,41 @@ static Node *add() {
   }
 }
 
-static Node *rel() {
+static Node *shift() {
   Node *lhs = add();
   for (;;) {
+    if (consume(TK_SHL))
+      lhs = new_binop(ND_SHL, lhs, add());
+    else if (consume(TK_SHR))
+      lhs = new_binop(ND_SHR, lhs, add());
+    else
+      return lhs;
+  }
+}
+
+static Node *relational() {
+  Node *lhs = shift();
+  for (;;) {
     if (consume('<'))
-      lhs = new_binop('<', lhs, add());
+      lhs = new_binop('<', lhs, shift());
     else if (consume('>'))
-      lhs = new_binop('<', add(), lhs);
+      lhs = new_binop('<', shift(), lhs);
     else if (consume(TK_LE))
-      lhs = new_binop(ND_LE, lhs, add());
+      lhs = new_binop(ND_LE, lhs, shift());
     else if (consume(TK_GE))
-      lhs = new_binop(ND_LE, add(), lhs);
+      lhs = new_binop(ND_LE, shift(), lhs);
     else
       return lhs;
   }
 }
 
 static Node *equality() {
-  Node *lhs = rel();
+  Node *lhs = relational();
   for (;;) {
     if (consume(TK_EQ))
-      lhs = new_binop(ND_EQ, lhs, rel());
+      lhs = new_binop(ND_EQ, lhs, relational());
     else if (consume(TK_NE))
-      lhs = new_binop(ND_NE, lhs, rel());
+      lhs = new_binop(ND_NE, lhs, relational());
     else
       return lhs;
   }
