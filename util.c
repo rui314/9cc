@@ -97,6 +97,8 @@ char *sb_get(StringBuilder *sb) {
 Type *ptr_to(Type *base) {
   Type *ty = calloc(1, sizeof(Type));
   ty->ty = PTR;
+  ty->size = 8;
+  ty->align = 8;
   ty->ptr_to = base;
   return ty;
 }
@@ -104,31 +106,33 @@ Type *ptr_to(Type *base) {
 Type *ary_of(Type *base, int len) {
   Type *ty = calloc(1, sizeof(Type));
   ty->ty = ARY;
+  ty->size = base->size * len;
+  ty->align = base->align;
   ty->ary_of = base;
   ty->len = len;
   return ty;
 }
 
-int size_of(Type *ty) {
-  if (ty->ty == CHAR)
-    return 1;
-  if (ty->ty == INT)
-    return 4;
-  if (ty->ty == PTR)
-    return 8;
-  assert(ty->ty == ARY);
-  return size_of(ty->ary_of) * ty->len;
-}
+Type *struct_of(Vector *members) {
+  Type *ty = calloc(1, sizeof(Type));
+  ty->ty = STRUCT;
+  ty->members = new_vec();
 
-int align_of(Type *ty) {
-  if (ty->ty == CHAR)
-    return 1;
-  if (ty->ty == INT)
-    return 4;
-  if (ty->ty == PTR)
-    return 8;
-  assert(ty->ty == ARY);
-  return align_of(ty->ary_of);
+  int off = 0;
+  for (int i = 0; i < members->len; i++) {
+    Node *node = members->data[i];
+    assert(node->op == ND_VARDEF);
+
+    Type *t = node->ty;
+    off = roundup(off, t->align);
+    t->offset = off;
+    off += t->size;
+
+    if (ty->align < node->ty->align)
+      ty->align = node->ty->align;
+  }
+  ty->size = roundup(off, ty->align);
+  return ty;
 }
 
 int roundup(int x, int align) { return (x + align - 1) & ~(align - 1); }
