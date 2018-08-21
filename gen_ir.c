@@ -221,6 +221,9 @@ static int gen_expr(Node *node) {
     return gen_binop(IR_DIV, node);
   case '<':
     return gen_binop(IR_LT, node);
+  case ',':
+    kill(gen_expr(node->lhs));
+    return gen_expr(node->rhs);
   case '?': {
     int x = nlabel++;
     int y = nlabel++;
