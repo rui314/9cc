@@ -91,6 +91,8 @@ enum {
   TK_WHILE,     // "while"
   TK_EQ,        // ==
   TK_NE,        // !=
+  TK_LE,        // <=
+  TK_GE,        // >=
   TK_LOGOR,     // ||
   TK_LOGAND,    // &&
   TK_RETURN,    // "return"
@@ -131,6 +133,7 @@ enum {
   ND_DOT,       // Struct member access
   ND_EQ,        // ==
   ND_NE,        // !=
+  ND_LE,        // <=
   ND_LOGAND,    // &&
   ND_LOGOR,     // ||
   ND_RETURN,    // "return"
@@ -237,6 +240,7 @@ enum {
   IR_LABEL_ADDR,
   IR_EQ,
   IR_NE,
+  IR_LE,
   IR_LT,
   IR_AND,
   IR_OR,
