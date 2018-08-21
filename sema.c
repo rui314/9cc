@@ -184,6 +184,12 @@ static Node *walk(Node *node, Env *env, bool decay) {
       return maybe_decay(node, decay);
     }
     error("member missing: %s", node->name);
+  case '?':
+    node->cond = walk(node->cond, env, true);
+    node->then = walk(node->then, env, true);
+    node->els = walk(node->els, env, true);
+    node->ty = node->then->ty;
+    return node;
   case '*':
   case '/':
   case '<':

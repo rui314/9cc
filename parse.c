@@ -325,10 +325,24 @@ static Node *logor() {
   }
 }
 
+static Node *conditional() {
+  Node *cond = logor();
+  if (!consume('?'))
+    return cond;
+
+  Node *node = calloc(1, sizeof(Node));
+  node->op = '?';
+  node->cond = cond;
+  node->then = assign();
+  expect(':');
+  node->els = assign();
+  return node;
+}
+
 static Node *assign() {
-  Node *lhs = logor();
+  Node *lhs = conditional();
   if (consume('='))
-    return new_binop('=', lhs, logor());
+    return new_binop('=', lhs, conditional());
   return lhs;
 }
 
