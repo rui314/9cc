@@ -121,6 +121,8 @@ int main() {
   EXPECT(4, ({ struct { int a; } x; return sizeof(x); }));
   EXPECT(8, ({ struct { char a; int b; } x; return sizeof(x); }));
   EXPECT(12, ({ struct { char a; char b; int c; char d; } x; return sizeof(x); }));
+  EXPECT(3, ({ struct { int a; } x; x.a=3; return x.a; }));
+  EXPECT(8, ({ struct { char a; int b; } x; x.a=3; x.b=5; return x.a+x.b; }));
 
   printf("OK\n");
   return 0;

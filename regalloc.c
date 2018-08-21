@@ -17,7 +17,7 @@ char *regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
 char *regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
 
 static bool used[sizeof(regs) / sizeof(*regs)];
-static int *reg_map;
+static int reg_map[8192];
 
 static int alloc(int ir_reg) {
   if (reg_map[ir_reg] != -1) {
@@ -67,14 +67,11 @@ static void visit(Vector *irv) {
 }
 
 void alloc_regs(Vector *fns) {
+  for (int i = 0; i < sizeof(reg_map) / sizeof(*reg_map); i++)
+    reg_map[i] = -1;
+
   for (int i = 0; i < fns->len; i++) {
     Function *fn = fns->data[i];
-
-    reg_map = malloc(sizeof(int) * fn->ir->len);
-    for (int j = 0; j < fn->ir->len; j++)
-      reg_map[j] = -1;
-    memset(used, 0, sizeof(used));
-
     visit(fn->ir);
   }
 }
