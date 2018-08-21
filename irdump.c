@@ -2,6 +2,7 @@
 
 IRInfo irinfo[] = {
         [IR_ADD] = {"ADD", IR_TY_REG_REG},
+        [IR_ADD_IMM] = {"ADD", IR_TY_REG_IMM},
         [IR_CALL] = {"CALL", IR_TY_CALL},
         [IR_DIV] = {"DIV", IR_TY_REG_REG},
         [IR_IMM] = {"IMM", IR_TY_REG_IMM},
@@ -25,6 +26,7 @@ IRInfo irinfo[] = {
         [IR_NEG] = {"NEG", IR_TY_REG},
         [IR_MOV] = {"MOV", IR_TY_REG_REG},
         [IR_MUL] = {"MUL", IR_TY_REG_REG},
+        [IR_MUL_IMM] = {"MUL", IR_TY_REG_IMM},
         [IR_NOP] = {"NOP", IR_TY_NOARG},
         [IR_RETURN] = {"RET", IR_TY_REG},
         [IR_STORE8] = {"STORE8", IR_TY_REG_REG},
@@ -34,6 +36,7 @@ IRInfo irinfo[] = {
         [IR_STORE32_ARG] = {"STORE32_ARG", IR_TY_IMM_IMM},
         [IR_STORE64_ARG] = {"STORE64_ARG", IR_TY_IMM_IMM},
         [IR_SUB] = {"SUB", IR_TY_REG_REG},
+        [IR_SUB_IMM] = {"SUB", IR_TY_REG_IMM},
         [IR_BPREL] = {"BPREL", IR_TY_REG_IMM},
         [IR_IF] = {"IF", IR_TY_REG_LABEL},
         [IR_UNLESS] = {"UNLESS", IR_TY_REG_LABEL},

@@ -73,12 +73,9 @@ static int gen_lval(Node *node) {
     return gen_expr(node->expr);
 
   if (node->op == ND_DOT) {
-    int r1 = gen_lval(node->expr);
-    int r2 = nreg++;
-    add(IR_IMM, r2, node->offset);
-    add(IR_ADD, r1, r2);
-    kill(r2);
-    return r1;
+    int r = gen_lval(node->expr);
+    add(IR_ADD_IMM, r, node->offset);
+    return r;
   }
 
   if (node->op == ND_LVAR) {
@@ -106,26 +103,15 @@ static int gen_pre_inc(Node *node, int num) {
   int addr = gen_lval(node->expr);
   int val = nreg++;
   add(load_insn(node), val, addr);
-  int imm = nreg++;
-  add(IR_IMM, imm, num);
-  add(IR_ADD, val, imm);
-  kill(imm);
+  add(IR_ADD_IMM, val, num);
   add(store_insn(node), addr, val);
   kill(addr);
   return val;
 }
 
 static int gen_post_inc(Node *node, int num) {
-  int addr = gen_lval(node->expr);
-  int val = nreg++;
-  add(load_insn(node), val, addr);
-  int imm = nreg++;
-  add(IR_IMM, imm, num);
-  add(IR_ADD, val, imm);
-  add(store_insn(node), addr, val);
-  kill(addr);
-  add(IR_SUB, val, imm);
-  kill(imm);
+  int val = gen_pre_inc(node, num);
+  add(IR_SUB_IMM, val, num);
   return val;
 }
 
@@ -232,10 +218,7 @@ static int gen_expr(Node *node) {
       return gen_binop(insn, node);
 
     int rhs = gen_expr(node->rhs);
-    int r = nreg++;
-    add(IR_IMM, r, node->lhs->ty->ptr_to->size);
-    add(IR_MUL, rhs, r);
-    kill(r);
+    add(IR_MUL_IMM, rhs, node->lhs->ty->ptr_to->size);
 
     int lhs = gen_expr(node->lhs);
     add(insn, lhs, rhs);
