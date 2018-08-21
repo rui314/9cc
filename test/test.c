@@ -86,6 +86,8 @@ int main() {
   EXPECT(11, 9 | 2);
   EXPECT(11, 9 | 3);
   EXPECT(5, 6 ^ 3);
+  EXPECT(2, 6 & 3);
+  EXPECT(0, 6 & 0);
 
   EXPECT(45, ({ int x=0; int y=0; do { y=y+x; x=x+1; } while (x < 10); return y; }));
 
