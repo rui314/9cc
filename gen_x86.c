@@ -50,19 +50,21 @@ void gen(Function *fn) {
 
   for (int i = 0; i < fn->ir->len; i++) {
     IR *ir = fn->ir->data[i];
+    int lhs = ir->lhs;
+    int rhs = ir->rhs;
 
     switch (ir->op) {
     case IR_IMM:
-      printf("  mov %s, %d\n", regs[ir->lhs], ir->rhs);
+      printf("  mov %s, %d\n", regs[lhs], rhs);
       break;
     case IR_BPREL:
-      printf("  lea %s, [rbp-%d]\n", regs[ir->lhs], ir->rhs);
+      printf("  lea %s, [rbp-%d]\n", regs[lhs], rhs);
       break;
     case IR_MOV:
-      printf("  mov %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  mov %s, %s\n", regs[lhs], regs[rhs]);
       break;
     case IR_RETURN:
-      printf("  mov rax, %s\n", regs[ir->lhs]);
+      printf("  mov rax, %s\n", regs[lhs]);
       printf("  jmp %s\n", ret);
       break;
     case IR_CALL: {
@@ -76,17 +78,17 @@ void gen(Function *fn) {
       printf("  pop r11\n");
       printf("  pop r10\n");
 
-      printf("  mov %s, rax\n", regs[ir->lhs]);
+      printf("  mov %s, rax\n", regs[lhs]);
       break;
     }
     case IR_LABEL:
-      printf(".L%d:\n", ir->lhs);
+      printf(".L%d:\n", lhs);
       break;
     case IR_LABEL_ADDR:
-      printf("  lea %s, %s\n", regs[ir->lhs], ir->name);
+      printf("  lea %s, %s\n", regs[lhs], ir->name);
       break;
     case IR_NEG:
-      printf("  neg %s\n", regs[ir->lhs]);
+      printf("  neg %s\n", regs[lhs]);
       break;
     case IR_EQ:
       emit_cmp(ir, "sete");
@@ -101,93 +103,93 @@ void gen(Function *fn) {
       emit_cmp(ir, "setle");
       break;
     case IR_AND:
-      printf("  and %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  and %s, %s\n", regs[lhs], regs[rhs]);
       break;
     case IR_OR:
-      printf("  or %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  or %s, %s\n", regs[lhs], regs[rhs]);
       break;
     case IR_XOR:
-      printf("  xor %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  xor %s, %s\n", regs[lhs], regs[rhs]);
       break;
     case IR_SHL:
-      printf("  mov cl, %s\n", regs8[ir->rhs]);
-      printf("  shl %s, cl\n", regs[ir->lhs]);
+      printf("  mov cl, %s\n", regs8[rhs]);
+      printf("  shl %s, cl\n", regs[lhs]);
       break;
     case IR_SHR:
-      printf("  mov cl, %s\n", regs8[ir->rhs]);
-      printf("  shr %s, cl\n", regs[ir->lhs]);
+      printf("  mov cl, %s\n", regs8[rhs]);
+      printf("  shr %s, cl\n", regs[lhs]);
       break;
     case IR_JMP:
-      printf("  jmp .L%d\n", ir->lhs);
+      printf("  jmp .L%d\n", lhs);
       break;
     case IR_IF:
-      printf("  cmp %s, 0\n", regs[ir->lhs]);
-      printf("  jne .L%d\n", ir->rhs);
+      printf("  cmp %s, 0\n", regs[lhs]);
+      printf("  jne .L%d\n", rhs);
       break;
     case IR_UNLESS:
-      printf("  cmp %s, 0\n", regs[ir->lhs]);
-      printf("  je .L%d\n", ir->rhs);
+      printf("  cmp %s, 0\n", regs[lhs]);
+      printf("  je .L%d\n", rhs);
       break;
     case IR_LOAD8:
-      printf("  mov %s, [%s]\n", regs8[ir->lhs], regs[ir->rhs]);
-      printf("  movzb %s, %s\n", regs[ir->lhs], regs8[ir->lhs]);
+      printf("  mov %s, [%s]\n", regs8[lhs], regs[rhs]);
+      printf("  movzb %s, %s\n", regs[lhs], regs8[lhs]);
       break;
     case IR_LOAD32:
-      printf("  mov %s, [%s]\n", regs32[ir->lhs], regs[ir->rhs]);
+      printf("  mov %s, [%s]\n", regs32[lhs], regs[rhs]);
       break;
     case IR_LOAD64:
-      printf("  mov %s, [%s]\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  mov %s, [%s]\n", regs[lhs], regs[rhs]);
       break;
     case IR_STORE8:
-      printf("  mov [%s], %s\n", regs[ir->lhs], regs8[ir->rhs]);
+      printf("  mov [%s], %s\n", regs[lhs], regs8[rhs]);
     case IR_STORE32:
-      printf("  mov [%s], %s\n", regs[ir->lhs], regs32[ir->rhs]);
+      printf("  mov [%s], %s\n", regs[lhs], regs32[rhs]);
       break;
     case IR_STORE64:
-      printf("  mov [%s], %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  mov [%s], %s\n", regs[lhs], regs[rhs]);
       break;
     case IR_STORE8_ARG:
-      printf("  mov [rbp-%d], %s\n", ir->lhs, argreg8[ir->rhs]);
+      printf("  mov [rbp-%d], %s\n", lhs, argreg8[rhs]);
       break;
     case IR_STORE32_ARG:
-      printf("  mov [rbp-%d], %s\n", ir->lhs, argreg32[ir->rhs]);
+      printf("  mov [rbp-%d], %s\n", lhs, argreg32[rhs]);
       break;
     case IR_STORE64_ARG:
-      printf("  mov [rbp-%d], %s\n", ir->lhs, argreg64[ir->rhs]);
+      printf("  mov [rbp-%d], %s\n", lhs, argreg64[rhs]);
       break;
     case IR_ADD:
-      printf("  add %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  add %s, %s\n", regs[lhs], regs[rhs]);
       break;
     case IR_ADD_IMM:
-      printf("  add %s, %d\n", regs[ir->lhs], ir->rhs);
+      printf("  add %s, %d\n", regs[lhs], rhs);
       break;
     case IR_SUB:
-      printf("  sub %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
+      printf("  sub %s, %s\n", regs[lhs], regs[rhs]);
       break;
     case IR_SUB_IMM:
-      printf("  sub %s, %d\n", regs[ir->lhs], ir->rhs);
+      printf("  sub %s, %d\n", regs[lhs], rhs);
       break;
     case IR_MUL:
-      printf("  mov rax, %s\n", regs[ir->rhs]);
-      printf("  mul %s\n", regs[ir->lhs]);
-      printf("  mov %s, rax\n", regs[ir->lhs]);
+      printf("  mov rax, %s\n", regs[rhs]);
+      printf("  mul %s\n", regs[lhs]);
+      printf("  mov %s, rax\n", regs[lhs]);
       break;
     case IR_MUL_IMM:
-      printf("  mov rax, %d\n", ir->rhs);
-      printf("  mul %s\n", regs[ir->lhs]);
-      printf("  mov %s, rax\n", regs[ir->lhs]);
+      printf("  mov rax, %d\n", rhs);
+      printf("  mul %s\n", regs[lhs]);
+      printf("  mov %s, rax\n", regs[lhs]);
       break;
     case IR_DIV:
-      printf("  mov rax, %s\n", regs[ir->lhs]);
+      printf("  mov rax, %s\n", regs[lhs]);
       printf("  cqo\n");
-      printf("  div %s\n", regs[ir->rhs]);
-      printf("  mov %s, rax\n", regs[ir->lhs]);
+      printf("  div %s\n", regs[rhs]);
+      printf("  mov %s, rax\n", regs[lhs]);
       break;
     case IR_MOD:
-      printf("  mov rax, %s\n", regs[ir->lhs]);
+      printf("  mov rax, %s\n", regs[lhs]);
       printf("  cqo\n");
-      printf("  div %s\n", regs[ir->rhs]);
-      printf("  mov %s, rdx\n", regs[ir->lhs]);
+      printf("  div %s\n", regs[rhs]);
+      printf("  mov %s, rdx\n", regs[lhs]);
       break;
     case IR_NOP:
       break;
