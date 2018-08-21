@@ -195,6 +195,10 @@ static Node *walk(Node *node, Env *env, bool decay) {
     node->rhs = walk(node->rhs, env, true);
     node->ty = node->lhs->ty;
     return node;
+  case '!':
+    node->expr = walk(node->expr, env, true);
+    node->ty = node->expr->ty;
+    return node;
   case ND_ADDR:
     node->expr = walk(node->expr, env, true);
     check_lval(node->expr);
