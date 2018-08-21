@@ -236,6 +236,8 @@ static Node *unary() {
     return new_expr(ND_DEREF, mul());
   if (consume('&'))
     return new_expr(ND_ADDR, mul());
+  if (consume('!'))
+    return new_expr('!', unary());
   if (consume(TK_SIZEOF))
     return new_expr(ND_SIZEOF, unary());
   if (consume(TK_ALIGNOF))

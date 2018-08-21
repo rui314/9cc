@@ -221,6 +221,14 @@ static int gen_expr(Node *node) {
     return gen_binop(IR_DIV, node);
   case '<':
     return gen_binop(IR_LT, node);
+  case '!': {
+    int lhs = gen_expr(node->expr);
+    int rhs = nreg++;
+    add(IR_IMM, rhs, 0);
+    add(IR_EQ, lhs, rhs);
+    kill(rhs);
+    return lhs;
+  }
   default:
     assert(0 && "unknown AST type");
   }
