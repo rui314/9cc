@@ -213,6 +213,10 @@ static Node *walk(Node *node, Env *env, bool decay) {
     node->rhs = walk(node->rhs, env, true);
     node->ty = node->rhs->ty;
     return node;
+  case ND_PRE_INC:
+  case ND_PRE_DEC:
+  case ND_POST_INC:
+  case ND_POST_DEC:
   case ND_NEG:
   case '!':
     node->expr = walk(node->expr, env, true);
