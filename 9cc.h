@@ -238,6 +238,7 @@ enum {
   IR_EQ,
   IR_NE,
   IR_LT,
+  IR_OR,
   IR_JMP,
   IR_IF,
   IR_UNLESS,

@@ -304,14 +304,25 @@ static Node *equality() {
   }
 }
 
-static Node *logand() {
+static Node *bit_or() {
   Node *lhs = equality();
+  for (;;) {
+    Token *t = tokens->data[pos];
+    if (t->ty != '|')
+      return lhs;
+    pos++;
+    lhs = new_binop('|', lhs, equality());
+  }
+}
+
+static Node *logand() {
+  Node *lhs = bit_or();
   for (;;) {
     Token *t = tokens->data[pos];
     if (t->ty != TK_LOGAND)
       return lhs;
     pos++;
-    lhs = new_binop(ND_LOGAND, lhs, equality());
+    lhs = new_binop(ND_LOGAND, lhs, bit_or());
   }
 }
 
