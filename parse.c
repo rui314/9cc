@@ -8,9 +8,22 @@
 // `1+2=3`, are accepted by this parser, but that's intentional.
 // Semantic errors are detected in a later pass.
 
+typedef struct Env {
+  Map *tags;
+  struct Env *next;
+} Env;
+
 static Vector *tokens;
 static int pos;
+struct Env *env;
 static Node null_stmt = {ND_NULL};
+
+static Env *new_env(Env *next) {
+  Env *env = calloc(1, sizeof(Env));
+  env->tags = new_map();
+  env->next = next;
+  return env;
+}
 
 static Node *assign();
 
@@ -62,10 +75,32 @@ static Type *read_type() {
 
   if (t->ty == TK_STRUCT) {
     pos++;
-    expect('{');
-    Vector *members = new_vec();
-    while (!consume('}'))
-      vec_push(members, decl());
+
+    char *tag = NULL;
+    Token *t = tokens->data[pos];
+    if (t->ty == TK_IDENT) {
+      pos++;
+      tag = t->name;
+    }
+
+    Vector *members = NULL;
+    if (consume('{')) {
+      members = new_vec();
+      while (!consume('}'))
+        vec_push(members, decl());
+    }
+
+    if (!tag && !members)
+      error("bad struct definition");
+
+    if (tag && members) {
+      map_put(env->tags, tag, members);
+    } else if (tag && !members) {
+      members = map_get(env->tags, tag);
+      if (!members)
+        error("incomplete type: %s", tag);
+    }
+
     return struct_of(members);
   }
 
@@ -421,8 +456,10 @@ static Node *compound_stmt() {
   node->op = ND_COMP_STMT;
   node->stmts = new_vec();
 
+  env = new_env(env);
   while (!consume('}'))
     vec_push(node->stmts, stmt());
+  env = env->next;
   return node;
 }
 
@@ -474,6 +511,7 @@ static Node *toplevel() {
 Vector *parse(Vector *tokens_) {
   tokens = tokens_;
   pos = 0;
+  env = new_env(env);
 
   Vector *v = new_vec();
   while (((Token *)tokens->data[pos])->ty != TK_EOF)
