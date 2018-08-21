@@ -169,6 +169,12 @@ void gen(Function *fn) {
       printf("  div %s\n", regs[ir->rhs]);
       printf("  mov %s, rax\n", regs[ir->lhs]);
       break;
+    case IR_MOD:
+      printf("  mov rax, %s\n", regs[ir->lhs]);
+      printf("  cqo\n");
+      printf("  div %s\n", regs[ir->rhs]);
+      printf("  mov %s, rdx\n", regs[ir->lhs]);
+      break;
     case IR_NOP:
       break;
     default:

@@ -219,6 +219,8 @@ static int gen_expr(Node *node) {
     return gen_binop(IR_MUL, node);
   case '/':
     return gen_binop(IR_DIV, node);
+  case '%':
+    return gen_binop(IR_MOD, node);
   case '<':
     return gen_binop(IR_LT, node);
   case ND_LE:

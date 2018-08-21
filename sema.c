@@ -192,6 +192,7 @@ static Node *walk(Node *node, Env *env, bool decay) {
     return node;
   case '*':
   case '/':
+  case '%':
   case '<':
   case '|':
   case '^':
