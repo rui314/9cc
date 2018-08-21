@@ -158,11 +158,22 @@ void gen(Function *fn) {
     case IR_ADD:
       printf("  add %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
       break;
+    case IR_ADD_IMM:
+      printf("  add %s, %d\n", regs[ir->lhs], ir->rhs);
+      break;
     case IR_SUB:
       printf("  sub %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
       break;
+    case IR_SUB_IMM:
+      printf("  sub %s, %d\n", regs[ir->lhs], ir->rhs);
+      break;
     case IR_MUL:
       printf("  mov rax, %s\n", regs[ir->rhs]);
+      printf("  mul %s\n", regs[ir->lhs]);
+      printf("  mov %s, rax\n", regs[ir->lhs]);
+      break;
+    case IR_MUL_IMM:
+      printf("  mov rax, %d\n", ir->rhs);
       printf("  mul %s\n", regs[ir->lhs]);
       printf("  mov %s, rax\n", regs[ir->lhs]);
       break;

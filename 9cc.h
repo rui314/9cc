@@ -238,8 +238,11 @@ void dump_ir(Vector *irv);
 
 enum {
   IR_ADD,
+  IR_ADD_IMM,
   IR_SUB,
+  IR_SUB_IMM,
   IR_MUL,
+  IR_MUL_IMM,
   IR_DIV,
   IR_IMM,
   IR_BPREL,

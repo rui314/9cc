@@ -149,7 +149,7 @@ static Type *read_type() {
     if (members) {
       add_members(ty, members);
       if (tag)
-	map_put(env->tags, tag, ty);
+        map_put(env->tags, tag, ty);
     }
     return ty;
   }
