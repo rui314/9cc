@@ -304,14 +304,25 @@ static Node *equality() {
   }
 }
 
-static Node *bit_or() {
+static Node *bit_xor() {
   Node *lhs = equality();
+  for (;;) {
+    Token *t = tokens->data[pos];
+    if (t->ty != '^')
+      return lhs;
+    pos++;
+    lhs = new_binop('^', lhs, equality());
+  }
+}
+
+static Node *bit_or() {
+  Node *lhs = bit_xor();
   for (;;) {
     Token *t = tokens->data[pos];
     if (t->ty != '|')
       return lhs;
     pos++;
-    lhs = new_binop('|', lhs, equality());
+    lhs = new_binop('|', lhs, bit_xor());
   }
 }
 
