@@ -94,6 +94,9 @@ void gen(Function *fn) {
     case IR_LT:
       emit_cmp(ir, "setl");
       break;
+    case IR_LE:
+      emit_cmp(ir, "setle");
+      break;
     case IR_AND:
       printf("  and %s, %s\n", regs[ir->lhs], regs[ir->rhs]);
       break;

@@ -11,6 +11,7 @@ IRInfo irinfo[] = {
         [IR_LABEL_ADDR] = {"LABEL_ADDR", IR_TY_LABEL_ADDR},
         [IR_EQ] = {"EQ", IR_TY_REG_REG},
         [IR_NE] = {"NE", IR_TY_REG_REG},
+        [IR_LE] = {"LE", IR_TY_REG_REG},
         [IR_LT] = {"LT", IR_TY_REG_REG},
         [IR_AND] = {"AND", IR_TY_REG_REG},
         [IR_OR] = {"OR", IR_TY_REG_REG},
