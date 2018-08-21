@@ -73,7 +73,7 @@ static Node *maybe_decay(Node *base, bool decay) {
 
 static void check_lval(Node *node) {
   int op = node->op;
-  if (op == ND_LVAR || op == ND_GVAR || op == ND_DEREF)
+  if (op == ND_LVAR || op == ND_GVAR || op == ND_DEREF || op == ND_DOT)
     return;
   error("not an lvalue: %d (%s)", op, node->name);
 }
@@ -169,6 +169,21 @@ static Node *walk(Node *node, Env *env, bool decay) {
     node->rhs = walk(node->rhs, env, true);
     node->ty = node->lhs->ty;
     return node;
+  case ND_DOT:
+    node->expr = walk(node->expr, env, true);
+    if (node->expr->ty->ty != STRUCT)
+      error("struct expected before '.'");
+
+    Type *ty = node->expr->ty;
+    for (int i = 0; i < ty->members->len; i++) {
+      Node *m = ty->members->data[i];
+      if (strcmp(m->name, node->member))
+        continue;
+      node->ty = m->ty;
+      node->offset = m->ty->offset;
+      return node;
+    }
+    error("member missing: %s", node->member);
   case '*':
   case '/':
   case '<':

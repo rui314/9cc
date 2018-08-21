@@ -125,6 +125,7 @@ enum {
   ND_DO_WHILE,  // do ~ while
   ND_ADDR,      // address-of operator ("&")
   ND_DEREF,     // pointer dereference ("*")
+  ND_DOT,       // Struct member access
   ND_EQ,        // ==
   ND_NE,        // !=
   ND_LOGAND,    // &&
@@ -167,6 +168,9 @@ typedef struct Node {
   // Struct
   Vector *members;
 
+  // Struct access
+  char *member;
+
   // "if" ( cond ) then "else" els
   // "for" ( init; cond; inc ) body
   struct Node *cond;
@@ -180,7 +184,7 @@ typedef struct Node {
   int stacksize;
   Vector *globals;
 
-  // Local variable
+  // Offset from BP or begining of a struct
   int offset;
 
   // Function call
