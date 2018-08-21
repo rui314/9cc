@@ -113,26 +113,4 @@ Type *ary_of(Type *base, int len) {
   return ty;
 }
 
-Type *struct_of(Vector *members) {
-  Type *ty = calloc(1, sizeof(Type));
-  ty->ty = STRUCT;
-  ty->members = members;
-
-  int off = 0;
-  for (int i = 0; i < members->len; i++) {
-    Node *node = members->data[i];
-    assert(node->op == ND_VARDEF);
-
-    Type *t = node->ty;
-    off = roundup(off, t->align);
-    t->offset = off;
-    off += t->size;
-
-    if (ty->align < node->ty->align)
-      ty->align = node->ty->align;
-  }
-  ty->size = roundup(off, ty->align);
-  return ty;
-}
-
 int roundup(int x, int align) { return (x + align - 1) & ~(align - 1); }

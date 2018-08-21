@@ -27,6 +27,20 @@ static Env *new_env(Env *next) {
   return env;
 }
 
+static Type *find_typedef(char *name) {
+  for (Env *e = env; e; e = e->next)
+    if (map_exists(e->typedefs, name))
+      return map_get(e->typedefs, name);
+  return NULL;
+}
+
+static Type *find_tag(char *name) {
+  for (Env *e = env; e; e = e->next)
+    if (map_exists(e->tags, name))
+      return map_get(e->tags, name);
+  return NULL;
+}
+
 static Node *assign();
 static Node *expr();
 
@@ -60,18 +74,37 @@ static bool consume(int ty) {
 static bool is_typename() {
   Token *t = tokens->data[pos];
   if (t->ty == TK_IDENT)
-    return map_exists(env->typedefs, t->name);
+    return find_typedef(t->name);
   return t->ty == TK_INT || t->ty == TK_CHAR || t->ty == TK_VOID ||
          t->ty == TK_STRUCT;
 }
 
 static Node *decl();
 
+static void add_members(Type *ty, Vector *members) {
+  int off = 0;
+  for (int i = 0; i < members->len; i++) {
+    Node *node = members->data[i];
+    assert(node->op == ND_VARDEF);
+
+    Type *t = node->ty;
+    off = roundup(off, t->align);
+    t->offset = off;
+    off += t->size;
+
+    if (ty->align < node->ty->align)
+      ty->align = node->ty->align;
+  }
+
+  ty->members = members;
+  ty->size = roundup(off, ty->align);
+}
+
 static Type *read_type() {
   Token *t = tokens->data[pos++];
 
   if (t->ty == TK_IDENT) {
-    Type *ty = map_get(env->typedefs, t->name);
+    Type *ty = find_typedef(t->name);
     if (!ty)
       pos--;
     return ty;
@@ -104,15 +137,21 @@ static Type *read_type() {
     if (!tag && !members)
       error("bad struct definition");
 
-    if (tag && members) {
-      map_put(env->tags, tag, members);
-    } else if (tag && !members) {
-      members = map_get(env->tags, tag);
-      if (!members)
-        error("incomplete type: %s", tag);
+    Type *ty = NULL;
+    if (tag && !members)
+      ty = find_tag(tag);
+
+    if (!ty) {
+      ty = calloc(1, sizeof(Type));
+      ty->ty = STRUCT;
     }
 
-    return struct_of(members);
+    if (members) {
+      add_members(ty, members);
+      if (tag)
+	map_put(env->tags, tag, ty);
+    }
+    return ty;
   }
 
   pos--;
@@ -546,7 +585,9 @@ static Node *compound_stmt() {
 }
 
 static Node *toplevel() {
+  bool is_typedef = consume(TK_TYPEDEF);
   bool is_extern = consume(TK_EXTERN);
+
   Type *ty = type();
   if (!ty) {
     Token *t = tokens->data[pos];
@@ -571,22 +612,31 @@ static Node *toplevel() {
     }
 
     expect('{');
+    if (is_typedef)
+      error("typedef %s has function definition", name);
     node->body = compound_stmt();
     return node;
+  }
+
+  ty = read_array(ty);
+  expect(';');
+
+  if (is_typedef) {
+    map_put(env->typedefs, name, ty);
+    return NULL;
   }
 
   // Global variable
   Node *node = calloc(1, sizeof(Node));
   node->op = ND_VARDEF;
-  node->ty = read_array(ty);
+  node->ty = ty;
   node->name = name;
-  if (is_extern) {
-    node->is_extern = true;
-  } else {
+  node->is_extern = is_extern;
+
+  if (!is_extern) {
     node->data = calloc(1, node->ty->size);
     node->len = node->ty->size;
   }
-  expect(';');
   return node;
 };
 
@@ -596,7 +646,12 @@ Vector *parse(Vector *tokens_) {
   env = new_env(env);
 
   Vector *v = new_vec();
-  while (((Token *)tokens->data[pos])->ty != TK_EOF)
-    vec_push(v, toplevel());
-  return v;
+  for (;;) {
+    Token *t = tokens->data[pos];
+    if (t->ty == TK_EOF)
+      return v;
+    Node *node = toplevel();
+    if (node)
+      vec_push(v, node);
+  }
 }
