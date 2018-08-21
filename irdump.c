@@ -22,6 +22,7 @@ IRInfo irinfo[] = {
         [IR_LOAD32] = {"LOAD32", IR_TY_REG_REG},
         [IR_LOAD64] = {"LOAD64", IR_TY_REG_REG},
         [IR_MOD] = {"MOD", IR_TY_REG_REG},
+        [IR_NEG] = {"NEG", IR_TY_REG},
         [IR_MOV] = {"MOV", IR_TY_REG_REG},
         [IR_MUL] = {"MUL", IR_TY_REG_REG},
         [IR_NOP] = {"NOP", IR_TY_NOARG},
