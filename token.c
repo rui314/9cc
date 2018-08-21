@@ -29,10 +29,11 @@ static struct {
     {"sizeof", TK_SIZEOF},
     {"struct", TK_STRUCT},
     {"while", TK_WHILE},
-    {"&&", TK_LOGAND},
-    {"||", TK_LOGOR},
-    {"==", TK_EQ},
     {"!=", TK_NE},
+    {"&&", TK_LOGAND},
+    {"->", TK_ARROW},
+    {"==", TK_EQ},
+    {"||", TK_LOGOR},
     {NULL, 0},
 };
 

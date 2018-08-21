@@ -161,7 +161,15 @@ static Node *postfix() {
     Node *node = calloc(1, sizeof(Node));
     node->op = ND_DOT;
     node->expr = lhs;
-    node->member = ident();
+    node->name = ident();
+    return node;
+  }
+
+  if (consume(TK_ARROW)) {
+    Node *node = calloc(1, sizeof(Node));
+    node->op = ND_DOT;
+    node->expr = new_expr(ND_DEREF, lhs);
+    node->name = ident();
     return node;
   }
 

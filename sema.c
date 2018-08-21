@@ -177,13 +177,13 @@ static Node *walk(Node *node, Env *env, bool decay) {
     Type *ty = node->expr->ty;
     for (int i = 0; i < ty->members->len; i++) {
       Node *m = ty->members->data[i];
-      if (strcmp(m->name, node->member))
+      if (strcmp(m->name, node->name))
         continue;
       node->ty = m->ty;
       node->offset = m->ty->offset;
       return node;
     }
-    error("member missing: %s", node->member);
+    error("member missing: %s", node->name);
   case '*':
   case '/':
   case '<':
