@@ -24,6 +24,7 @@ typedef struct Env {
   struct Env *next;
 } Env;
 
+static Env *env;
 static Vector *globals;
 static int str_label;
 static int stacksize;
@@ -45,9 +46,9 @@ static Var *new_global(Type *ty, char *name, char *data, int len) {
   return var;
 }
 
-static Var *find(Env *env, char *name) {
-  for (; env; env = env->next) {
-    Var *var = map_get(env->vars, name);
+static Var *find_var(char *name) {
+  for (Env *e = env; e; e = e->next) {
+    Var *var = map_get(e->vars, name);
     if (var)
       return var;
   }
@@ -86,7 +87,7 @@ static Node *new_int(int val) {
   return node;
 }
 
-static Node *walk(Node *node, Env *env, bool decay) {
+static Node *walk(Node *node, bool decay) {
   switch (node->op) {
   case ND_NUM:
     return node;
@@ -102,7 +103,7 @@ static Node *walk(Node *node, Env *env, bool decay) {
     return maybe_decay(ret, decay);
   }
   case ND_IDENT: {
-    Var *var = find(env, node->name);
+    Var *var = find_var(node->name);
     if (!var)
       error("undefined variable: %s", node->name);
 
@@ -132,29 +133,29 @@ static Node *walk(Node *node, Env *env, bool decay) {
     map_put(env->vars, node->name, var);
 
     if (node->init)
-      node->init = walk(node->init, env, true);
+      node->init = walk(node->init, true);
     return node;
   }
   case ND_IF:
-    node->cond = walk(node->cond, env, true);
-    node->then = walk(node->then, env, true);
+    node->cond = walk(node->cond, true);
+    node->then = walk(node->then, true);
     if (node->els)
-      node->els = walk(node->els, env, true);
+      node->els = walk(node->els, true);
     return node;
   case ND_FOR:
-    node->init = walk(node->init, env, true);
-    node->cond = walk(node->cond, env, true);
-    node->inc = walk(node->inc, env, true);
-    node->body = walk(node->body, env, true);
+    node->init = walk(node->init, true);
+    node->cond = walk(node->cond, true);
+    node->inc = walk(node->inc, true);
+    node->body = walk(node->body, true);
     return node;
   case ND_DO_WHILE:
-    node->cond = walk(node->cond, env, true);
-    node->body = walk(node->body, env, true);
+    node->cond = walk(node->cond, true);
+    node->body = walk(node->body, true);
     return node;
   case '+':
   case '-':
-    node->lhs = walk(node->lhs, env, true);
-    node->rhs = walk(node->rhs, env, true);
+    node->lhs = walk(node->lhs, true);
+    node->rhs = walk(node->rhs, true);
 
     if (node->rhs->ty->ty == PTR)
       swap(&node->lhs, &node->rhs);
@@ -164,13 +165,13 @@ static Node *walk(Node *node, Env *env, bool decay) {
     node->ty = node->lhs->ty;
     return node;
   case '=':
-    node->lhs = walk(node->lhs, env, false);
+    node->lhs = walk(node->lhs, false);
     check_lval(node->lhs);
-    node->rhs = walk(node->rhs, env, true);
+    node->rhs = walk(node->rhs, true);
     node->ty = node->lhs->ty;
     return node;
   case ND_DOT:
-    node->expr = walk(node->expr, env, true);
+    node->expr = walk(node->expr, true);
     if (node->expr->ty->ty != STRUCT)
       error("struct expected before '.'");
 
@@ -188,9 +189,9 @@ static Node *walk(Node *node, Env *env, bool decay) {
     }
     error("member missing: %s", node->name);
   case '?':
-    node->cond = walk(node->cond, env, true);
-    node->then = walk(node->then, env, true);
-    node->els = walk(node->els, env, true);
+    node->cond = walk(node->cond, true);
+    node->then = walk(node->then, true);
+    node->els = walk(node->els, true);
     node->ty = node->then->ty;
     return node;
   case '*':
@@ -207,13 +208,13 @@ static Node *walk(Node *node, Env *env, bool decay) {
   case ND_SHR:
   case ND_LOGAND:
   case ND_LOGOR:
-    node->lhs = walk(node->lhs, env, true);
-    node->rhs = walk(node->rhs, env, true);
+    node->lhs = walk(node->lhs, true);
+    node->rhs = walk(node->rhs, true);
     node->ty = node->lhs->ty;
     return node;
   case ',':
-    node->lhs = walk(node->lhs, env, true);
-    node->rhs = walk(node->rhs, env, true);
+    node->lhs = walk(node->lhs, true);
+    node->rhs = walk(node->rhs, true);
     node->ty = node->rhs->ty;
     return node;
   case ND_PRE_INC:
@@ -222,55 +223,56 @@ static Node *walk(Node *node, Env *env, bool decay) {
   case ND_POST_DEC:
   case ND_NEG:
   case '!':
-    node->expr = walk(node->expr, env, true);
+    node->expr = walk(node->expr, true);
     node->ty = node->expr->ty;
     return node;
   case ND_ADDR:
-    node->expr = walk(node->expr, env, true);
+    node->expr = walk(node->expr, true);
     check_lval(node->expr);
     node->ty = ptr_to(node->expr->ty);
     return node;
   case ND_DEREF:
-    node->expr = walk(node->expr, env, true);
+    node->expr = walk(node->expr, true);
 
     if (node->expr->ty->ty != PTR)
       error("operand must be a pointer");
 
     if (node->expr->ty->ptr_to->ty == VOID)
-      error("cannot dereference void opinter");
+      error("cannot dereference void pointer");
 
     node->ty = node->expr->ty->ptr_to;
     return node;
   case ND_RETURN:
   case ND_EXPR_STMT:
-    node->expr = walk(node->expr, env, true);
+    node->expr = walk(node->expr, true);
     return node;
   case ND_SIZEOF: {
-    Node *expr = walk(node->expr, env, false);
+    Node *expr = walk(node->expr, false);
     return new_int(expr->ty->size);
   }
   case ND_ALIGNOF: {
-    Node *expr = walk(node->expr, env, false);
+    Node *expr = walk(node->expr, false);
     return new_int(expr->ty->align);
   }
   case ND_CALL:
     for (int i = 0; i < node->args->len; i++)
-      node->args->data[i] = walk(node->args->data[i], env, true);
+      node->args->data[i] = walk(node->args->data[i], true);
     node->ty = &int_ty;
     return node;
   case ND_FUNC:
     for (int i = 0; i < node->args->len; i++)
-      node->args->data[i] = walk(node->args->data[i], env, true);
-    node->body = walk(node->body, env, true);
+      node->args->data[i] = walk(node->args->data[i], true);
+    node->body = walk(node->body, true);
     return node;
   case ND_COMP_STMT: {
-    Env *newenv = new_env(env);
+    env = new_env(env);
     for (int i = 0; i < node->stmts->len; i++)
-      node->stmts->data[i] = walk(node->stmts->data[i], newenv, true);
+      node->stmts->data[i] = walk(node->stmts->data[i], true);
+    env = env->next;
     return node;
   }
   case ND_STMT_EXPR:
-    node->body = walk(node->body, env, true);
+    node->body = walk(node->body, true);
     node->ty = &int_ty;
     return node;
   case ND_NULL:
@@ -281,8 +283,8 @@ static Node *walk(Node *node, Env *env, bool decay) {
 }
 
 Vector *sema(Vector *nodes) {
+  env = new_env(NULL);
   globals = new_vec();
-  Env *topenv = new_env(NULL);
 
   for (int i = 0; i < nodes->len; i++) {
     Node *node = nodes->data[i];
@@ -291,14 +293,14 @@ Vector *sema(Vector *nodes) {
       Var *var = new_global(node->ty, node->name, node->data, node->len);
       var->is_extern = node->is_extern;
       vec_push(globals, var);
-      map_put(topenv->vars, node->name, var);
+      map_put(env->vars, node->name, var);
       continue;
     }
 
     assert(node->op == ND_FUNC);
 
     stacksize = 0;
-    walk(node, topenv, true);
+    walk(node, true);
     node->stacksize = stacksize;
   }
 
