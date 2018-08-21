@@ -128,6 +128,7 @@ int main() {
   EXPECT(4, ({ int x; return sizeof(x); }));
   EXPECT(8, ({ int *x; return sizeof x; }));
   EXPECT(16, ({ int x[4]; return sizeof x; }));
+  EXPECT(4, sizeof("abc"));
 
   EXPECT(1, ({ char x; return _Alignof x; }));
   EXPECT(4, ({ int x; return _Alignof(x); }));
