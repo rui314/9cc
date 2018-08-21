@@ -22,6 +22,7 @@ int add(int a, int b, int c, int d, int e, int f) { return a+b+c+d+e+f; }
 int var1;
 int var2[5];
 extern int global_arr[1];
+typedef int myint;
 
 // Single-line comment test
 
@@ -175,6 +176,9 @@ int main() {
       }));
 
   EXPECT(3, ({ typedef int foo; foo x = 3; return x; }));
+  EXPECT(4, ({ myint foo = 3; return sizeof(foo); }));
+
+  EXPECT(1, ({ typedef struct foo_ foo; return 1; }));
 
   printf("OK\n");
   return 0;
