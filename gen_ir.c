@@ -235,6 +235,11 @@ static int gen_expr(Node *node) {
     return gen_binop(IR_SHL, node);
   case ND_SHR:
     return gen_binop(IR_SHR, node);
+  case ND_NEG: {
+    int r = gen_expr(node->expr);
+    add(IR_NEG, r, -1);
+    return r;
+  }
   case ',':
     kill(gen_expr(node->lhs));
     return gen_expr(node->rhs);

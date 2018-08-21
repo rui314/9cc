@@ -85,6 +85,9 @@ void gen(Function *fn) {
     case IR_LABEL_ADDR:
       printf("  lea %s, %s\n", regs[ir->lhs], ir->name);
       break;
+    case IR_NEG:
+      printf("  neg %s\n", regs[ir->lhs]);
+      break;
     case IR_EQ:
       emit_cmp(ir, "sete");
       break;
