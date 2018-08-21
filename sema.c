@@ -17,7 +17,7 @@
 //
 // - Reject bad assignments, such as `1=2+3`.
 
-static Type int_ty = {INT, NULL};
+static Type int_ty = {INT, 4, 4};
 
 typedef struct Env {
   Map *vars;
@@ -121,8 +121,8 @@ static Node *walk(Node *node, Env *env, bool decay) {
     return maybe_decay(ret, decay);
   }
   case ND_VARDEF: {
-    stacksize = roundup(stacksize, align_of(node->ty));
-    stacksize += size_of(node->ty);
+    stacksize = roundup(stacksize, node->ty->align);
+    stacksize += node->ty->size;
     node->offset = stacksize;
 
     Var *var = calloc(1, sizeof(Var));
@@ -196,11 +196,11 @@ static Node *walk(Node *node, Env *env, bool decay) {
     return node;
   case ND_SIZEOF: {
     Node *expr = walk(node->expr, env, false);
-    return new_int(size_of(expr->ty));
+    return new_int(expr->ty->size);
   }
   case ND_ALIGNOF: {
     Node *expr = walk(node->expr, env, false);
-    return new_int(align_of(expr->ty));
+    return new_int(expr->ty->align);
   }
   case ND_CALL:
     for (int i = 0; i < node->args->len; i++)

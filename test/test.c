@@ -7,7 +7,7 @@ extern int *stderr;
     if (e1 == e2) {                                             \
       fprintf(stderr, "%s => %d\n", #expr, e2);                 \
     } else {                                                    \
-      fprintf(stderr, "%d: %s: %d expected, but got %d\n",      \
+      fprintf(stderr, "line %d: %s: %d expected, but got %d\n", \
               __LINE__, #expr, e1, e2);                         \
       exit(1);                                                  \
     }                                                           \
@@ -117,6 +117,10 @@ int main() {
 
   EXPECT(8, ({ return 3 + ({ return 5; }); }));
   EXPECT(1, ({; return 1; }));
+
+  EXPECT(4, ({ struct { int a; } x; return sizeof(x); }));
+  EXPECT(8, ({ struct { char a; int b; } x; return sizeof(x); }));
+  EXPECT(12, ({ struct { char a; char b; int c; char d; } x; return sizeof(x); }));
 
   printf("OK\n");
   return 0;
