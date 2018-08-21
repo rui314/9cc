@@ -28,6 +28,7 @@ static struct {
     {"return", TK_RETURN},
     {"sizeof", TK_SIZEOF},
     {"struct", TK_STRUCT},
+    {"typedef", TK_TYPEDEF},
     {"while", TK_WHILE},
     {"!=", TK_NE},
     {"&&", TK_LOGAND},
