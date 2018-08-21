@@ -249,114 +249,84 @@ static Node *unary() {
 static Node *mul() {
   Node *lhs = unary();
   for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty != '*' && t->ty != '/')
+    if (consume('*'))
+      lhs = new_binop('*', lhs, unary());
+    else if (consume('/'))
+      lhs = new_binop('/', lhs, unary());
+    else
       return lhs;
-    pos++;
-    lhs = new_binop(t->ty, lhs, unary());
   }
 }
 
 static Node *add() {
   Node *lhs = mul();
   for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty != '+' && t->ty != '-')
+    if (consume('+'))
+      lhs = new_binop('+', lhs, mul());
+    else if (consume('-'))
+      lhs = new_binop('-', lhs, mul());
+    else
       return lhs;
-    pos++;
-    lhs = new_binop(t->ty, lhs, mul());
   }
 }
 
 static Node *rel() {
   Node *lhs = add();
   for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty == '<') {
-      pos++;
+    if (consume('<'))
       lhs = new_binop('<', lhs, add());
-      continue;
-    }
-    if (t->ty == '>') {
-      pos++;
+    else if (consume('>'))
       lhs = new_binop('<', add(), lhs);
-      continue;
-    }
-    return lhs;
+    else
+      return lhs;
   }
 }
 
 static Node *equality() {
   Node *lhs = rel();
   for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty == TK_EQ) {
-      pos++;
+    if (consume(TK_EQ))
       lhs = new_binop(ND_EQ, lhs, rel());
-      continue;
-    }
-    if (t->ty == TK_NE) {
-      pos++;
+    else if (consume(TK_NE))
       lhs = new_binop(ND_NE, lhs, rel());
-      continue;
-    }
-    return lhs;
+    else
+      return lhs;
   }
 }
 
 static Node *bit_and() {
   Node *lhs = equality();
-  for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty != '&')
-      return lhs;
-    pos++;
+  while (consume('&'))
     lhs = new_binop('&', lhs, equality());
-  }
+  return lhs;
 }
 
 static Node *bit_xor() {
   Node *lhs = bit_and();
-  for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty != '^')
-      return lhs;
-    pos++;
+  while (consume('^'))
     lhs = new_binop('^', lhs, bit_and());
-  }
+  return lhs;
 }
 
 static Node *bit_or() {
   Node *lhs = bit_xor();
-  for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty != '|')
-      return lhs;
-    pos++;
+  while (consume('|'))
     lhs = new_binop('|', lhs, bit_xor());
-  }
+  return lhs;
 }
 
 static Node *logand() {
   Node *lhs = bit_or();
-  for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty != TK_LOGAND)
-      return lhs;
-    pos++;
+  while (consume(TK_LOGAND))
     lhs = new_binop(ND_LOGAND, lhs, bit_or());
-  }
+  return lhs;
 }
 
 static Node *logor() {
   Node *lhs = logand();
-  for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty != TK_LOGOR)
-      return lhs;
-    pos++;
+  while (consume(TK_LOGOR))
     lhs = new_binop(ND_LOGOR, lhs, logand());
-  }
+  return lhs;
 }
 
 static Node *conditional() {
