@@ -13,6 +13,7 @@ IRInfo irinfo[] = {
         [IR_NE] = {"NE", IR_TY_REG_REG},
         [IR_LT] = {"LT", IR_TY_REG_REG},
         [IR_OR] = {"OR", IR_TY_REG_REG},
+        [IR_XOR] = {"XOR", IR_TY_REG_REG},
         [IR_LOAD8] = {"LOAD8", IR_TY_REG_REG},
         [IR_LOAD32] = {"LOAD32", IR_TY_REG_REG},
         [IR_LOAD64] = {"LOAD64", IR_TY_REG_REG},

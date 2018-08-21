@@ -223,6 +223,8 @@ static int gen_expr(Node *node) {
     return gen_binop(IR_LT, node);
   case '|':
     return gen_binop(IR_OR, node);
+  case '^':
+    return gen_binop(IR_XOR, node);
   case ',':
     kill(gen_expr(node->lhs));
     return gen_expr(node->rhs);
