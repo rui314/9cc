@@ -120,6 +120,7 @@ loop:
           p += 2;
           break;
         }
+        p++;
       }
       continue;
     }
