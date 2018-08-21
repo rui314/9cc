@@ -29,6 +29,7 @@ static struct {
     {"sizeof", TK_SIZEOF},
     {"struct", TK_STRUCT},
     {"typedef", TK_TYPEDEF},
+    {"void", TK_VOID},
     {"while", TK_WHILE},
     {"!=", TK_NE},
     {"&&", TK_LOGAND},
