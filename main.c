@@ -13,7 +13,7 @@ static char *read_file(char *filename) {
     int nread = fread(buf, 1, sizeof(buf), fp);
     if (nread == 0)
       break;
-    sb_lappend(sb, buf, nread);
+    sb_append_n(sb, buf, nread);
   }
   return sb_get(sb);
 }

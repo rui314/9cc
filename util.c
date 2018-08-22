@@ -81,9 +81,9 @@ void sb_add(StringBuilder *sb, char s) {
   sb->data[sb->len++] = s;
 }
 
-void sb_append(StringBuilder *sb, char *s) { sb_lappend(sb, s, strlen(s)); }
+void sb_append(StringBuilder *sb, char *s) { sb_append_n(sb, s, strlen(s)); }
 
-void sb_lappend(StringBuilder *sb, char *s, int len) {
+void sb_append_n(StringBuilder *sb, char *s, int len) {
   sb_grow(sb, len);
   memcpy(sb->data + sb->len, s, len);
   sb->len += len;
