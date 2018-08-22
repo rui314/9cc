@@ -84,7 +84,7 @@ static char *read_string(StringBuilder *sb, char *p) {
 
     p++;
     if (*p == '\0')
-      error("PREMATURE end of input");
+      error("premature end of input");
     int esc = escaped[(unsigned)*p];
     sb_add(sb, esc ? esc : *p);
     p++;
@@ -113,16 +113,13 @@ loop:
 
     // Block comment
     if (!strncmp(p, "/*", 2)) {
-      p += 2;
-      for (;;) {
-        if (*p == '\0')
-          error("premature end of input");
-        if (!strncmp(p, "*/", 2)) {
-          p += 2;
-          break;
-        }
+      for (p += 2; *p; p++) {
+        if (strncmp(p, "*/", 2))
+          continue;
+        p += 2;
+        goto loop;
       }
-      continue;
+      error("unclosed comment");
     }
 
     // Character literal
