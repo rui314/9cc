@@ -18,6 +18,7 @@ static struct {
   int ty;
 } symbols[] = {
     {"_Alignof", TK_ALIGNOF},
+    {"break", TK_BREAK},
     {"char", TK_CHAR},
     {"do", TK_DO},
     {"else", TK_ELSE},
