@@ -19,9 +19,7 @@ IRInfo irinfo[] = {
         [IR_XOR] = {"XOR", IR_TY_REG_REG},
         [IR_SHL] = {"SHL", IR_TY_REG_REG},
         [IR_SHR] = {"SHR", IR_TY_REG_REG},
-        [IR_LOAD8] = {"LOAD8", IR_TY_REG_REG},
-        [IR_LOAD32] = {"LOAD32", IR_TY_REG_REG},
-        [IR_LOAD64] = {"LOAD64", IR_TY_REG_REG},
+        [IR_LOAD] = {"LOAD8", IR_TY_MEM},
         [IR_MOD] = {"MOD", IR_TY_REG_REG},
         [IR_NEG] = {"NEG", IR_TY_REG},
         [IR_MOV] = {"MOV", IR_TY_REG_REG},
@@ -58,6 +56,8 @@ static char *tostr(IR *ir) {
     return format("  %s .L%d", info.name, ir->lhs);
   case IR_TY_REG_REG:
     return format("  %s r%d, r%d", info.name, ir->lhs, ir->rhs);
+  case IR_TY_MEM:
+    return format("  %s%d r%d, r%d", info.name, ir->size, ir->lhs, ir->rhs);
   case IR_TY_REG_IMM:
     return format("  %s r%d, %d", info.name, ir->lhs, ir->rhs);
   case IR_TY_IMM_IMM:

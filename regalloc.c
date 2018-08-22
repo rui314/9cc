@@ -51,6 +51,7 @@ static void visit(Vector *irv) {
     case IR_TY_LABEL_ADDR:
       ir->lhs = alloc(ir->lhs);
       break;
+    case IR_TY_MEM:
     case IR_TY_REG_REG:
       ir->lhs = alloc(ir->lhs);
       ir->rhs = alloc(ir->rhs);

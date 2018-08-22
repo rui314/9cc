@@ -267,9 +267,7 @@ enum {
   IR_JMP,
   IR_IF,
   IR_UNLESS,
-  IR_LOAD8,
-  IR_LOAD32,
-  IR_LOAD64,
+  IR_LOAD,
   IR_STORE8,
   IR_STORE32,
   IR_STORE64,
@@ -285,6 +283,9 @@ typedef struct {
   int lhs;
   int rhs;
 
+  // Load/store size in bytes
+  int size;
+
   // Function call
   char *name;
   int nargs;
@@ -295,6 +296,7 @@ enum {
   IR_TY_NOARG,
   IR_TY_REG,
   IR_TY_IMM,
+  IR_TY_MEM,
   IR_TY_JMP,
   IR_TY_LABEL,
   IR_TY_LABEL_ADDR,

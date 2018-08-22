@@ -43,8 +43,9 @@ static int choose_insn(Node *node, int op8, int op32, int op64) {
   return op64;
 }
 
-static int load_insn(Node *node) {
-  return choose_insn(node, IR_LOAD8, IR_LOAD32, IR_LOAD64);
+static void load(Node *node, int dst, int src) {
+  IR *ir = add(IR_LOAD, dst, src);
+  ir->size = node->ty->size;
 }
 
 static int store_insn(Node *node) {
@@ -112,7 +113,7 @@ int get_inc_scale(Node *node) {
 static int gen_pre_inc(Node *node, int num) {
   int addr = gen_lval(node->expr);
   int val = nreg++;
-  add(load_insn(node), val, addr);
+  load(node, val, addr);
   add(IR_ADD_IMM, val, num * get_inc_scale(node));
   add(store_insn(node), addr, val);
   kill(addr);
@@ -173,7 +174,7 @@ static int gen_expr(Node *node) {
   case ND_LVAR:
   case ND_DOT: {
     int r = gen_lval(node);
-    add(load_insn(node), r, r);
+    load(node, r, r);
     return r;
   }
   case ND_CALL: {
@@ -196,7 +197,7 @@ static int gen_expr(Node *node) {
     return gen_lval(node->expr);
   case ND_DEREF: {
     int r = gen_expr(node->expr);
-    add(load_insn(node), r, r);
+    load(node, r, r);
     return r;
   }
   case ND_STMT_EXPR: {

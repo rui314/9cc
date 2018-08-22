@@ -43,6 +43,15 @@ static void emit_cmp(char *insn, IR *ir) {
   emit("movzb %s, %s", regs[ir->lhs], regs8[ir->lhs]);
 }
 
+static char *reg(int r, int size) {
+  if (size == 1)
+    return regs8[r];
+  if (size == 4)
+    return regs32[r];
+  assert(size == 8);
+  return regs[r];
+}
+
 void gen(Function *fn) {
   char *ret = format(".Lend%d", nlabel++);
 
@@ -138,15 +147,10 @@ void gen(Function *fn) {
       emit("cmp %s, 0", regs[lhs]);
       emit("je .L%d", rhs);
       break;
-    case IR_LOAD8:
-      emit("mov %s, [%s]", regs8[lhs], regs[rhs]);
-      emit("movzb %s, %s", regs[lhs], regs8[lhs]);
-      break;
-    case IR_LOAD32:
-      emit("mov %s, [%s]", regs32[lhs], regs[rhs]);
-      break;
-    case IR_LOAD64:
-      emit("mov %s, [%s]", regs[lhs], regs[rhs]);
+    case IR_LOAD:
+      emit("mov %s, [%s]", reg(lhs, ir->size), regs[rhs]);
+      if (ir->size == 1)
+        emit("movzb %s, %s", regs[lhs], regs8[lhs]);
       break;
     case IR_STORE8:
       emit("mov [%s], %s", regs[lhs], regs8[rhs]);
