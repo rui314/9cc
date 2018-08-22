@@ -1,8 +1,7 @@
 #include "9cc.h"
 
 IRInfo irinfo[] = {
-        [IR_ADD] = {"ADD", IR_TY_REG_REG},
-        [IR_ADD_IMM] = {"ADD", IR_TY_REG_IMM},
+        [IR_ADD] = {"ADD", IR_TY_BINARY},
         [IR_CALL] = {"CALL", IR_TY_CALL},
         [IR_DIV] = {"DIV", IR_TY_REG_REG},
         [IR_IMM] = {"IMM", IR_TY_REG_IMM},
@@ -23,14 +22,12 @@ IRInfo irinfo[] = {
         [IR_MOD] = {"MOD", IR_TY_REG_REG},
         [IR_NEG] = {"NEG", IR_TY_REG},
         [IR_MOV] = {"MOV", IR_TY_REG_REG},
-        [IR_MUL] = {"MUL", IR_TY_REG_REG},
-        [IR_MUL_IMM] = {"MUL", IR_TY_REG_IMM},
+        [IR_MUL] = {"MUL", IR_TY_BINARY},
         [IR_NOP] = {"NOP", IR_TY_NOARG},
         [IR_RETURN] = {"RET", IR_TY_REG},
         [IR_STORE] = {"STORE", IR_TY_MEM},
         [IR_STORE_ARG] = {"STORE_ARG", IR_TY_STORE_ARG},
-        [IR_SUB] = {"SUB", IR_TY_REG_REG},
-        [IR_SUB_IMM] = {"SUB", IR_TY_REG_IMM},
+        [IR_SUB] = {"SUB", IR_TY_BINARY},
         [IR_BPREL] = {"BPREL", IR_TY_REG_IMM},
         [IR_IF] = {"IF", IR_TY_REG_LABEL},
         [IR_UNLESS] = {"UNLESS", IR_TY_REG_LABEL},
@@ -40,6 +37,10 @@ static char *tostr(IR *ir) {
   IRInfo info = irinfo[ir->op];
 
   switch (info.ty) {
+  case IR_TY_BINARY:
+    if (ir->is_imm)
+      return format("  %s r%d, %d", info.name, ir->lhs, ir->rhs);
+    return format("  %s r%d, r%d", info.name, ir->lhs, ir->rhs);
   case IR_TY_LABEL:
     return format(".L%d:", ir->lhs);
   case IR_TY_LABEL_ADDR:

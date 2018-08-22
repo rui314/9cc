@@ -240,11 +240,8 @@ void dump_ir(Vector *irv);
 
 enum {
   IR_ADD,
-  IR_ADD_IMM,
   IR_SUB,
-  IR_SUB_IMM,
   IR_MUL,
-  IR_MUL_IMM,
   IR_DIV,
   IR_IMM,
   IR_BPREL,
@@ -282,6 +279,9 @@ typedef struct {
   // Load/store size in bytes
   int size;
 
+  // For binary operator. If true, rhs is an immediate.
+  bool is_imm;
+
   // Function call
   char *name;
   int nargs;
@@ -290,6 +290,7 @@ typedef struct {
 
 enum {
   IR_TY_NOARG,
+  IR_TY_BINARY,
   IR_TY_REG,
   IR_TY_IMM,
   IR_TY_MEM,

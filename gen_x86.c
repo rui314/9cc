@@ -4,9 +4,9 @@
 
 static int nlabel;
 
- char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
- char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
- char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
+char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static char *escape(char *s, int len) {
   static char escaped[256] = {
@@ -168,27 +168,30 @@ void gen(Function *fn) {
       emit("mov [rbp-%d], %s", lhs, argreg(rhs, ir->size));
       break;
     case IR_ADD:
-      emit("add %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_ADD_IMM:
-      emit("add %s, %d", regs[lhs], rhs);
+      if (ir->is_imm)
+        emit("add %s, %d", regs[lhs], rhs);
+      else
+        emit("add %s, %s", regs[lhs], regs[rhs]);
       break;
     case IR_SUB:
-      emit("sub %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_SUB_IMM:
-      emit("sub %s, %d", regs[lhs], rhs);
+      if (ir->is_imm)
+        emit("sub %s, %d", regs[lhs], rhs);
+      else
+        emit("sub %s, %s", regs[lhs], regs[rhs]);
       break;
     case IR_MUL:
-      emit("mov rax, %s", regs[rhs]);
-      emit("mul %s", regs[lhs]);
-      emit("mov %s, rax", regs[lhs]);
-      break;
-    case IR_MUL_IMM:
-      if (rhs < 256 && __builtin_popcount(rhs) == 1) {
+      if (!ir->is_imm) {
+        emit("mov rax, %s", regs[rhs]);
+        emit("mul %s", regs[lhs]);
+        emit("mov %s, rax", regs[lhs]);
+        break;
+      }
+
+      if (__builtin_popcount(rhs) == 1) {
         emit("shl %s, %d", regs[lhs], __builtin_ctz(rhs));
         break;
       }
+
       emit("mov rax, %d", rhs);
       emit("mul %s", regs[lhs]);
       emit("mov %s, rax", regs[lhs]);
