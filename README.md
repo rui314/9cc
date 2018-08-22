@@ -6,8 +6,8 @@ In this new project, I'm trying to write a compiler whose code is
 extremely easy to understand while it can produces reasonably efficient assembly.
 
 Currently, it looks like 9cc can generate assembly that is only <1.5x slower
-than gcc -O2, which is not bad at all. Being said that, 9cc cannot do
-anything useful because it is incomplete.
+than gcc -O2 for my test case, which is not bad at all. Being said that,
+9cc is not anything other than a toy because it is incomplete.
 
 9cc has more stages than 8cc. Here is an overview of the internals:
 
