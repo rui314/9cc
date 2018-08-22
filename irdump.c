@@ -28,9 +28,7 @@ IRInfo irinfo[] = {
         [IR_NOP] = {"NOP", IR_TY_NOARG},
         [IR_RETURN] = {"RET", IR_TY_REG},
         [IR_STORE] = {"STORE", IR_TY_MEM},
-        [IR_STORE8_ARG] = {"STORE8_ARG", IR_TY_IMM_IMM},
-        [IR_STORE32_ARG] = {"STORE32_ARG", IR_TY_IMM_IMM},
-        [IR_STORE64_ARG] = {"STORE64_ARG", IR_TY_IMM_IMM},
+        [IR_STORE_ARG] = {"STORE_ARG", IR_TY_STORE_ARG},
         [IR_SUB] = {"SUB", IR_TY_REG_REG},
         [IR_SUB_IMM] = {"SUB", IR_TY_REG_IMM},
         [IR_BPREL] = {"BPREL", IR_TY_REG_IMM},
@@ -58,8 +56,8 @@ static char *tostr(IR *ir) {
     return format("  %s%d r%d, r%d", info.name, ir->size, ir->lhs, ir->rhs);
   case IR_TY_REG_IMM:
     return format("  %s r%d, %d", info.name, ir->lhs, ir->rhs);
-  case IR_TY_IMM_IMM:
-    return format("  %s %d, %d", info.name, ir->lhs, ir->rhs);
+  case IR_TY_STORE_ARG:
+    return format("  %s%d %d, %d", info.name, ir->size, ir->lhs, ir->rhs);
   case IR_TY_REG_LABEL:
     return format("  %s r%d, .L%d", info.name, ir->lhs, ir->rhs);
   case IR_TY_CALL: {

@@ -4,9 +4,9 @@
 
 static int nlabel;
 
-const char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
-const char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
-const char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+ char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+ char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
+ char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static char *escape(char *s, int len) {
   static char escaped[256] = {
@@ -50,6 +50,15 @@ static char *reg(int r, int size) {
     return regs32[r];
   assert(size == 8);
   return regs[r];
+}
+
+static char *argreg(int r, int size) {
+  if (size == 1)
+    return argreg8[r];
+  if (size == 4)
+    return argreg32[r];
+  assert(size == 8);
+  return argreg64[r];
 }
 
 void gen(Function *fn) {
@@ -155,14 +164,8 @@ void gen(Function *fn) {
     case IR_STORE:
       emit("mov [%s], %s", regs[lhs], reg(rhs, ir->size));
       break;
-    case IR_STORE8_ARG:
-      emit("mov [rbp-%d], %s", lhs, argreg8[rhs]);
-      break;
-    case IR_STORE32_ARG:
-      emit("mov [rbp-%d], %s", lhs, argreg32[rhs]);
-      break;
-    case IR_STORE64_ARG:
-      emit("mov [rbp-%d], %s", lhs, argreg64[rhs]);
+    case IR_STORE_ARG:
+      emit("mov [rbp-%d], %s", lhs, argreg(rhs, ir->size));
       break;
     case IR_ADD:
       emit("add %s, %s", regs[lhs], regs[rhs]);
