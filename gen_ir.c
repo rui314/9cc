@@ -340,11 +340,14 @@ static void gen_stmt(Node *node) {
 
     gen_stmt(node->init);
     label(x);
-    int r = gen_expr(node->cond);
-    add(IR_UNLESS, r, y);
-    kill(r);
+    if (node->cond) {
+      int r = gen_expr(node->cond);
+      add(IR_UNLESS, r, y);
+      kill(r);
+    }
     gen_stmt(node->body);
-    gen_stmt(node->inc);
+    if (node->inc)
+      gen_stmt(node->inc);
     add(IR_JMP, x, -1);
     label(y);
     label(break_label);
