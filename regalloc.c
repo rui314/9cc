@@ -18,15 +18,19 @@ char *regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
 
 static bool used[sizeof(regs) / sizeof(*regs)];
 static int reg_map[8192];
+static int reg_map_sz = sizeof(reg_map) / sizeof(*reg_map);
 
 static int alloc(int ir_reg) {
+  if (reg_map_sz <= ir_reg)
+    error("program too big");
+
   if (reg_map[ir_reg] != -1) {
     int r = reg_map[ir_reg];
     assert(used[r]);
     return r;
   }
 
-  for (int i = 0; i < sizeof(regs) / sizeof(*regs); i++) {
+  for (int i = 0; i < reg_map_sz; i++) {
     if (used[i])
       continue;
     reg_map[ir_reg] = i;
@@ -67,7 +71,7 @@ static void visit(Vector *irv) {
 }
 
 void alloc_regs(Vector *fns) {
-  for (int i = 0; i < sizeof(reg_map) / sizeof(*reg_map); i++)
+  for (int i = 0; i < reg_map_sz; i++)
     reg_map[i] = -1;
 
   for (int i = 0; i < fns->len; i++) {
