@@ -25,7 +25,7 @@ simple as I can get:
    We allcate memory using malloc() but never call free(). 
    I know that people find the policy odd, but this is actually a
    reasonable design choice for short-lived programs such as compilers.
-   This policy greately simplifies code and also eliminates use-after-free
+   This policy greatly simplifies code and also eliminates use-after-free
    bugs entirely.
 
  - 9cc's parser is a hand-written recursive descendent parser, so that the
@@ -37,7 +37,7 @@ simple as I can get:
 
  - We use brute force if it makes code simpler. We don't try too hard to
    implement sophisticated data structures to make the compiler run faster.
-   If the perforamcen becomes a problem, we can fix it at that moment.
+   If the performance becomes a problem, we can fix it at that moment.
 
  - Entire contents are loaded into memory at once if it makes code simpler.
    We don't use character IO to read from an input file; instead, we read
