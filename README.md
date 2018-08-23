@@ -22,7 +22,7 @@ There are a few important design choices that I made to keep the code as
 simple as I can get:
 
  - Like 8cc, no memory management is the memory management policy in 9cc.
-   We allcate memory using malloc() but never call free(). 
+   We allocate memory using malloc() but never call free(). 
    I know that people find the policy odd, but this is actually a
    reasonable design choice for short-lived programs such as compilers.
    This policy greatly simplifies code and also eliminates use-after-free
