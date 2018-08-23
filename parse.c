@@ -441,7 +441,7 @@ static Node *assign() {
   Node *lhs = conditional();
   int op = assignment_op();
   if (op)
-    return new_binop(op, lhs, conditional());
+    return new_binop(op, lhs, assign());
   return lhs;
 }
 
