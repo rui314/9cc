@@ -45,11 +45,22 @@ void map_put(Map *map, char *key, void *val) {
   vec_push(map->vals, val);
 }
 
+void map_puti(Map *map, char *key, int val) {
+  map_put(map, key, (void *)(intptr_t)val);
+}
+
 void *map_get(Map *map, char *key) {
   for (int i = map->keys->len - 1; i >= 0; i--)
     if (!strcmp(map->keys->data[i], key))
       return map->vals->data[i];
   return NULL;
+}
+
+int map_geti(Map *map, char *key, int default_) {
+  for (int i = map->keys->len - 1; i >= 0; i--)
+    if (!strcmp(map->keys->data[i], key))
+      return (intptr_t)map->vals->data[i];
+  return default_;
 }
 
 bool map_exists(Map *map, char *key) {

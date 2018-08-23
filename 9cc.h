@@ -30,7 +30,9 @@ typedef struct {
 
 Map *new_map(void);
 void map_put(Map *map, char *key, void *val);
+void map_puti(Map *map, char *key, int val);
 void *map_get(Map *map, char *key);
+int map_geti(Map *map, char *key, int default_);
 bool map_exists(Map *map, char *key);
 
 typedef struct {
