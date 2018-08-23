@@ -1,6 +1,9 @@
 #include "9cc.h"
 
-static char *read_file(char *filename) {
+static SrcFile *read_file(char *filename) {
+  SrcFile *src = malloc(sizeof(SrcFile));
+  src->fname = filename;
+
   FILE *fp = fopen(filename, "r");
   if (!fp) {
     perror(filename);
@@ -15,7 +18,9 @@ static char *read_file(char *filename) {
       break;
     sb_append_n(sb, buf, nread);
   }
-  return sb_get(sb);
+
+  src->text = sb_get(sb);
+  return src;
 }
 
 int main(int argc, char **argv) {
@@ -41,11 +46,11 @@ int main(int argc, char **argv) {
   }
 
   // Tokenize and parse.
-  char *input = read_file(filename);
-  Vector *tokens = tokenize(input);
-  Vector *nodes = parse(tokens);
-  Vector *globals = sema(nodes);
-  Vector *fns = gen_ir(nodes);
+  SrcFile *input = read_file(filename);
+  Vector  *tokens = tokenize(input);
+  Vector  *nodes = parse(tokens);
+  Vector  *globals = sema(nodes);
+  Vector  *fns = gen_ir(nodes);
 
   if (dump_ir1)
     dump_ir(fns);

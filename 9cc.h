@@ -9,9 +9,23 @@
 #include <stdnoreturn.h>
 #include <string.h>
 
+// Input file
+typedef struct {
+  char *fname;
+  char *text;
+} SrcFile;
+
+// Diagnostic location
+typedef struct {
+  SrcFile *file;
+  // A pointer into the file->text;
+  char *pos;
+} SrcLoc;
+
 /// util.c
 
 noreturn void error(char *fmt, ...);
+noreturn void errorloc(SrcLoc loc, char *fmt, ...);
 char *format(char *fmt, ...);
 
 typedef struct {
@@ -122,14 +136,14 @@ typedef struct {
   int ty;      // Token type
   int val;     // Number literal
   char *name;  // Identifier
-  char *input; // Token string (for error reporting)
+  SrcLoc loc;  // Token location (for error reporting)
 
   // String literal
   char *str;
   char len;
 } Token;
 
-Vector *tokenize(char *p);
+Vector *tokenize(SrcFile *src);
 
 /// parse.c
 

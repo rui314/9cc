@@ -5,10 +5,13 @@
 // The tokenizer splits an input string into tokens.
 // Spaces and comments are removed by the tokenizer.
 
+static SrcFile *current_src;
+
 static Token *add_token(Vector *v, int ty, char *input) {
   Token *t = calloc(1, sizeof(Token));
   t->ty = ty;
-  t->input = input;
+  t->loc.file = current_src;
+  t->loc.pos = input;
   vec_push(v, t);
   return t;
 }
@@ -97,9 +100,12 @@ static Map *keyword_map() {
 }
 
 // Tokenized input is stored to this array.
-Vector *tokenize(char *p) {
+Vector *tokenize(SrcFile *src) {
+  char *p = src->text;
   Vector *v = new_vec();
   Map *keywords = keyword_map();
+
+  current_src = src;
 
 loop:
   while (*p) {
@@ -190,5 +196,7 @@ loop:
   }
 
   add_token(v, TK_EOF, p);
+  current_src = 0;
+
   return v;
 }

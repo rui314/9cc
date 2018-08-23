@@ -1,5 +1,63 @@
 #include "9cc.h"
 
+static void loc2linecol(SrcLoc loc, char **pline, int *line, int *col) {
+  char *p = loc.file->text;
+
+  *pline = p;
+  *line = 1;
+  *col = 1;
+
+  while (*p) {
+    if (*col == 1)
+      *pline = p;
+
+    if (p == loc.pos)
+      break;
+
+    if (*p == '\n') {
+      *line += 1;
+      *col = 1;
+    } else if (*p == '\t')
+      *col += 4;
+    else
+      *col += 1;
+
+    p++;
+  }
+}
+
+noreturn void errorloc(SrcLoc loc, char *fmt, ...) {
+  char *pline;
+  int line;
+  int col;
+
+  // Lazily calculating line/col this way
+  // simplifies the line accounting in token.c.
+  loc2linecol(loc, &pline, &line, &col);
+
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, ":%s:%d:%d\n", loc.file->fname, line, col);
+
+  while (*pline && *pline != '\n') {
+    // Convert tab to space for consistent output.
+    if(*pline == '\t')
+      fputs("    ", stderr);
+    else
+      fputc(*pline, stderr);
+
+    pline++;
+  }
+
+  fputc('\n', stderr);
+  for(int i = 0; i < col-1; i++)
+    fputc(' ', stderr);
+  fputs("^\n", stderr);
+
+  exit(1);
+}
+
 noreturn void error(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);

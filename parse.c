@@ -179,7 +179,7 @@ static Node *compound_stmt();
 static char *ident() {
   Token *t = tokens->data[pos++];
   if (t->ty != TK_IDENT)
-    error("identifier expected, but got %s", t->input);
+    errorloc(t->loc, "identifier expected");
   return t->name;
 }
 
@@ -236,7 +236,7 @@ static Node *primary() {
     return node;
   }
 
-  error("number expected, but got %s", t->input);
+  errorloc(t->loc, "number expected");
 }
 
 static Node *mul();
@@ -456,7 +456,7 @@ static Type *type() {
   Token *t = tokens->data[pos];
   Type *ty = read_type();
   if (!ty)
-    error("typename expected, but got %s", t->input);
+    errorloc(t->loc, "typename expected");
 
   while (consume('*'))
     ty = ptr_to(ty);
@@ -620,7 +620,7 @@ static Node *toplevel() {
   Type *ty = type();
   if (!ty) {
     Token *t = tokens->data[pos];
-    error("typename expected, but got %s", t->input);
+    errorloc(t->loc, "typename expected");
   }
 
   char *name = ident();
