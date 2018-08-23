@@ -16,7 +16,10 @@ test: 9cc test/test.c
 	@gcc -static -o tmp-test tmp-test.s tmp-test2.o
 	@./tmp-test
 
-clean:
-	rm -f 9cc *.o *~ tmp* a.out test/*~
+slow-tests: 9cc test
+	./test/test.sh
 
-.PHONY: test clean
+clean:
+	rm -f 9cc *.o *~ tmp* a.out test/*~ test/exec/*.{gccbin,bin,expected,s,output,diff}
+
+.PHONY: test slow-tests clean
