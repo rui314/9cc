@@ -172,6 +172,16 @@ static Node *walk(Node *node, bool decay) {
     node->ty = node->lhs->ty;
     return node;
   case '=':
+  case ND_MUL_EQ:
+  case ND_DIV_EQ:
+  case ND_MOD_EQ:
+  case ND_ADD_EQ:
+  case ND_SUB_EQ:
+  case ND_SHL_EQ:
+  case ND_SHR_EQ:
+  case ND_BITAND_EQ:
+  case ND_XOR_EQ:
+  case ND_BITOR_EQ:
     node->lhs = walk(node->lhs, false);
     check_lval(node->lhs);
     node->rhs = walk(node->rhs, true);

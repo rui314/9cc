@@ -125,6 +125,45 @@ static int gen_post_inc(Node *node, int num) {
   return val;
 }
 
+static int to_assign_op(int op) {
+  switch (op) {
+  case ND_MUL_EQ:
+    return IR_MUL;
+  case ND_DIV_EQ:
+    return IR_DIV;
+  case ND_MOD_EQ:
+    return IR_MOD;
+  case ND_ADD_EQ:
+    return IR_ADD;
+  case ND_SUB_EQ:
+    return IR_SUB;
+  case ND_SHL_EQ:
+    return IR_SHL;
+  case ND_SHR_EQ:
+    return IR_SHR;
+  case ND_BITAND_EQ:
+    return IR_AND;
+  case ND_XOR_EQ:
+    return IR_XOR;
+  default:
+    assert(op == ND_BITOR_EQ);
+    return IR_OR;
+  }
+}
+
+static int gen_assign_op(Node *node) {
+  int src = gen_expr(node->rhs);
+  int dst = gen_lval(node->lhs);
+  int val = nreg++;
+
+  load(node, val, dst);
+  add(to_assign_op(node->op), val, src);
+  kill(src);
+  store(node, dst, val);
+  kill(dst);
+  return val;
+}
+
 static void gen_stmt(Node *node);
 
 static int gen_expr(Node *node) {
@@ -213,6 +252,17 @@ static int gen_expr(Node *node) {
     return_reg = orig_reg;
     return r;
   }
+  case ND_MUL_EQ:
+  case ND_DIV_EQ:
+  case ND_MOD_EQ:
+  case ND_ADD_EQ:
+  case ND_SUB_EQ:
+  case ND_SHL_EQ:
+  case ND_SHR_EQ:
+  case ND_BITAND_EQ:
+  case ND_XOR_EQ:
+  case ND_BITOR_EQ:
+    return gen_assign_op(node);
   case '=': {
     int rhs = gen_expr(node->rhs);
     int lhs = gen_lval(node->lhs);

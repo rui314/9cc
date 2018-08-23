@@ -411,11 +411,38 @@ static Node *conditional() {
   return node;
 }
 
+static int assignment_op() {
+  if (consume('='))
+    return '=';
+  if (consume(TK_MUL_EQ))
+    return ND_MUL_EQ;
+  if (consume(TK_DIV_EQ))
+    return ND_DIV_EQ;
+  if (consume(TK_MOD_EQ))
+    return ND_MOD_EQ;
+  if (consume(TK_ADD_EQ))
+    return ND_ADD_EQ;
+  if (consume(TK_SUB_EQ))
+    return ND_SUB_EQ;
+  if (consume(TK_SHL_EQ))
+    return ND_SHL_EQ;
+  if (consume(TK_SHR_EQ))
+    return ND_SHR_EQ;
+  if (consume(TK_BITAND_EQ))
+    return ND_BITAND_EQ;
+  if (consume(TK_XOR_EQ))
+    return ND_XOR_EQ;
+  if (consume(TK_BITOR_EQ))
+    return ND_BITOR_EQ;
+  return 0;
+}
+
 static Node *assign() {
   Node *lhs = conditional();
-  if (!consume('='))
-    return lhs;
-  return new_binop('=', lhs, conditional());
+  int op = assignment_op();
+  if (op)
+    return new_binop(op, lhs, conditional());
+  return lhs;
 }
 
 static Node *expr() {
