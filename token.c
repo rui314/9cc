@@ -17,33 +17,17 @@ static struct {
   char *name;
   int ty;
 } symbols[] = {
-    {"_Alignof", TK_ALIGNOF},
-    {"break", TK_BREAK},
-    {"char", TK_CHAR},
-    {"do", TK_DO},
-    {"else", TK_ELSE},
-    {"extern", TK_EXTERN},
-    {"for", TK_FOR},
-    {"if", TK_IF},
-    {"int", TK_INT},
-    {"return", TK_RETURN},
-    {"sizeof", TK_SIZEOF},
-    {"struct", TK_STRUCT},
-    {"typedef", TK_TYPEDEF},
-    {"void", TK_VOID},
-    {"while", TK_WHILE},
-    {"!=", TK_NE},
-    {"&&", TK_LOGAND},
-    {"++", TK_INC},
-    {"--", TK_DEC},
-    {"->", TK_ARROW},
-    {"<<", TK_SHL},
-    {"<=", TK_LE},
-    {"==", TK_EQ},
-    {">=", TK_GE},
-    {">>", TK_SHR},
-    {"||", TK_LOGOR},
-    {NULL, 0},
+    {"!=", TK_NE},        {"&&", TK_LOGAND},
+    {"++", TK_INC},       {"--", TK_DEC},
+    {"->", TK_ARROW},     {"<<", TK_SHL},
+    {"<=", TK_LE},        {"==", TK_EQ},
+    {">=", TK_GE},        {">>", TK_SHR},
+    {"||", TK_LOGOR},     {"*=", TK_MUL_EQ},
+    {"/=", TK_DIV_EQ},    {"%=", TK_MOD_EQ},
+    {"+=", TK_ADD_EQ},    {"-=", TK_SUB_EQ},
+    {"<<=", TK_SHL_EQ},   {">>=", TK_SHR_EQ},
+    {"&=", TK_BITAND_EQ}, {"^=", TK_XOR_EQ},
+    {"|=", TK_BITOR_EQ},  {NULL, 0},
 };
 
 static char escaped[256] = {
@@ -92,9 +76,30 @@ static char *read_string(StringBuilder *sb, char *p) {
   return p + 1;
 }
 
+static Map *keyword_map() {
+  Map *map = new_map();
+  map_puti(map, "_Alignof", TK_ALIGNOF);
+  map_puti(map, "break", TK_BREAK);
+  map_puti(map, "char", TK_CHAR);
+  map_puti(map, "do", TK_DO);
+  map_puti(map, "else", TK_ELSE);
+  map_puti(map, "extern", TK_EXTERN);
+  map_puti(map, "for", TK_FOR);
+  map_puti(map, "if", TK_IF);
+  map_puti(map, "int", TK_INT);
+  map_puti(map, "return", TK_RETURN);
+  map_puti(map, "sizeof", TK_SIZEOF);
+  map_puti(map, "struct", TK_STRUCT);
+  map_puti(map, "typedef", TK_TYPEDEF);
+  map_puti(map, "void", TK_VOID);
+  map_puti(map, "while", TK_WHILE);
+  return map;
+}
+
 // Tokenized input is stored to this array.
 Vector *tokenize(char *p) {
   Vector *v = new_vec();
+  Map *keywords = keyword_map();
 
 loop:
   while (*p) {
@@ -139,7 +144,7 @@ loop:
       continue;
     }
 
-    // Multi-letter symbol or keyword
+    // Multi-letter symbol
     for (int i = 0; symbols[i].name; i++) {
       char *name = symbols[i].name;
       int len = strlen(name);
@@ -151,21 +156,24 @@ loop:
       goto loop;
     }
 
-    // Single-letter token
+    // Single-letter symbol
     if (strchr("+-*/;=(),{}<>[]&.!?:|^%", *p)) {
       add_token(v, *p, p);
       p++;
       continue;
     }
 
-    // Identifier
+    // Keyword or identifier
     if (isalpha(*p) || *p == '_') {
       int len = 1;
       while (isalpha(p[len]) || isdigit(p[len]) || p[len] == '_')
         len++;
 
-      Token *t = add_token(v, TK_IDENT, p);
-      t->name = strndup(p, len);
+      char *name = strndup(p, len);
+      int ty = map_geti(keywords, name, -1);
+
+      Token *t = add_token(v, (ty == -1) ? TK_IDENT : ty, p);
+      t->name = name;
       p += len;
       continue;
     }
