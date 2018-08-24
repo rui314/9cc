@@ -260,6 +260,7 @@ static Node *walk(Node *node, bool decay) {
   case ND_POST_DEC:
   case ND_NEG:
   case '!':
+  case '~':
     node->expr = walk(node->expr, true);
     node->ty = node->expr->ty;
     return node;
