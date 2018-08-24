@@ -344,6 +344,6 @@ void alloc_regs(Vector *irv);
 extern char *regs[];
 extern char *regs8[];
 extern char *regs32[];
-extern int nregs;
+extern int num_regs;
 
 void gen_x86(Vector *globals, Vector *fns);

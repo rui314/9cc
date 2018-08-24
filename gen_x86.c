@@ -6,7 +6,7 @@ char *regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
 char *regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
 char *regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
 
-int nregs = sizeof(regs) / sizeof(*regs);
+int num_regs = sizeof(regs) / sizeof(*regs);
 
 static int nlabel;
 
