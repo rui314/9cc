@@ -2,8 +2,9 @@
 ==============
 
 9cc is a successor of my [8cc](https://github.com/rui314/8cc) C compiler.
-In this new project, I'm trying to write a compiler whose code is
-extremely easy to understand while it can produces reasonably efficient assembly.
+In this new project, I'm trying to write code that can be understood
+extremely easily while creating a compiler that generates reasonably
+efficient assembly.
 
 9cc has more stages than 8cc. Here is an overview of the internals:
 
