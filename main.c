@@ -26,9 +26,7 @@ static char *read_file(char *filename) {
   return sb_get(sb);
 }
 
-void usage() {
-  error("Usage: 9cc [-test] [-dump-ir1] [-dump-ir2] <file>");
-}
+void usage() { error("Usage: 9cc [-test] [-dump-ir1] [-dump-ir2] <file>"); }
 
 int main(int argc, char **argv) {
   if (argc == 1)

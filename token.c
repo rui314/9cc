@@ -1,10 +1,12 @@
 #include "9cc.h"
 
-/// Error reporting
+// Error reporting
 
 static char *input_file;
 
-static void print_line(Token *t) {
+// Finds a line pointed by a given pointer from the input file
+// to print it out.
+static void print_line(char *pos) {
   char *start = input_file;
   int line = 0;
   int col = 0;
@@ -17,7 +19,7 @@ static void print_line(Token *t) {
       continue;
     }
 
-    if (p != t->start) {
+    if (p != pos) {
       col++;
       continue;
     }
@@ -35,7 +37,7 @@ static void print_line(Token *t) {
 }
 
 noreturn void bad_token(Token *t, char *msg) {
-  print_line(t);
+  print_line(t->start);
   error(msg);
 }
 
@@ -44,11 +46,14 @@ noreturn void bad_token(Token *t, char *msg) {
 // The tokenizer splits an input string into tokens.
 // Spaces and comments are removed by the tokenizer.
 
-static Token *add_token(Vector *v, int ty, char *start) {
+static Vector *tokens;
+static Map *keywords;
+
+static Token *add(int ty, char *start) {
   Token *t = calloc(1, sizeof(Token));
   t->ty = ty;
   t->start = start;
-  vec_push(v, t);
+  vec_push(tokens, t);
   return t;
 }
 
@@ -75,46 +80,6 @@ static char escaped[256] = {
         ['v'] = '\v', ['e'] = '\033', ['E'] = '\033',
 };
 
-static char *read_char(int *result, char *p) {
-  if (!*p)
-    error("premature end of input");
-
-  if (*p != '\\') {
-    *result = *p++;
-  } else {
-    p++;
-    if (!*p)
-      error("premature end of input");
-    int esc = escaped[(unsigned)*p];
-    *result = esc ? esc : *p;
-    p++;
-  }
-
-  if (*p != '\'')
-    error("unclosed character literal");
-  return p + 1;
-}
-
-static char *read_string(StringBuilder *sb, char *p) {
-  while (*p != '"') {
-    if (!*p)
-      error("premature end of input");
-
-    if (*p != '\\') {
-      sb_add(sb, *p++);
-      continue;
-    }
-
-    p++;
-    if (*p == '\0')
-      error("premature end of input");
-    int esc = escaped[(unsigned)*p];
-    sb_add(sb, esc ? esc : *p);
-    p++;
-  }
-  return p + 1;
-}
-
 static Map *keyword_map() {
   Map *map = new_map();
   map_puti(map, "_Alignof", TK_ALIGNOF);
@@ -135,15 +100,91 @@ static Map *keyword_map() {
   return map;
 }
 
+static char *block_comment(char *pos) {
+  for (char *p = pos + 2; *p; p++)
+    if (!strncmp(p, "*/", 2))
+      return p + 2;
+  print_line(pos);
+  error("unclosed comment");
+}
+
+static char *char_literal(char *p) {
+  Token *t = add(TK_NUM, p++);
+
+  if (!*p)
+    goto err;
+
+  if (*p != '\\') {
+    t->val = *p++;
+  } else {
+    if (!p[1])
+      goto err;
+    int esc = escaped[(unsigned)p[1]];
+    t->val = esc ? esc : p[1];
+    p += 2;
+  }
+
+  if (*p == '\'')
+    return p + 1;
+
+ err:
+  bad_token(t, "unclosed character literal");
+}
+
+static char *string_literal(char *p) {
+  Token *t = add(TK_STR, p++);
+  StringBuilder *sb = new_sb();
+
+  while (*p != '"') {
+    if (!*p)
+      goto err;
+
+    if (*p != '\\') {
+      sb_add(sb, *p++);
+      continue;
+    }
+
+    p++;
+    if (*p == '\0')
+      goto err;
+    int esc = escaped[(unsigned)*p];
+    sb_add(sb, esc ? esc : *p);
+    p++;
+  }
+
+  t->str = sb_get(sb);
+  t->len = sb->len;
+  return p + 1;
+
+ err:
+  bad_token(t, "unclosed string literal");
+}
+
+static char *ident(char *p) {
+  int len = 1;
+  while (isalpha(p[len]) || isdigit(p[len]) || p[len] == '_')
+    len++;
+
+  char *name = strndup(p, len);
+  int ty = map_geti(keywords, name, TK_IDENT);
+  Token *t = add(ty, p);
+  t->name = name;
+  return p + len;
+}
+
+static char *number(char *p) {
+  Token *t = add(TK_NUM, p);
+  for (; isdigit(*p); p++)
+    t->val = t->val * 10 + *p - '0';
+  return p;
+}
+
 // Tokenized input is stored to this array.
-Vector *tokenize(char *p) {
-  input_file = p;
-  Vector *v = new_vec();
-  Map *keywords = keyword_map();
+static void scan() {
+  char *p = input_file;
 
 loop:
   while (*p) {
-    // Skip whitespace
     if (isspace(*p)) {
       p++;
       continue;
@@ -158,29 +199,19 @@ loop:
 
     // Block comment
     if (!strncmp(p, "/*", 2)) {
-      for (p += 2; *p; p++) {
-        if (strncmp(p, "*/", 2))
-          continue;
-        p += 2;
-        goto loop;
-      }
-      error("unclosed comment");
+      p = block_comment(p);
+      continue;
     }
 
     // Character literal
     if (*p == '\'') {
-      Token *t = add_token(v, TK_NUM, p++);
-      p = read_char(&t->val, p);
+      p = char_literal(p);
       continue;
     }
 
     // String literal
     if (*p == '"') {
-      Token *t = add_token(v, TK_STR, p++);
-      StringBuilder *sb = new_sb();
-      p = read_string(sb, p);
-      t->str = sb_get(sb);
-      t->len = sb->len;
+      p = string_literal(p);
       continue;
     }
 
@@ -191,44 +222,42 @@ loop:
       if (strncmp(p, name, len))
         continue;
 
-      add_token(v, symbols[i].ty, p);
+      add(symbols[i].ty, p);
       p += len;
       goto loop;
     }
 
     // Single-letter symbol
     if (strchr("+-*/;=(),{}<>[]&.!?:|^%~", *p)) {
-      add_token(v, *p, p);
+      add(*p, p);
       p++;
       continue;
     }
 
     // Keyword or identifier
     if (isalpha(*p) || *p == '_') {
-      int len = 1;
-      while (isalpha(p[len]) || isdigit(p[len]) || p[len] == '_')
-        len++;
-
-      char *name = strndup(p, len);
-      int ty = map_geti(keywords, name, -1);
-
-      Token *t = add_token(v, (ty == -1) ? TK_IDENT : ty, p);
-      t->name = name;
-      p += len;
+      p = ident(p);
       continue;
     }
 
     // Number
     if (isdigit(*p)) {
-      Token *t = add_token(v, TK_NUM, p);
-      for (; isdigit(*p); p++)
-        t->val = t->val * 10 + *p - '0';
+      p = number(p);
       continue;
     }
 
-    error("cannot tokenize: %s", p);
+    print_line(p);
+    error("cannot tokenize");
   }
 
-  add_token(v, TK_EOF, p);
-  return v;
+  add(TK_EOF, p);
+}
+
+Vector *tokenize(char *p) {
+  tokens = new_vec();
+  keywords = keyword_map();
+  input_file = p;
+
+  scan();
+  return tokens;
 }
