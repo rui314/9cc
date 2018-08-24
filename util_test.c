@@ -11,7 +11,7 @@
 // larger, but that's not a problem for toy programs like 9cc.
 // What is most important is to write tests while keeping everything simple.
 
-void expect(int line, int expected, int actual) {
+static void expect(int line, int expected, int actual) {
   if (expected == actual)
     return;
   fprintf(stderr, "%d: %d expected, but got %d\n", line, expected, actual);

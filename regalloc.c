@@ -12,11 +12,7 @@
 // practically we don't have to think about the case in which
 // registers are exhausted and need to be spilled to memory.
 
-char *regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
-char *regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
-char *regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
-
-static bool used[sizeof(regs) / sizeof(*regs)];
+static bool *used;
 static int reg_map[8192];
 static int reg_map_sz = sizeof(reg_map) / sizeof(*reg_map);
 
@@ -30,7 +26,7 @@ static int alloc(int ir_reg) {
     return r;
   }
 
-  for (int i = 0; i < reg_map_sz; i++) {
+  for (int i = 0; i < nregs; i++) {
     if (used[i])
       continue;
     reg_map[ir_reg] = i;
@@ -77,6 +73,7 @@ static void visit(Vector *irv) {
 }
 
 void alloc_regs(Vector *fns) {
+  used = calloc(1, nregs);
   for (int i = 0; i < reg_map_sz; i++)
     reg_map[i] = -1;
 

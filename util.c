@@ -64,7 +64,7 @@ int map_geti(Map *map, char *key, int default_) {
 }
 
 bool map_exists(Map *map, char *key) {
-  for (int i = 0; i < map->keys->len; i++)
+  for (int i = map->keys->len - 1; i >= 0; i--)
     if (!strcmp(map->keys->data[i], key))
       return true;
   return false;
@@ -87,9 +87,9 @@ static void sb_grow(StringBuilder *sb, int len) {
   sb->data = realloc(sb->data, sb->capacity);
 }
 
-void sb_add(StringBuilder *sb, char s) {
+void sb_add(StringBuilder *sb, char c) {
   sb_grow(sb, 1);
-  sb->data[sb->len++] = s;
+  sb->data[sb->len++] = c;
 }
 
 void sb_append(StringBuilder *sb, char *s) { sb_append_n(sb, s, strlen(s)); }

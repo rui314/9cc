@@ -2,13 +2,19 @@
 
 // This pass generates x86-64 assembly from IR.
 
+char *regs[] = {"r10", "r11", "rbx", "r12", "r13", "r14", "r15"};
+char *regs8[] = {"r10b", "r11b", "bl", "r12b", "r13b", "r14b", "r15b"};
+char *regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
+
+int nregs = sizeof(regs) / sizeof(*regs);
+
 static int nlabel;
 
-char *argreg8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
-char *argreg32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
-char *argreg64[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *argregs8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *argregs32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 
-static char *escape(char *s, int len) {
+static char *backslash_escape(char *s, int len) {
   static char escaped[256] = {
           ['\b'] = 'b', ['\f'] = 'f',  ['\n'] = 'n',  ['\r'] = 'r',
           ['\t'] = 't', ['\\'] = '\\', ['\''] = '\'', ['"'] = '"',
@@ -54,11 +60,11 @@ static char *reg(int r, int size) {
 
 static char *argreg(int r, int size) {
   if (size == 1)
-    return argreg8[r];
+    return argregs8[r];
   if (size == 4)
-    return argreg32[r];
+    return argregs32[r];
   assert(size == 8);
-  return argreg64[r];
+  return argregs[r];
 }
 
 void gen(Function *fn) {
@@ -95,7 +101,7 @@ void gen(Function *fn) {
       break;
     case IR_CALL: {
       for (int i = 0; i < ir->nargs; i++)
-        emit("mov %s, %s", argreg64[i], regs[ir->args[i]]);
+        emit("mov %s, %s", argregs[i], regs[ir->args[i]]);
 
       emit("push r10");
       emit("push r11");
@@ -234,7 +240,7 @@ void gen_x86(Vector *globals, Vector *fns) {
     if (var->is_extern)
       continue;
     printf("%s:\n", var->name);
-    emit(".ascii \"%s\"", escape(var->data, var->len));
+    emit(".ascii \"%s\"", backslash_escape(var->data, var->len));
   }
 
   printf(".text\n");
