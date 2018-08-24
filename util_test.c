@@ -43,9 +43,6 @@ static void map_test() {
 
   map_put(map, "foo", (void *)6);
   expect(__LINE__, 6, (intptr_t)map_get(map, "foo"));
-
-  expect(__LINE__, true, map_exists(map, "foo"));
-  expect(__LINE__, false, map_exists(map, "baz"));
 }
 
 static void sb_test() {

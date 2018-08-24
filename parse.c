@@ -29,16 +29,20 @@ static Env *new_env(Env *next) {
 }
 
 static Type *find_typedef(char *name) {
-  for (Env *e = env; e; e = e->next)
-    if (map_exists(e->typedefs, name))
-      return map_get(e->typedefs, name);
+  for (Env *e = env; e; e = e->next) {
+    Type *ty = map_get(e->typedefs, name);
+    if (ty)
+      return ty;
+  }
   return NULL;
 }
 
 static Type *find_tag(char *name) {
-  for (Env *e = env; e; e = e->next)
-    if (map_exists(e->tags, name))
-      return map_get(e->tags, name);
+  for (Env *e = env; e; e = e->next) {
+    Type *ty = map_get(e->tags, name);
+    if (ty)
+      return ty;
+  }
   return NULL;
 }
 

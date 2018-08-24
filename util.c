@@ -63,13 +63,6 @@ int map_geti(Map *map, char *key, int default_) {
   return default_;
 }
 
-bool map_exists(Map *map, char *key) {
-  for (int i = map->keys->len - 1; i >= 0; i--)
-    if (!strcmp(map->keys->data[i], key))
-      return true;
-  return false;
-}
-
 StringBuilder *new_sb(void) {
   StringBuilder *sb = malloc(sizeof(StringBuilder));
   sb->data = malloc(8);
