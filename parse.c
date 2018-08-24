@@ -178,6 +178,14 @@ static Node *new_expr(int op, Node *expr) {
   return node;
 }
 
+static Node *new_num(int val) {
+  Node *node = calloc(1, sizeof(Node));
+  node->op = ND_NUM;
+  node->ty = int_ty();
+  node->val = val;
+  return node;
+}
+
 static Node *compound_stmt();
 
 static char *ident() {
@@ -205,12 +213,8 @@ static Node *primary() {
 
   Node *node = calloc(1, sizeof(Node));
 
-  if (t->ty == TK_NUM) {
-    node->ty = int_ty();
-    node->op = ND_NUM;
-    node->val = t->val;
-    return node;
-  }
+  if (t->ty == TK_NUM)
+    return new_num(t->val);
 
   if (t->ty == TK_STR) {
     node->ty = ary_of(char_ty(), t->len);
@@ -289,14 +293,16 @@ static Node *unary() {
     return new_expr(ND_ADDR, unary());
   if (consume('!'))
     return new_expr('!', unary());
-  if (consume(TK_INC))
-    return new_expr(ND_PRE_INC, unary());
-  if (consume(TK_DEC))
-    return new_expr(ND_PRE_DEC, unary());
   if (consume(TK_SIZEOF))
     return new_expr(ND_SIZEOF, unary());
   if (consume(TK_ALIGNOF))
     return new_expr(ND_ALIGNOF, unary());
+
+  if (consume(TK_INC))
+    return new_binop(ND_ADD_EQ, unary(), new_num(1));
+  if (consume(TK_DEC))
+    return new_binop(ND_SUB_EQ, unary(), new_num(1));
+
   return postfix();
 }
 

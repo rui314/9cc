@@ -271,20 +271,9 @@ static int gen_expr(Node *node) {
     return rhs;
   }
   case '+':
-  case '-': {
-    int insn = (node->op == '+') ? IR_ADD : IR_SUB;
-
-    if (node->lhs->ty->ty != PTR)
-      return gen_binop(insn, node);
-
-    int rhs = gen_expr(node->rhs);
-    add_imm(IR_MUL, rhs, node->lhs->ty->ptr_to->size);
-
-    int lhs = gen_expr(node->lhs);
-    add(insn, lhs, rhs);
-    kill(rhs);
-    return lhs;
-  }
+    return gen_binop(IR_ADD, node);
+  case '-':
+    return gen_binop(IR_SUB, node);
   case '*':
     return gen_binop(IR_MUL, node);
   case '/':
@@ -310,10 +299,6 @@ static int gen_expr(Node *node) {
     add(IR_NEG, r, -1);
     return r;
   }
-  case ND_PRE_INC:
-    return gen_pre_inc(node, 1);
-  case ND_PRE_DEC:
-    return gen_pre_inc(node, -1);
   case ND_POST_INC:
     return gen_post_inc(node, 1);
   case ND_POST_DEC:

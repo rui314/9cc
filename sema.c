@@ -15,6 +15,9 @@
 //   Recall that, in C, "array of T" is automatically converted to
 //   "pointer to T" in most contexts.
 //
+// - Scales operands for pointer arithmetic. E.g. ptr+1 becomes ptr+4
+//   for integer and becomes ptr+8 for pointer.
+//
 // - Reject bad assignments, such as `1=2+3`.
 
 static Type int_ty = {INT, 4, 4};
@@ -84,6 +87,14 @@ static Node *new_int(int val) {
   node->ty = INT;
   node->val = val;
   return node;
+}
+
+static Node *scale_ptr(Node *node, Type *ty) {
+  Node *e = calloc(1, sizeof(Node));
+  e->op = '*';
+  e->lhs = node;
+  e->rhs = new_int(ty->ptr_to->size);
+  return e;
 }
 
 static Node *walk(Node *node, bool decay) {
@@ -169,14 +180,25 @@ static Node *walk(Node *node, bool decay) {
     if (node->rhs->ty->ty == PTR)
       error("'pointer %c pointer' is not defined", node->op);
 
+    if (node->lhs->ty->ty == PTR)
+      node->rhs = scale_ptr(node->rhs, node->lhs->ty);
+
     node->ty = node->lhs->ty;
+    return node;
+  case ND_ADD_EQ:
+  case ND_SUB_EQ:
+    node->lhs = walk(node->lhs, false);
+    check_lval(node->lhs);
+    node->rhs = walk(node->rhs, true);
+    node->ty = node->lhs->ty;
+
+    if (node->lhs->ty->ty == PTR)
+      node->rhs = scale_ptr(node->rhs, node->lhs->ty);
     return node;
   case '=':
   case ND_MUL_EQ:
   case ND_DIV_EQ:
   case ND_MOD_EQ:
-  case ND_ADD_EQ:
-  case ND_SUB_EQ:
   case ND_SHL_EQ:
   case ND_SHR_EQ:
   case ND_BITAND_EQ:
@@ -234,8 +256,6 @@ static Node *walk(Node *node, bool decay) {
     node->rhs = walk(node->rhs, true);
     node->ty = node->rhs->ty;
     return node;
-  case ND_PRE_INC:
-  case ND_PRE_DEC:
   case ND_POST_INC:
   case ND_POST_DEC:
   case ND_NEG:
