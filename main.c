@@ -3,10 +3,13 @@
 char *filename;
 
 static char *read_file(char *filename) {
-  FILE *fp = fopen(filename, "r");
-  if (!fp) {
-    perror(filename);
-    exit(1);
+  FILE *fp = stdin;
+  if (strcmp(filename, "-")) {
+    fp = fopen(filename, "r");
+    if (!fp) {
+      perror(filename);
+      exit(1);
+    }
   }
 
   StringBuilder *sb = new_sb();
@@ -23,8 +26,15 @@ static char *read_file(char *filename) {
   return sb_get(sb);
 }
 
+void usage() {
+  error("Usage: 9cc [-test] [-dump-ir1] [-dump-ir2] <file>");
+}
+
 int main(int argc, char **argv) {
-  if (!strcmp(argv[1], "-test")) {
+  if (argc == 1)
+    usage();
+
+  if (argc == 2 && !strcmp(argv[1], "-test")) {
     util_test();
     return 0;
   }
@@ -40,7 +50,7 @@ int main(int argc, char **argv) {
     filename = argv[2];
   } else {
     if (argc != 2)
-      error("Usage: 9cc [-test] [-dump-ir1] [-dump-ir2] <file>\n");
+      usage();
     filename = argv[1];
   }
 
