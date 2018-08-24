@@ -3,3 +3,8 @@
 tmp*
 9cc
 a.out
+test/exec/*.bin
+test/exec/*.gccbin
+test/exec/*.output
+test/exec/*.diff
+test/exec/*.s
