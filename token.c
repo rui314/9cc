@@ -1,14 +1,53 @@
 #include "9cc.h"
 
+/// Error reporting
+
+static char *input_file;
+
+static void print_line(Token *t) {
+  char *start = input_file;
+  int line = 0;
+  int col = 0;
+
+  for (char *p = input_file; p; p++) {
+    if (*p == '\n') {
+      start = p + 1;
+      line++;
+      col = 0;
+      continue;
+    }
+
+    if (p != t->start) {
+      col++;
+      continue;
+    }
+
+    fprintf(stderr, "error at %s:%d:%d\n\n", filename, line + 1, col + 1);
+
+    int linelen = strchr(p, '\n') - start;
+    fprintf(stderr, "%.*s\n", linelen, start);
+
+    for (int i = 0; i < col; i++)
+      fprintf(stderr, " ");
+    fprintf(stderr, "^\n\n");
+    return;
+  }
+}
+
+noreturn void bad_token(Token *t, char *msg) {
+  print_line(t);
+  error(msg);
+}
+
 // Atomic unit in the grammar is called "token".
 // For example, `123`, `"abc"` and `while` are tokens.
 // The tokenizer splits an input string into tokens.
 // Spaces and comments are removed by the tokenizer.
 
-static Token *add_token(Vector *v, int ty, char *input) {
+static Token *add_token(Vector *v, int ty, char *start) {
   Token *t = calloc(1, sizeof(Token));
   t->ty = ty;
-  t->input = input;
+  t->start = start;
   vec_push(v, t);
   return t;
 }
@@ -98,6 +137,7 @@ static Map *keyword_map() {
 
 // Tokenized input is stored to this array.
 Vector *tokenize(char *p) {
+  input_file = p;
   Vector *v = new_vec();
   Map *keywords = keyword_map();
 

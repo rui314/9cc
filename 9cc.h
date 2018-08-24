@@ -119,17 +119,20 @@ enum {
 
 // Token type
 typedef struct {
-  int ty;      // Token type
-  int val;     // Number literal
-  char *name;  // Identifier
-  char *input; // Token string (for error reporting)
+  int ty;     // Token type
+  int val;    // Number literal
+  char *name; // Identifier
 
   // String literal
   char *str;
   char len;
+
+  // For error reporting
+  char *start;
 } Token;
 
 Vector *tokenize(char *p);
+noreturn void bad_token(Token *t, char *msg);
 
 /// parse.c
 
@@ -345,3 +348,7 @@ extern char *regs32[];
 extern int num_regs;
 
 void gen_x86(Vector *globals, Vector *fns);
+
+/// main.c
+
+char *filename;

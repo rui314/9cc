@@ -1,5 +1,7 @@
 #include "9cc.h"
 
+char *filename;
+
 static char *read_file(char *filename) {
   FILE *fp = fopen(filename, "r");
   if (!fp) {
@@ -15,6 +17,9 @@ static char *read_file(char *filename) {
       break;
     sb_append_n(sb, buf, nread);
   }
+
+  if (sb->data[sb->len] != '\n')
+    sb_add(sb, '\n');
   return sb_get(sb);
 }
 
@@ -26,7 +31,6 @@ int main(int argc, char **argv) {
 
   bool dump_ir1 = false;
   bool dump_ir2 = false;
-  char *filename;
 
   if (argc == 3 && !strcmp(argv[1], "-dump-ir1")) {
     dump_ir1 = true;
