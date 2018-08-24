@@ -253,11 +253,48 @@ loop:
   add(TK_EOF, p);
 }
 
+static void remove_backslash_newline() {
+  char *p = input_file;
+  for (char *q = p; *q;) {
+    if (q[0] == '\\' && q[1] == '\n')
+      q += 2;
+    else
+      *p++ = *q++;
+  }
+  *p = '\0';
+}
+
+static void append(Token *x, Token *y) {
+  StringBuilder *sb = new_sb();
+  sb_append_n(sb, x->str, x->len - 1);
+  sb_append_n(sb, y->str, y->len - 1);
+  x->str = sb_get(sb);
+  x->len = sb->len;
+}
+
+static void join_string_literals() {
+  Vector *v = new_vec();
+  Token *last = NULL;
+
+  for (int i = 0; i < tokens->len; i++) {
+    Token *t = tokens->data[i];
+    if (last && last->ty == TK_STR && t->ty == TK_STR) {
+      append(last, t);
+      continue;
+    }
+
+    last = t;
+    vec_push(v, t);
+  }
+  tokens = v;
+}
+
 Vector *tokenize(char *p) {
   tokens = new_vec();
   keywords = keyword_map();
   input_file = p;
 
   scan();
+  join_string_literals();
   return tokens;
 }
