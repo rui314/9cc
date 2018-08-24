@@ -1,5 +1,16 @@
 #include "9cc.h"
 
+// Unit tests for our data structures.
+//
+// This kind of file is usually built as an independent executable in
+// a common build config, but in 9cc I took a different approach.
+// This file is just a part of the main executable. This scheme greatly
+// simplifies build config.
+//
+// In return for the simplicity, the main executable becomes slightly
+// larger, but that's not a problem for toy programs like 9cc.
+// What is most important is to write tests while keeping everything simple.
+
 void expect(int line, int expected, int actual) {
   if (expected == actual)
     return;
