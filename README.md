@@ -5,10 +5,6 @@
 In this new project, I'm trying to write a compiler whose code is
 extremely easy to understand while it can produces reasonably efficient assembly.
 
-Currently, it looks like 9cc can generate assembly that is only <1.5x slower
-than gcc -O2 for my test case, which is not bad at all. Being said that,
-9cc is not anything other than a toy because it is incomplete.
-
 9cc has more stages than 8cc. Here is an overview of the internals:
 
  1. Compiles an input string to abstract syntax trees.
@@ -22,7 +18,7 @@ There are a few important design choices that I made to keep the code as
 simple as I can get:
 
  - Like 8cc, no memory management is the memory management policy in 9cc.
-   We allcate memory using malloc() but never call free(). 
+   We allocate memory using malloc() but never call free().
    I know that people find the policy odd, but this is actually a
    reasonable design choice for short-lived programs such as compilers.
    This policy greatly simplifies code and also eliminates use-after-free
