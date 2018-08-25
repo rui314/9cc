@@ -86,7 +86,7 @@ static int gen_lval(Node *node) {
 
   if (node->op == ND_DOT) {
     int r = gen_lval(node->expr);
-    add_imm(IR_ADD, r, node->offset);
+    add_imm(IR_ADD, r, node->ty->offset);
     return r;
   }
 

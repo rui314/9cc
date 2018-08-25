@@ -254,9 +254,6 @@ typedef struct Node {
   int stacksize;
   Vector *globals;
 
-  // Offset from BP or begining of a struct
-  int offset;
-
   // Function call
   Vector *args;
 
