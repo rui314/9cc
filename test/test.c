@@ -18,6 +18,7 @@ int two() { return 2; }
 int plus(int x, int y) { return x + y; }
 int mul(int x, int y) { return x * y; }
 int add(int a, int b, int c, int d, int e, int f) { return a+b+c+d+e+f; }
+int add2(int (*a)[2]) { return a[0][0] + a[1][0]; }
 
 int var1;
 int var2[5];
