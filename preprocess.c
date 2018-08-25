@@ -21,6 +21,26 @@ static Context *new_ctx(Context *next, Vector *input) {
   return c;
 }
 
+enum {
+  OBJLIKE,
+  FUNCLIKE,
+};
+
+typedef struct Macro {
+  int ty;
+  Vector *tokens;
+  Vector *params;
+} Macro;
+
+static Macro *new_macro(int ty, char *name) {
+  Macro *m = calloc(1, sizeof(Macro));
+  m->ty = ty;
+  m->tokens = new_vec();
+  m->params = new_vec();
+  map_put(macros, name, m);
+  return m;
+}
+
 static void append(Vector *v) {
   for (int i = 0; i < v->len; i++)
     vec_push(ctx->output, v->data[i]);
@@ -42,18 +62,171 @@ static Token *get(int ty, char *msg) {
   return t;
 }
 
-static void define() {
-  Token *t = get(TK_IDENT, "macro name expected");
-  char *name = t->name;
+static char *ident(char *msg) {
+  Token *t = get(TK_IDENT, "parameter name expected");
+  return t->name;
+}
 
+static Token *peek() { return ctx->input->data[ctx->pos]; }
+
+static bool consume(int ty) {
+  if (peek()->ty != ty)
+    return false;
+  ctx->pos++;
+  return true;
+}
+
+static Vector *read_until_eol() {
   Vector *v = new_vec();
   while (!eof()) {
-    t = next();
+    Token *t = next();
     if (t->ty == '\n')
       break;
     vec_push(v, t);
   }
-  map_put(macros, name, v);
+  return v;
+}
+
+static Token *new_param(int n) {
+  Token *t = calloc(1, sizeof(Token));
+  t->ty = TK_PARAM;
+  t->val = n;
+  return t;
+}
+
+static void replace_params(Macro *m) {
+  Vector *params = m->params;
+  Vector *tokens = m->tokens;
+
+  // Replaces macro parameter tokens with TK_PARAM tokens.
+  Map *map = new_map();
+  for (int i = 0; i < params->len; i++) {
+    char *name = params->data[i];
+    map_puti(map, name, i);
+  }
+
+  for (int i = 0; i < tokens->len; i++) {
+    Token *t = tokens->data[i];
+    if (t->ty != TK_IDENT)
+      continue;
+    int n = map_geti(map, t->name, -1);
+    if (n == -1)
+      continue;
+    tokens->data[i] = new_param(n);
+  }
+
+  // Process '#' followed by a macro parameter.
+  Vector *v = new_vec();
+  for (int i = 0; i < tokens->len; i++) {
+    Token *t1 = tokens->data[i];
+    Token *t2 = tokens->data[i + 1];
+
+    if (i != tokens->len - 1 && t1->ty == '#' && t2->ty == TK_PARAM) {
+      t2->stringize = true;
+      vec_push(v, t2);
+      i++;
+    } else {
+      vec_push(v, t1);
+    }
+  }
+  m->tokens = v;
+}
+
+static Vector *read_one_arg() {
+  Vector *v = new_vec();
+  Token *start = peek();
+  int level = 0;
+
+  while (!eof()) {
+    Token *t = peek();
+    if (level == 0)
+      if (t->ty == ')' || t->ty == ',')
+        return v;
+
+    next();
+    if (t->ty == '(')
+      level++;
+    else if (t->ty == ')')
+      level--;
+    vec_push(v, t);
+  }
+  bad_token(start, "unclosed macro argument");
+}
+
+static Vector *read_args() {
+  Vector *v = new_vec();
+  if (consume(')'))
+    return v;
+  vec_push(v, read_one_arg());
+  while (!consume(')')) {
+    get(',', "comma expected");
+    vec_push(v, read_one_arg());
+  }
+  return v;
+}
+
+static Token *stringize(Vector *tokens) {
+  StringBuilder *sb = new_sb();
+
+  for (int i = 0; i < tokens->len; i++) {
+    Token *t = tokens->data[i];
+    if (i)
+      sb_add(sb, ' ');
+    sb_append(sb, tokstr(t));
+  }
+
+  Token *t = calloc(1, sizeof(Token));
+  t->ty = TK_STR;
+  t->str = sb_get(sb);
+  t->len = sb->len;
+  return t;
+}
+
+static void apply(Macro *m) {
+  if (m->ty == OBJLIKE) {
+    append(m->tokens);
+    return;
+  }
+
+  // Function-like macro
+  Token *t = peek();
+  get('(', "comma expected");
+  Vector *args = read_args();
+  if (m->params->len != args->len)
+    bad_token(t, "number of parameter does not match");
+
+  for (int i = 0; i < m->tokens->len; i++) {
+    Token *t = m->tokens->data[i];
+    if (t->ty != TK_PARAM)
+      add(t);
+    else if (t->stringize)
+      add(stringize(args->data[t->val]));
+    else
+      append(args->data[t->val]);
+  }
+}
+
+static void funclike_macro(char *name) {
+  Macro *m = new_macro(FUNCLIKE, name);
+  vec_push(m->params, ident("parameter name expected"));
+  while (!consume(')')) {
+    get(',', "comma expected");
+    vec_push(m->params, ident("parameter name expected"));
+  }
+  m->tokens = read_until_eol();
+  replace_params(m);
+}
+
+static void objlike_macro(char *name) {
+  Macro *m = new_macro(OBJLIKE, name);
+  m->tokens = read_until_eol();
+}
+
+static void define() {
+  char *name = ident("macro name expected");
+  if (consume('('))
+    return funclike_macro(name);
+  return objlike_macro(name);
 }
 
 static void include() {
@@ -72,9 +245,9 @@ Vector *preprocess(Vector *tokens) {
     Token *t = next();
 
     if (t->ty == TK_IDENT) {
-      Vector *macro = map_get(macros, t->name);
-      if (macro)
-        append(macro);
+      Macro *m = map_get(macros, t->name);
+      if (m)
+        apply(m);
       else
         add(t);
       continue;
