@@ -471,17 +471,24 @@ static Node *expr() {
 
 static Type *read_array(Type *ty) {
   Vector *v = new_vec();
+
   while (consume('[')) {
+    if (consume(']')) {
+      vec_push(v, (void *)(intptr_t)-1);
+      continue;
+    }
+
     Token *t = tokens->data[pos];
     Node *len = expr();
     if (len->op != ND_NUM)
       bad_token(t, "number expected");
-    vec_push(v, len);
+    vec_push(v, (void *)(intptr_t)len->val);
     expect(']');
   }
+
   for (int i = v->len - 1; i >= 0; i--) {
-    Node *len = v->data[i];
-    ty = ary_of(ty, len->val);
+    int len = (intptr_t)v->data[i];
+    ty = ary_of(ty, len);
   }
   return ty;
 }
@@ -529,7 +536,10 @@ static Node *declaration() {
 
 static Node *param_declaration() {
   Type *ty = decl_specifiers();
-  return declarator(ty);
+  Node *node = declarator(ty);
+  if (node->ty->ty == ARY)
+    node->ty = ptr_to(node->ty->ary_of);
+  return node;
 }
 
 static Node *expr_stmt() {
