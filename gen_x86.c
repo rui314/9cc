@@ -191,7 +191,7 @@ void gen(Function *fn) {
     case IR_MUL:
       if (!ir->is_imm) {
         emit("mov rax, %s", regs[rhs]);
-        emit("mul %s", regs[lhs]);
+        emit("imul %s", regs[lhs]);
         emit("mov %s, rax", regs[lhs]);
         break;
       }
@@ -202,19 +202,19 @@ void gen(Function *fn) {
       }
 
       emit("mov rax, %d", rhs);
-      emit("mul %s", regs[lhs]);
+      emit("imul %s", regs[lhs]);
       emit("mov %s, rax", regs[lhs]);
       break;
     case IR_DIV:
       emit("mov rax, %s", regs[lhs]);
       emit("cqo");
-      emit("div %s", regs[rhs]);
+      emit("idiv %s", regs[rhs]);
       emit("mov %s, rax", regs[lhs]);
       break;
     case IR_MOD:
       emit("mov rax, %s", regs[lhs]);
       emit("cqo");
-      emit("div %s", regs[rhs]);
+      emit("idiv %s", regs[rhs]);
       emit("mov %s, rdx", regs[lhs]);
       break;
     case IR_NOP:

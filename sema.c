@@ -105,9 +105,9 @@ static void check_lval(Node *node) {
     bad_node(node, "not an lvalue");
 }
 
-static Node *scale_ptr(Node *node, Type *ty) {
+static Node *scale_ptr(int op, Node *node, Type *ty) {
   Node *e = calloc(1, sizeof(Node));
-  e->op = '*';
+  e->op = op;
   e->lhs = node;
   e->rhs = new_int_node(ty->ptr_to->size, node->token);
   return e;
@@ -186,20 +186,31 @@ static Node *do_walk(Node *node, bool decay) {
     node->body = walk(node->body);
     return node;
   case '+':
-  case '-':
     node->lhs = walk(node->lhs);
     node->rhs = walk(node->rhs);
 
     if (node->rhs->ty->ty == PTR)
       swap(&node->lhs, &node->rhs);
     if (node->rhs->ty->ty == PTR)
-      bad_node(node, format("'pointer %c pointer' is not defined", node->op));
+      bad_node(node, "pointer + pointer");
 
     if (node->lhs->ty->ty == PTR)
-      node->rhs = scale_ptr(node->rhs, node->lhs->ty);
+      node->rhs = scale_ptr('*', node->rhs, node->lhs->ty);
 
     node->ty = node->lhs->ty;
     return node;
+  case '-': {
+    node->lhs = walk(node->lhs);
+    node->rhs = walk(node->rhs);
+
+    int rty = node->rhs->ty->ty;
+    int lty = node->lhs->ty->ty;
+    if (rty == PTR && lty == PTR)
+      node = scale_ptr('/', node, node->lhs->ty);
+
+    node->ty = node->lhs->ty;
+    return node;
+  }
   case ND_ADD_EQ:
   case ND_SUB_EQ:
     node->lhs = walk_noconv(node->lhs);
@@ -208,7 +219,7 @@ static Node *do_walk(Node *node, bool decay) {
     node->ty = node->lhs->ty;
 
     if (node->lhs->ty->ty == PTR)
-      node->rhs = scale_ptr(node->rhs, node->lhs->ty);
+      node->rhs = scale_ptr('*', node->rhs, node->lhs->ty);
     return node;
   case '=':
   case ND_MUL_EQ:
