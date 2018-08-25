@@ -1,1 +1,3 @@
-printf("OK\n");
+#define OK "O%c\n", 'K'
+
+printf(OK);
