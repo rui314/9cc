@@ -291,7 +291,6 @@ static char *number(char *p) {
   return decimal(p);
 }
 
-// Tokenized input is stored to this array.
 static void scan() {
   char *p = ctx->buf;
 
