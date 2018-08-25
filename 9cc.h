@@ -69,6 +69,7 @@ typedef struct Type {
 
 Type *ptr_to(Type *base);
 Type *ary_of(Type *base, int len);
+bool same_type(Type *x, Type *y);
 int roundup(int x, int align);
 
 /// util_test.c

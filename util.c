@@ -122,3 +122,20 @@ Type *ary_of(Type *base, int len) {
   ty->len = len;
   return ty;
 }
+
+bool same_type(Type *x, Type *y) {
+  if (x->ty != y->ty)
+    return false;
+
+  switch (x->ty) {
+  case PTR:
+    return same_type(x->ptr_to, y->ptr_to);
+  case ARY:
+    return x->size == y->size && same_type(x->ary_of, y->ary_of);
+  case STRUCT:
+  case FUNC:
+    return x == y;
+  default:
+    return true;
+  }
+}

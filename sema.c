@@ -203,10 +203,13 @@ static Node *do_walk(Node *node, bool decay) {
     node->lhs = walk(node->lhs);
     node->rhs = walk(node->rhs);
 
-    int rty = node->rhs->ty->ty;
-    int lty = node->lhs->ty->ty;
-    if (rty == PTR && lty == PTR)
-      node = scale_ptr('/', node, node->lhs->ty);
+    Type *l = node->lhs->ty;
+    Type *r = node->rhs->ty;
+    if (l->ty == PTR && r->ty == PTR) {
+      if (!same_type(r, l))
+	bad_node(node, "incompatible pointer");
+      node = scale_ptr('/', node, l);
+    }
 
     node->ty = node->lhs->ty;
     return node;
