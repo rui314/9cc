@@ -66,6 +66,9 @@ typedef struct Type {
 
   // Function
   struct Type *returning;
+
+  // Typeof
+  struct Node *node;
 } Type;
 
 Type *ptr_to(Type *base);
@@ -119,6 +122,7 @@ enum {
   TK_RETURN,    // "return"
   TK_SIZEOF,    // "sizeof"
   TK_ALIGNOF,   // "_Alignof"
+  TK_TYPEOF,    // "typeof"
   TK_PARAM,     // Function-like macro parameter
   TK_EOF,       // End marker
 };
@@ -193,6 +197,7 @@ enum {
   ND_RETURN,    // "return"
   ND_SIZEOF,    // "sizeof"
   ND_ALIGNOF,   // "_Alignof"
+  ND_TYPEOF,    // "typeof"
   ND_CALL,      // Function call
   ND_FUNC,      // Function definition
   ND_COMP_STMT, // Compound statement
@@ -209,6 +214,7 @@ enum {
   ARY,
   STRUCT,
   FUNC,
+  TYPEOF,
 };
 
 typedef struct {
@@ -270,6 +276,7 @@ Node *new_int_node(int val, Token *t);
 
 /// sema.c
 
+Type *get_type(Node *node);
 void sema(Program *prog);
 
 /// ir_dump.c

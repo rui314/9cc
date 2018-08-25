@@ -166,6 +166,7 @@ static Map *keyword_map() {
   map_puti(map, "sizeof", TK_SIZEOF);
   map_puti(map, "struct", TK_STRUCT);
   map_puti(map, "typedef", TK_TYPEDEF);
+  map_puti(map, "typeof", TK_TYPEOF);
   map_puti(map, "void", TK_VOID);
   map_puti(map, "while", TK_WHILE);
   return map;

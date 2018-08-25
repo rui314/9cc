@@ -265,12 +265,15 @@ static void sema_funcdef(Node *node) {
   node->stacksize = off;
 }
 
+Type *get_type(Node *node) {
+  return walk(node)->ty;
+}
+
 void sema(Program *prog) {
   for (int i = 0; i < prog->nodes->len; i++) {
     Node *node = prog->nodes->data[i];
     if (node->op == ND_DECL)
       continue;
-
     assert(node->op == ND_FUNC);
     sema_funcdef(node);
   }

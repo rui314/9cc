@@ -222,6 +222,10 @@ int main() {
   EXPECT(6, ({ int i=5; i^=3; return i; }));
   EXPECT(7, ({ int i=5; i|=3; return i; }));
 
+  EXPECT(5, ({ int x; typeof(x) y = 5; return y; }));
+  EXPECT(1, ({ char x; typeof(x) y = 257; return y; }));
+  EXPECT(2, ({ char x; typeof(x) y[2]; y[0]=257; y[1]=1; return y[0]+y[1]; }));
+
   printf("OK\n");
   return 0;
 }
