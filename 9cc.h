@@ -131,11 +131,17 @@ typedef struct {
   char len;
 
   // For error reporting
+  char *buf;
+  char *filename;
   char *start;
 } Token;
 
-Vector *tokenize(char *p);
+Vector *tokenize(char *path, bool add_eof);
 noreturn void bad_token(Token *t, char *msg);
+
+/// preprocess.c
+
+Vector *preprocess(Vector *tokens);
 
 /// parse.c
 
@@ -353,7 +359,3 @@ extern char *regs32[];
 extern int num_regs;
 
 void gen_x86(Vector *globals, Vector *fns);
-
-/// main.c
-
-char *filename;

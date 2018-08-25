@@ -1,31 +1,5 @@
 #include "9cc.h"
 
-char *filename;
-
-static char *read_file(char *filename) {
-  FILE *fp = stdin;
-  if (strcmp(filename, "-")) {
-    fp = fopen(filename, "r");
-    if (!fp) {
-      perror(filename);
-      exit(1);
-    }
-  }
-
-  StringBuilder *sb = new_sb();
-  char buf[4096];
-  for (;;) {
-    int nread = fread(buf, 1, sizeof(buf), fp);
-    if (nread == 0)
-      break;
-    sb_append_n(sb, buf, nread);
-  }
-
-  if (sb->data[sb->len] != '\n')
-    sb_add(sb, '\n');
-  return sb_get(sb);
-}
-
 void usage() { error("Usage: 9cc [-test] [-dump-ir1] [-dump-ir2] <file>"); }
 
 int main(int argc, char **argv) {
@@ -37,24 +11,24 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  char *path;
   bool dump_ir1 = false;
   bool dump_ir2 = false;
 
   if (argc == 3 && !strcmp(argv[1], "-dump-ir1")) {
     dump_ir1 = true;
-    filename = argv[2];
+    path = argv[2];
   } else if (argc == 3 && !strcmp(argv[1], "-dump-ir2")) {
     dump_ir2 = true;
-    filename = argv[2];
+    path = argv[2];
   } else {
     if (argc != 2)
       usage();
-    filename = argv[1];
+    path = argv[1];
   }
 
   // Tokenize and parse.
-  char *input = read_file(filename);
-  Vector *tokens = tokenize(input);
+  Vector *tokens = tokenize(path, true);
   Vector *nodes = parse(tokens);
   Vector *globals = sema(nodes);
   Vector *fns = gen_ir(nodes);
