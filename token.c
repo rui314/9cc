@@ -172,7 +172,30 @@ static char *ident(char *p) {
   return p + len;
 }
 
+static char *hexadecimal(char *p) {
+  Token *t = add(TK_NUM, p);
+  p += 2;
+
+  if (!isxdigit(*p))
+    bad_token(t, "bad hexadecimal number");
+
+  for (;;) {
+    if ('0' <= *p && *p <= '9')
+      t->val = t->val * 16 + *p++ - '0';
+    else if ('a' <= *p && *p <= 'f')
+      t->val = t->val * 16 + *p++ - 'a' + 10;
+    else if ('A' <= *p && *p <= 'F')
+      t->val = t->val * 16 + *p++ - 'A' + 10;
+    else
+      return p;
+    }
+  }
+}
+
 static char *number(char *p) {
+  if (!strncasecmp(p, "0x", 2))
+    return hexadecimal(p);
+
   Token *t = add(TK_NUM, p);
   for (; isdigit(*p); p++)
     t->val = t->val * 10 + *p - '0';
