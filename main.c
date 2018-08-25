@@ -21,7 +21,7 @@ static char *read_file(char *filename) {
     sb_append_n(sb, buf, nread);
   }
 
-  if (sb->data[sb->len] != '\n')
+  if (sb->data[sb->len-1] != '\n')
     sb_add(sb, '\n');
   return sb_get(sb);
 }
