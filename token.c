@@ -1,17 +1,60 @@
 #include "9cc.h"
 
-// Error reporting
+typedef struct Context {
+  char *path;
+  char *buf;
+  char *pos;
+  Vector *tokens;
+  struct Context *next;
+} Context;
 
-static char *buf;
-static char *filename;
+static Context *ctx;
+static Map *keywords;
+
+static char *read_file(char *path) {
+  FILE *fp = stdin;
+  if (strcmp(path, "-")) {
+    fp = fopen(path, "r");
+    if (!fp) {
+      perror(path);
+      exit(1);
+    }
+  }
+
+  StringBuilder *sb = new_sb();
+  char buf[4096];
+  for (;;) {
+    int nread = fread(buf, 1, sizeof(buf), fp);
+    if (nread == 0)
+      break;
+    sb_append_n(sb, buf, nread);
+  }
+
+  if (sb->data[sb->len] != '\n')
+    sb_add(sb, '\n');
+  return sb_get(sb);
+}
+
+static Context *new_ctx(Context *next, char *path, char *buf) {
+  Context *ctx = calloc(1, sizeof(Context));
+  ctx->path = path;
+  ctx->buf = buf;
+  ctx->pos = ctx->buf;
+  ctx->tokens = new_vec();
+  ctx->next = next;
+  return ctx;
+}
+
+// Error reporting
 
 // Finds a line pointed by a given pointer from the input file
 // to print it out.
-static void print_line(char *start, char *path, char *pos) {
+static void print_line(char *buf, char *path, char *pos) {
+  char *start = buf;
   int line = 0;
   int col = 0;
 
-  for (char *p = start; p; p++) {
+  for (char *p = buf; p; p++) {
     if (*p == '\n') {
       start = p + 1;
       line++;
@@ -37,7 +80,7 @@ static void print_line(char *start, char *path, char *pos) {
 }
 
 noreturn void bad_token(Token *t, char *msg) {
-  print_line(t->buf, t->filename, t->start);
+  print_line(t->buf, t->path, t->start);
   error(msg);
 }
 
@@ -46,16 +89,13 @@ noreturn void bad_token(Token *t, char *msg) {
 // The tokenizer splits an input string into tokens.
 // Spaces and comments are removed by the tokenizer.
 
-static Vector *tokens;
-static Map *keywords;
-
 static Token *add(int ty, char *start) {
   Token *t = calloc(1, sizeof(Token));
   t->ty = ty;
   t->start = start;
-  t->filename = filename;
-  t->buf = buf;
-  vec_push(tokens, t);
+  t->path = ctx->path;
+  t->buf = ctx->buf;
+  vec_push(ctx->tokens, t);
   return t;
 }
 
@@ -82,30 +122,6 @@ static char escaped[256] = {
         ['v'] = '\v', ['e'] = '\033', ['E'] = '\033',
 };
 
-static char *read_file(char *path) {
-  FILE *fp = stdin;
-  if (strcmp(path, "-")) {
-    fp = fopen(path, "r");
-    if (!fp) {
-      perror(path);
-      exit(1);
-    }
-  }
-
-  StringBuilder *sb = new_sb();
-  char buf[4096];
-  for (;;) {
-    int nread = fread(buf, 1, sizeof(buf), fp);
-    if (nread == 0)
-      break;
-    sb_append_n(sb, buf, nread);
-  }
-
-  if (sb->data[sb->len] != '\n')
-    sb_add(sb, '\n');
-  return sb_get(sb);
-}
-
 static Map *keyword_map() {
   Map *map = new_map();
   map_puti(map, "_Alignof", TK_ALIGNOF);
@@ -130,7 +146,7 @@ static char *block_comment(char *pos) {
   for (char *p = pos + 2; *p; p++)
     if (!strncmp(p, "*/", 2))
       return p + 2;
-  print_line(buf, filename, pos);
+  print_line(ctx->buf, ctx->path, ctx->pos);
   error("unclosed comment");
 }
 
@@ -241,7 +257,7 @@ static char *number(char *p) {
 
 // Tokenized input is stored to this array.
 static void scan() {
-  char *p = buf;
+  char *p = ctx->buf;
 
 loop:
   while (*p) {
@@ -314,13 +330,12 @@ loop:
       continue;
     }
 
-    print_line(buf, filename, p);
+    print_line(ctx->buf, ctx->path, p);
     error("cannot tokenize");
   }
 }
 
-static void canonicalize_newline() {
-  char *p = buf;
+static void canonicalize_newline(char *p) {
   for (char *q = p; *q;) {
     if (q[0] == '\r' && q[1] == '\n')
       q++;
@@ -329,8 +344,7 @@ static void canonicalize_newline() {
   *p = '\0';
 }
 
-static void remove_backslash_newline() {
-  char *p = buf;
+static void remove_backslash_newline(char *p) {
   for (char *q = p; *q;) {
     if (q[0] == '\\' && q[1] == '\n')
       q += 2;
@@ -340,14 +354,14 @@ static void remove_backslash_newline() {
   *p = '\0';
 }
 
-static void strip_newlines() {
+static Vector *strip_newline_tokens(Vector *tokens) {
   Vector *v = new_vec();
   for (int i = 0; i < tokens->len; i++) {
     Token *t = tokens->data[i];
     if (t->ty != '\n')
       vec_push(v, t);
   }
-  tokens = v;
+  return v;
 }
 
 static void append(Token *x, Token *y) {
@@ -358,7 +372,7 @@ static void append(Token *x, Token *y) {
   x->len = sb->len;
 }
 
-static void join_string_literals() {
+static Vector *join_string_literals(Vector *tokens) {
   Vector *v = new_vec();
   Token *last = NULL;
 
@@ -372,35 +386,25 @@ static void join_string_literals() {
     last = t;
     vec_push(v, t);
   }
-  tokens = v;
+  return v;
 }
 
 Vector *tokenize(char *path, bool add_eof) {
   if (!keywords)
     keywords = keyword_map();
 
-  Vector *tokens_ = tokens;
-  char *filename_ = filename;
-  char *buf_ = buf;
+  char *buf = read_file(path);
+  canonicalize_newline(buf);
+  remove_backslash_newline(buf);
 
-  tokens = new_vec();
-  filename = path;
-  buf = read_file(path);
-
-  canonicalize_newline();
-  remove_backslash_newline();
-
+  ctx = new_ctx(ctx, path, buf);
   scan();
   if (add_eof)
-    add(TK_EOF, buf);
+    add(TK_EOF, NULL);
+  Vector *v = ctx->tokens;
+  ctx = ctx->next;
 
-  tokens = preprocess(tokens);
-  strip_newlines();
-  join_string_literals();
-
-  Vector *ret = tokens;
-  buf = buf_;
-  tokens = tokens_;
-  filename = filename_;
-  return ret;
+  v = preprocess(v);
+  v = strip_newline_tokens(v);
+  return join_string_literals(v);
 }
