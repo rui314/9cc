@@ -253,6 +253,16 @@ loop:
   add(TK_EOF, p);
 }
 
+static void canonicalize_newline() {
+  char *p = input_file;
+  for (char *q = p; *q;) {
+    if (q[0] == '\r' && q[1] == '\n')
+      q++;
+    *p++ = *q++;
+  }
+  *p = '\0';
+}
+
 static void remove_backslash_newline() {
   char *p = input_file;
   for (char *q = p; *q;) {
@@ -294,6 +304,7 @@ Vector *tokenize(char *p) {
   keywords = keyword_map();
   input_file = p;
 
+  canonicalize_newline();
   remove_backslash_newline();
   scan();
   join_string_literals();
