@@ -279,7 +279,7 @@ static Node *walk(Node *node, bool decay) {
       error("cannot dereference void pointer");
 
     node->ty = node->expr->ty->ptr_to;
-    return node;
+    return maybe_decay(node, decay);
   case ND_RETURN:
   case ND_EXPR_STMT:
     node->expr = walk(node->expr, true);
