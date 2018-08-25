@@ -127,7 +127,7 @@ static char *char_literal(char *p) {
   if (*p == '\'')
     return p + 1;
 
- err:
+err:
   bad_token(t, "unclosed character literal");
 }
 
@@ -156,7 +156,7 @@ static char *string_literal(char *p) {
   t->len = sb->len;
   return p + 1;
 
- err:
+err:
   bad_token(t, "unclosed string literal");
 }
 
@@ -188,18 +188,29 @@ static char *hexadecimal(char *p) {
       t->val = t->val * 16 + *p++ - 'A' + 10;
     else
       return p;
-    }
   }
+}
+
+static char *octal(char *p) {
+  Token *t = add(TK_NUM, p++);
+  while ('0' <= *p && *p <= '7')
+    t->val = t->val * 8 + *p++ - '0';
+  return p;
+}
+
+static char *decimal(char *p) {
+  Token *t = add(TK_NUM, p);
+  while (isdigit(*p))
+    t->val = t->val * 10 + *p++ - '0';
+  return p;
 }
 
 static char *number(char *p) {
   if (!strncasecmp(p, "0x", 2))
     return hexadecimal(p);
-
-  Token *t = add(TK_NUM, p);
-  for (; isdigit(*p); p++)
-    t->val = t->val * 10 + *p - '0';
-  return p;
+  if (*p == '0')
+    return octal(p);
+  return decimal(p);
 }
 
 // Tokenized input is stored to this array.

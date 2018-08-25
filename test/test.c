@@ -33,6 +33,7 @@ typedef int myint;
 int main() {
   EXPECT(0, 0);
   EXPECT(1, 1);
+  EXPECT(493, 0755);
   EXPECT(48879, 0xBEEF);
   EXPECT(255, 0Xff);
   EXPECT(2, 1+1);
