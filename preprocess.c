@@ -87,15 +87,26 @@ static Vector *read_until_eol() {
   return v;
 }
 
-static Token *new_int(int val) {
+static Token *new_int(Token *tmpl, int val) {
   Token *t = calloc(1, sizeof(Token));
+  *t = *tmpl;
   t->ty = TK_NUM;
   t->val = val;
   return t;
 }
 
-static Token *new_param(int val) {
+static Token *new_string(Token *tmpl, char *str, int len) {
   Token *t = calloc(1, sizeof(Token));
+  *t = *tmpl;
+  t->ty = TK_STR;
+  t->str = str;
+  t->len = len;
+  return t;
+}
+
+static Token *new_param(Token *tmpl, int val) {
+  Token *t = calloc(1, sizeof(Token));
+  *t = *tmpl;
   t->ty = TK_PARAM;
   t->val = val;
   return t;
@@ -123,7 +134,7 @@ static void replace_macro_params(Macro *m) {
     int n = map_geti(map, t->name, -1);
     if (n == -1)
       continue;
-    tokens->data[i] = new_param(n);
+    tokens->data[i] = new_param(t, n);
   }
 }
 
@@ -184,7 +195,7 @@ static Vector *read_args() {
   return v;
 }
 
-static Token *stringize(Vector *tokens) {
+static Token *stringize(Token *tmpl, Vector *tokens) {
   StringBuilder *sb = new_sb();
 
   for (int i = 0; i < tokens->len; i++) {
@@ -194,16 +205,13 @@ static Token *stringize(Vector *tokens) {
     sb_append(sb, tokstr(t));
   }
 
-  Token *t = calloc(1, sizeof(Token));
-  t->ty = TK_STR;
-  t->str = sb_get(sb);
-  t->len = sb->len;
-  return t;
+  char *s = sb_get(sb);
+  return new_string(tmpl, s, sb->len);
 }
 
 static bool add_special_macro(Token *t) {
   if (is_ident(t, "__LINE__")) {
-    add(new_int(get_line_number(t)));
+    add(new_int(t, get_line_number(t)));
     return true;
   }
   return false;
@@ -232,7 +240,7 @@ static void apply_funclike(Macro *m, Token *start) {
 
     if (t->ty == TK_PARAM) {
       if (t->stringize)
-        add(stringize(args->data[t->val]));
+        add(stringize(t, args->data[t->val]));
       else
         append(args->data[t->val]);
       continue;
