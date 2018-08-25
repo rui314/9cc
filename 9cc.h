@@ -143,6 +143,7 @@ typedef struct {
 
 Vector *tokenize(char *path, bool add_eof);
 noreturn void bad_token(Token *t, char *msg);
+void warn_token(Token *t, char *msg);
 char *tokstr(Token *t);
 int get_line_number(Token *t);
 
@@ -244,11 +245,14 @@ typedef struct Node {
 
   // Function call
   Vector *args;
+
+  // For error reporting
+  Token *token;
 } Node;
 
 Vector *parse(Vector *tokens);
 
-Node *new_int_node(int val);
+Node *new_int_node(int val, Token *t);
 
 /// sema.c
 

@@ -168,27 +168,28 @@ static Type *decl_specifiers() {
   bad_token(t, "typename expected");
 }
 
-static Node *new_node(int op) {
+static Node *new_node(int op, Token *t) {
   Node *node = calloc(1, sizeof(Node));
   node->op = op;
+  node->token = t;
   return node;
 }
 
-static Node *new_binop(int op, Node *lhs, Node *rhs) {
-  Node *node = new_node(op);
+static Node *new_binop(int op, Token *t, Node *lhs, Node *rhs) {
+  Node *node = new_node(op, t);
   node->lhs = lhs;
   node->rhs = rhs;
   return node;
 }
 
-static Node *new_expr(int op, Node *expr) {
-  Node *node = new_node(op);
+static Node *new_expr(int op, Token *t, Node *expr) {
+  Node *node = new_node(op, t);
   node->expr = expr;
   return node;
 }
 
-Node *new_int_node(int val) {
-  Node *node = new_node(ND_NUM);
+Node *new_int_node(int val, Token *t) {
+  Node *node = new_node(ND_NUM, t);
   node->ty = int_ty();
   node->val = val;
   return node;
@@ -208,7 +209,7 @@ static Node *primary() {
 
   if (t->ty == '(') {
     if (consume('{')) {
-      Node *node = new_node(ND_STMT_EXPR);
+      Node *node = new_node(ND_STMT_EXPR, t);
       node->body = compound_stmt();
       expect(')');
       return node;
@@ -219,10 +220,10 @@ static Node *primary() {
   }
 
   if (t->ty == TK_NUM)
-    return new_int_node(t->val);
+    return new_int_node(t->val, t);
 
   if (t->ty == TK_STR) {
-    Node *node = new_node(ND_STR);
+    Node *node = new_node(ND_STR, t);
     node->ty = ary_of(char_ty(), t->len);
     node->data = t->str;
     node->len = t->len;
@@ -231,12 +232,12 @@ static Node *primary() {
 
   if (t->ty == TK_IDENT) {
     if (!consume('(')) {
-      Node *node = new_node(ND_IDENT);
+      Node *node = new_node(ND_IDENT, t);
       node->name = t->name;
       return node;
     }
 
-    Node *node = new_node(ND_CALL);
+    Node *node = new_node(ND_CALL, t);
     node->name = t->name;
     node->args = new_vec();
     if (consume(')'))
@@ -258,30 +259,33 @@ static Node *postfix() {
   Node *lhs = primary();
 
   for (;;) {
+    Token *t = tokens->data[pos];
+
     if (consume(TK_INC)) {
-      lhs = new_expr(ND_POST_INC, lhs);
+      lhs = new_expr(ND_POST_INC, t, lhs);
       continue;
     }
 
     if (consume(TK_DEC)) {
-      lhs = new_expr(ND_POST_DEC, lhs);
+      lhs = new_expr(ND_POST_DEC, t, lhs);
       continue;
     }
 
     if (consume('.')) {
-      lhs = new_expr(ND_DOT, lhs);
+      lhs = new_expr(ND_DOT, t, lhs);
       lhs->name = ident();
       continue;
     }
 
     if (consume(TK_ARROW)) {
-      lhs = new_expr(ND_DOT, new_expr(ND_DEREF, lhs));
+      lhs = new_expr(ND_DOT, t, new_expr(ND_DEREF, t, lhs));
       lhs->name = ident();
       continue;
     }
 
     if (consume('[')) {
-      lhs = new_expr(ND_DEREF, new_binop('+', lhs, assign()));
+      Node *node = new_binop('+', t, lhs, assign());
+      lhs = new_expr(ND_DEREF, t, node);
       expect(']');
       continue;
     }
@@ -290,38 +294,39 @@ static Node *postfix() {
 }
 
 static Node *unary() {
+  Token *t = tokens->data[pos];
+
   if (consume('-'))
-    return new_expr(ND_NEG, unary());
+    return new_expr(ND_NEG, t, unary());
   if (consume('*'))
-    return new_expr(ND_DEREF, unary());
+    return new_expr(ND_DEREF, t, unary());
   if (consume('&'))
-    return new_expr(ND_ADDR, unary());
+    return new_expr(ND_ADDR, t, unary());
   if (consume('!'))
-    return new_expr('!', unary());
+    return new_expr('!', t, unary());
   if (consume('~'))
-    return new_expr('~', unary());
+    return new_expr('~', t, unary());
   if (consume(TK_SIZEOF))
-    return new_expr(ND_SIZEOF, unary());
+    return new_expr(ND_SIZEOF, t, unary());
   if (consume(TK_ALIGNOF))
-    return new_expr(ND_ALIGNOF, unary());
-
+    return new_expr(ND_ALIGNOF, t, unary());
   if (consume(TK_INC))
-    return new_binop(ND_ADD_EQ, unary(), new_int_node(1));
+    return new_binop(ND_ADD_EQ, t, unary(), new_int_node(1, t));
   if (consume(TK_DEC))
-    return new_binop(ND_SUB_EQ, unary(), new_int_node(1));
-
+    return new_binop(ND_SUB_EQ, t, unary(), new_int_node(1, t));
   return postfix();
 }
 
 static Node *mul() {
   Node *lhs = unary();
   for (;;) {
+    Token *t = tokens->data[pos];
     if (consume('*'))
-      lhs = new_binop('*', lhs, unary());
+      lhs = new_binop('*', t, lhs, unary());
     else if (consume('/'))
-      lhs = new_binop('/', lhs, unary());
+      lhs = new_binop('/', t, lhs, unary());
     else if (consume('%'))
-      lhs = new_binop('%', lhs, unary());
+      lhs = new_binop('%', t, lhs, unary());
     else
       return lhs;
   }
@@ -330,10 +335,11 @@ static Node *mul() {
 static Node *add() {
   Node *lhs = mul();
   for (;;) {
+    Token *t = tokens->data[pos];
     if (consume('+'))
-      lhs = new_binop('+', lhs, mul());
+      lhs = new_binop('+', t, lhs, mul());
     else if (consume('-'))
-      lhs = new_binop('-', lhs, mul());
+      lhs = new_binop('-', t, lhs, mul());
     else
       return lhs;
   }
@@ -342,10 +348,11 @@ static Node *add() {
 static Node *shift() {
   Node *lhs = add();
   for (;;) {
+    Token *t = tokens->data[pos];
     if (consume(TK_SHL))
-      lhs = new_binop(ND_SHL, lhs, add());
+      lhs = new_binop(ND_SHL, t, lhs, add());
     else if (consume(TK_SHR))
-      lhs = new_binop(ND_SHR, lhs, add());
+      lhs = new_binop(ND_SHR, t, lhs, add());
     else
       return lhs;
   }
@@ -354,14 +361,15 @@ static Node *shift() {
 static Node *relational() {
   Node *lhs = shift();
   for (;;) {
+    Token *t = tokens->data[pos];
     if (consume('<'))
-      lhs = new_binop('<', lhs, shift());
+      lhs = new_binop('<', t, lhs, shift());
     else if (consume('>'))
-      lhs = new_binop('<', shift(), lhs);
+      lhs = new_binop('<', t, shift(), lhs);
     else if (consume(TK_LE))
-      lhs = new_binop(ND_LE, lhs, shift());
+      lhs = new_binop(ND_LE, t, lhs, shift());
     else if (consume(TK_GE))
-      lhs = new_binop(ND_LE, shift(), lhs);
+      lhs = new_binop(ND_LE, t, shift(), lhs);
     else
       return lhs;
   }
@@ -370,10 +378,11 @@ static Node *relational() {
 static Node *equality() {
   Node *lhs = relational();
   for (;;) {
+    Token *t = tokens->data[pos];
     if (consume(TK_EQ))
-      lhs = new_binop(ND_EQ, lhs, relational());
+      lhs = new_binop(ND_EQ, t, lhs, relational());
     else if (consume(TK_NE))
-      lhs = new_binop(ND_NE, lhs, relational());
+      lhs = new_binop(ND_NE, t, lhs, relational());
     else
       return lhs;
   }
@@ -381,45 +390,56 @@ static Node *equality() {
 
 static Node *bit_and() {
   Node *lhs = equality();
-  while (consume('&'))
-    lhs = new_binop('&', lhs, equality());
+  while (consume('&')) {
+    Token *t = tokens->data[pos];
+    lhs = new_binop('&', t, lhs, equality());
+  }
   return lhs;
 }
 
 static Node *bit_xor() {
   Node *lhs = bit_and();
-  while (consume('^'))
-    lhs = new_binop('^', lhs, bit_and());
+  while (consume('^')) {
+    Token *t = tokens->data[pos];
+    lhs = new_binop('^', t, lhs, bit_and());
+  }
   return lhs;
 }
 
 static Node *bit_or() {
   Node *lhs = bit_xor();
-  while (consume('|'))
-    lhs = new_binop('|', lhs, bit_xor());
+  while (consume('|')) {
+    Token *t = tokens->data[pos];
+    lhs = new_binop('|', t, lhs, bit_xor());
+  }
   return lhs;
 }
 
 static Node *logand() {
   Node *lhs = bit_or();
-  while (consume(TK_LOGAND))
-    lhs = new_binop(ND_LOGAND, lhs, bit_or());
+  while (consume(TK_LOGAND)) {
+    Token *t = tokens->data[pos];
+    lhs = new_binop(ND_LOGAND, t, lhs, bit_or());
+  }
   return lhs;
 }
 
 static Node *logor() {
   Node *lhs = logand();
-  while (consume(TK_LOGOR))
-    lhs = new_binop(ND_LOGOR, lhs, logand());
+  while (consume(TK_LOGOR)) {
+    Token *t = tokens->data[pos];
+    lhs = new_binop(ND_LOGOR, t, lhs, logand());
+  }
   return lhs;
 }
 
 static Node *conditional() {
   Node *cond = logor();
+  Token *t = tokens->data[pos];
   if (!consume('?'))
     return cond;
 
-  Node *node = new_node('?');
+  Node *node = new_node('?', t);
   node->cond = cond;
   node->then = expr();
   expect(':');
@@ -455,17 +475,19 @@ static int assignment_op() {
 
 static Node *assign() {
   Node *lhs = conditional();
+  Token *t = tokens->data[pos];
   int op = assignment_op();
   if (op)
-    return new_binop(op, lhs, assign());
+    return new_binop(op, t, lhs, assign());
   return lhs;
 }
 
 static Node *expr() {
   Node *lhs = assign();
+  Token *t = tokens->data[pos];
   if (!consume(','))
     return lhs;
-  return new_binop(',', lhs, expr());
+  return new_binop(',', t, lhs, expr());
 }
 
 static Type *read_array(Type *ty) {
@@ -500,7 +522,7 @@ static Node *direct_decl(Type *ty) {
   Type *placeholder = calloc(1, sizeof(Type));
 
   if (t->ty == TK_IDENT) {
-    node = new_node(ND_VARDEF);
+    node = new_node(ND_VARDEF, t);
     node->ty = placeholder;
     node->name = ident();
   } else if (consume('(')) {
@@ -541,7 +563,8 @@ static Node *param_declaration() {
 }
 
 static Node *expr_stmt() {
-  Node *node = new_expr(ND_EXPR_STMT, expr());
+  Token *t = tokens->data[pos];
+  Node *node = new_expr(ND_EXPR_STMT, t, expr());
   expect(';');
   return node;
 }
@@ -557,7 +580,7 @@ static Node *stmt() {
     return &null_stmt;
   }
   case TK_IF: {
-    Node *node = new_node(ND_IF);
+    Node *node = new_node(ND_IF, t);
     expect('(');
     node->cond = expr();
     expect(')');
@@ -569,7 +592,7 @@ static Node *stmt() {
     return node;
   }
   case TK_FOR: {
-    Node *node = new_node(ND_FOR);
+    Node *node = new_node(ND_FOR, t);
     expect('(');
 
     if (is_typename())
@@ -585,7 +608,7 @@ static Node *stmt() {
     }
 
     if (!consume(')')) {
-      node->inc = new_expr(ND_EXPR_STMT, expr());
+      node->inc = new_expr(ND_EXPR_STMT, t, expr());
       expect(')');
     }
 
@@ -593,7 +616,7 @@ static Node *stmt() {
     return node;
   }
   case TK_WHILE: {
-    Node *node = new_node(ND_FOR);
+    Node *node = new_node(ND_FOR, t);
     node->init = &null_stmt;
     node->inc = &null_stmt;
     expect('(');
@@ -603,7 +626,7 @@ static Node *stmt() {
     return node;
   }
   case TK_DO: {
-    Node *node = new_node(ND_DO_WHILE);
+    Node *node = new_node(ND_DO_WHILE, t);
     node->body = stmt();
     expect(TK_WHILE);
     expect('(');
@@ -615,13 +638,13 @@ static Node *stmt() {
   case TK_BREAK:
     return &break_stmt;
   case TK_RETURN: {
-    Node *node = new_node(ND_RETURN);
+    Node *node = new_node(ND_RETURN, t);
     node->expr = expr();
     expect(';');
     return node;
   }
   case '{': {
-    Node *node = new_node(ND_COMP_STMT);
+    Node *node = new_node(ND_COMP_STMT, t);
     node->stmts = new_vec();
     while (!consume('}'))
       vec_push(node->stmts, stmt());
@@ -638,7 +661,8 @@ static Node *stmt() {
 }
 
 static Node *compound_stmt() {
-  Node *node = new_node(ND_COMP_STMT);
+  Token *t = tokens->data[pos];
+  Node *node = new_node(ND_COMP_STMT, t);
   node->stmts = new_vec();
 
   env = new_env(env);
@@ -660,7 +684,8 @@ static Node *toplevel() {
 
   // Function
   if (consume('(')) {
-    Node *node = new_node(ND_DECL);
+    Token *t = tokens->data[pos];
+    Node *node = new_node(ND_DECL, t);
     node->name = name;
     node->args = new_vec();
 
@@ -679,7 +704,7 @@ static Node *toplevel() {
       return node;
 
     node->op = ND_FUNC;
-    Token *t = tokens->data[pos];
+    t = tokens->data[pos];
     expect('{');
     if (is_typedef)
       bad_token(t, "typedef has function definition");
@@ -696,7 +721,8 @@ static Node *toplevel() {
   }
 
   // Global variable
-  Node *node = new_node(ND_VARDEF);
+  Token *t = tokens->data[pos];
+  Node *node = new_node(ND_VARDEF, t);
   node->ty = ty;
   node->name = name;
   node->is_extern = is_extern;

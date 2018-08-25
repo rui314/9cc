@@ -91,17 +91,23 @@ static Node *maybe_decay(Node *base, bool decay) {
   return node;
 }
 
+noreturn static void bad_node(Node *node, char *msg) {
+  bad_token(node->token, msg);
+}
+
+static void warn_node(Node *node, char *msg) { warn_token(node->token, msg); }
+
 static void check_lval(Node *node) {
   int op = node->op;
   if (op != ND_LVAR && op != ND_GVAR && op != ND_DEREF && op != ND_DOT)
-    error("not an lvalue: %d (%s)", op, node->name);
+    bad_node(node, "not an lvalue");
 }
 
 static Node *scale_ptr(Node *node, Type *ty) {
   Node *e = calloc(1, sizeof(Node));
   e->op = '*';
   e->lhs = node;
-  e->rhs = new_int_node(ty->ptr_to->size);
+  e->rhs = new_int_node(ty->ptr_to->size, node->token);
   return e;
 }
 
@@ -123,7 +129,7 @@ static Node *walk(Node *node, bool decay) {
   case ND_IDENT: {
     Var *var = find_var(node->name);
     if (!var)
-      error("undefined variable: %s", node->name);
+      bad_node(node, "undefined variable");
 
     Node *n;
     if (var->is_local)
@@ -175,7 +181,7 @@ static Node *walk(Node *node, bool decay) {
     if (node->rhs->ty->ty == PTR)
       swap(&node->lhs, &node->rhs);
     if (node->rhs->ty->ty == PTR)
-      error("'pointer %c pointer' is not defined", node->op);
+      bad_node(node, format("'pointer %c pointer' is not defined", node->op));
 
     if (node->lhs->ty->ty == PTR)
       node->rhs = scale_ptr(node->rhs, node->lhs->ty);
@@ -209,11 +215,11 @@ static Node *walk(Node *node, bool decay) {
   case ND_DOT:
     node->expr = walk(node->expr, true);
     if (node->expr->ty->ty != STRUCT)
-      error("struct expected before '.'");
+      bad_node(node, "struct expected before '.'");
 
     Type *ty = node->expr->ty;
     if (!ty->members)
-      error("incomplete type");
+      bad_node(node, "incomplete type");
 
     for (int i = 0; i < ty->members->len; i++) {
       Node *m = ty->members->data[i];
@@ -223,7 +229,7 @@ static Node *walk(Node *node, bool decay) {
       node->offset = m->ty->offset;
       return maybe_decay(node, decay);
     }
-    error("member missing: %s", node->name);
+    bad_node(node, format("member missing: %s", node->name));
   case '?':
     node->cond = walk(node->cond, true);
     node->then = walk(node->then, true);
@@ -270,10 +276,10 @@ static Node *walk(Node *node, bool decay) {
     node->expr = walk(node->expr, true);
 
     if (node->expr->ty->ty != PTR)
-      error("operand must be a pointer");
+      bad_node(node, "operand must be a pointer");
 
     if (node->expr->ty->ptr_to->ty == VOID)
-      error("cannot dereference void pointer");
+      bad_node(node, "cannot dereference void pointer");
 
     node->ty = node->expr->ty->ptr_to;
     return maybe_decay(node, decay);
@@ -283,18 +289,18 @@ static Node *walk(Node *node, bool decay) {
     return node;
   case ND_SIZEOF: {
     Node *expr = walk(node->expr, false);
-    return new_int_node(expr->ty->size);
+    return new_int_node(expr->ty->size, expr->token);
   }
   case ND_ALIGNOF: {
     Node *expr = walk(node->expr, false);
-    return new_int_node(expr->ty->align);
+    return new_int_node(expr->ty->align, expr->token);
   }
   case ND_CALL: {
     Var *var = find_var(node->name);
     if (var && var->ty->ty == FUNC) {
       node->ty = var->ty->returning;
     } else {
-      fprintf(stderr, "bad function: %s\n", node->name);
+      warn_node(node, "undefined function");
       node->ty = &int_ty;
     }
 

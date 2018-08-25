@@ -84,9 +84,15 @@ static void print_line(char *buf, char *path, char *pos) {
 }
 
 noreturn void bad_token(Token *t, char *msg) {
+  warn_token(t, msg);
+  exit(1);
+}
+
+void warn_token(Token *t, char *msg) {
   if (t->start)
     print_line(t->buf, t->path, t->start);
-  error(msg);
+  fprintf(stderr, msg);
+  fprintf(stderr, "\n");
 }
 
 noreturn static void bad_position(char *p, char *msg) {
