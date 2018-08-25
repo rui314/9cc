@@ -209,7 +209,7 @@ static void apply(Macro *m, Token *start) {
     Token *t = m->tokens->data[i];
 
     if (is_ident(t, "__LINE__")) {
-      add(new_int(line(t)));
+      add(new_int(get_line_number(t)));
       continue;
     }
 

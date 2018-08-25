@@ -80,7 +80,13 @@ static void print_line(char *buf, char *path, char *pos) {
 }
 
 noreturn void bad_token(Token *t, char *msg) {
-  print_line(t->buf, t->path, t->start);
+  if (t->start)
+    print_line(t->buf, t->path, t->start);
+  error(msg);
+}
+
+noreturn static void bad_position(char *p, char *msg) {
+  print_line(ctx->buf, ctx->path, p);
   error(msg);
 }
 
@@ -89,7 +95,7 @@ char *tokstr(Token *t) {
   return strndup(t->start, t->end - t->start);
 }
 
-int line(Token *t) {
+int get_line_number(Token *t) {
   int n = 0;
   for (char *p = t->buf; p < t->end; p++)
     if (*p == '\n')
@@ -159,8 +165,7 @@ static char *block_comment(char *pos) {
   for (char *p = pos + 2; *p; p++)
     if (!strncmp(p, "*/", 2))
       return p + 2;
-  print_line(ctx->buf, ctx->path, ctx->pos);
-  error("unclosed comment");
+  bad_position(pos, "unclosed comment");
 }
 
 static char *char_literal(char *p) {
@@ -354,8 +359,7 @@ loop:
       continue;
     }
 
-    print_line(ctx->buf, ctx->path, p);
-    error("cannot tokenize");
+    bad_position(p, "cannot tokenize");
   }
 }
 
@@ -368,12 +372,22 @@ static void canonicalize_newline(char *p) {
   *p = '\0';
 }
 
+// Concatenates continuation lines. We keep the total number of
+// newline characters the same to keep the line counter sane.
 static void remove_backslash_newline(char *p) {
+  int cnt = 0;
   for (char *q = p; *q;) {
-    if (q[0] == '\\' && q[1] == '\n')
+    if (q[0] == '\\' && q[1] == '\n') {
+      cnt++;
       q += 2;
-    else
+    } else if (*q == '\n') {
+      for (int i = 0; i < cnt + 1; i++)
+        *p++ = '\n';
+      q++;
+      cnt = 0;
+    } else {
       *p++ = *q++;
+    }
   }
   *p = '\0';
 }
