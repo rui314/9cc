@@ -41,7 +41,7 @@ static char *read_file(FILE *fp) {
 
 static Context *new_ctx(Context *next, char *path, char *buf) {
   Context *ctx = calloc(1, sizeof(Context));
-  ctx->path = path;
+  ctx->path = strcmp(path, "-") ? path : "(stdin)";
   ctx->buf = buf;
   ctx->pos = ctx->buf;
   ctx->tokens = new_vec();
