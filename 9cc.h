@@ -49,8 +49,8 @@ char *sb_get(StringBuilder *sb);
 
 typedef struct Type {
   int ty;
-  int size;
-  int align;
+  int size;  // sizeof
+  int align; // alignof
 
   // Pointer
   struct Type *ptr_to;
@@ -62,6 +62,9 @@ typedef struct Type {
   // Struct
   Vector *members;
   int offset;
+
+  // Function
+  struct Type *returning;
 } Type;
 
 Type *ptr_to(Type *base);
@@ -141,6 +144,7 @@ enum {
   ND_STR,       // String literal
   ND_IDENT,     // Identifier
   ND_STRUCT,    // Struct
+  ND_DECL,      // declaration
   ND_VARDEF,    // Variable definition
   ND_LVAR,      // Local variable reference
   ND_GVAR,      // Global variable reference
@@ -190,6 +194,7 @@ enum {
   PTR,
   ARY,
   STRUCT,
+  FUNC,
 };
 
 typedef struct Node {

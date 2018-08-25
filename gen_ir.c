@@ -453,7 +453,7 @@ Vector *gen_ir(Vector *nodes) {
   for (int i = 0; i < nodes->len; i++) {
     Node *node = nodes->data[i];
 
-    if (node->op == ND_VARDEF)
+    if (node->op == ND_VARDEF || node->op == ND_DECL)
       continue;
 
     assert(node->op == ND_FUNC);

@@ -659,10 +659,12 @@ static Node *toplevel() {
   // Function
   if (consume('(')) {
     Node *node = calloc(1, sizeof(Node));
-    node->op = ND_FUNC;
-    node->ty = ty;
     node->name = name;
     node->args = new_vec();
+
+    node->ty = calloc(1, sizeof(Type));
+    node->ty->ty = FUNC;
+    node->ty->returning = ty;
 
     if (!consume(')')) {
       vec_push(node->args, param_declaration());
@@ -671,6 +673,12 @@ static Node *toplevel() {
       expect(')');
     }
 
+    if (consume(';')) {
+      node->op = ND_DECL;
+      return node;
+    }
+
+    node->op = ND_FUNC;
     Token *t = tokens->data[pos];
     expect('{');
     if (is_typedef)
