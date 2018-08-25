@@ -144,6 +144,7 @@ typedef struct {
 Vector *tokenize(char *path, bool add_eof);
 noreturn void bad_token(Token *t, char *msg);
 char *tokstr(Token *t);
+int line(Token *t);
 
 /// preprocess.c
 

@@ -87,11 +87,22 @@ static Vector *read_until_eol() {
   return v;
 }
 
-static Token *new_param(int n) {
+static Token *new_int(int val) {
+  Token *t = calloc(1, sizeof(Token));
+  t->ty = TK_NUM;
+  t->val = val;
+  return t;
+}
+
+static Token *new_param(int val) {
   Token *t = calloc(1, sizeof(Token));
   t->ty = TK_PARAM;
-  t->val = n;
+  t->val = val;
   return t;
+}
+
+static bool is_ident(Token *t, char *s) {
+  return t->ty == TK_IDENT && !strcmp(t->name, s);
 }
 
 static void replace_params(Macro *m) {
@@ -182,27 +193,35 @@ static Token *stringize(Vector *tokens) {
   return t;
 }
 
-static void apply(Macro *m) {
+static void apply(Macro *m, Token *start) {
   if (m->ty == OBJLIKE) {
     append(m->tokens);
     return;
   }
 
   // Function-like macro
-  Token *t = peek();
   get('(', "comma expected");
   Vector *args = read_args();
   if (m->params->len != args->len)
-    bad_token(t, "number of parameter does not match");
+    bad_token(start, "number of parameter does not match");
 
   for (int i = 0; i < m->tokens->len; i++) {
     Token *t = m->tokens->data[i];
-    if (t->ty != TK_PARAM)
-      add(t);
-    else if (t->stringize)
-      add(stringize(args->data[t->val]));
-    else
-      append(args->data[t->val]);
+
+    if (is_ident(t, "__LINE__")) {
+      add(new_int(line(t)));
+      continue;
+    }
+
+    if (t->ty == TK_PARAM) {
+      if (t->stringize)
+        add(stringize(args->data[t->val]));
+      else
+        append(args->data[t->val]);
+      continue;
+    }
+
+    add(t);
   }
 }
 
@@ -247,7 +266,7 @@ Vector *preprocess(Vector *tokens) {
     if (t->ty == TK_IDENT) {
       Macro *m = map_get(macros, t->name);
       if (m)
-        apply(m);
+        apply(m, t);
       else
         add(t);
       continue;

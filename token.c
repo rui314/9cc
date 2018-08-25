@@ -89,6 +89,14 @@ char *tokstr(Token *t) {
   return strndup(t->start, t->end - t->start);
 }
 
+int line(Token *t) {
+  int n = 0;
+  for (char *p = t->buf; p < t->end; p++)
+    if (*p == '\n')
+      n++;
+  return n;
+}
+
 // Atomic unit in the grammar is called "token".
 // For example, `123`, `"abc"` and `while` are tokens.
 // The tokenizer splits an input string into tokens.
@@ -276,8 +284,9 @@ loop:
   while (*p) {
     // New line (preprocessor-only token)
     if (*p == '\n') {
-      add(*p, p);
+      Token *t = add(*p, p);
       p++;
+      t->end = p;
       continue;
     }
 
