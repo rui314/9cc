@@ -39,32 +39,6 @@ static Env *new_env(Env *next) {
   return env;
 }
 
-static Var *new_global(Type *ty, char *name, char *data, int len) {
-  Var *var = calloc(1, sizeof(Var));
-  var->ty = ty;
-  var->is_local = false;
-  var->name = name;
-  var->data = data;
-  var->len = len;
-  return var;
-}
-
-static Node *new_lvar_node(Type *ty, int offset) {
-  Node *node = calloc(1, sizeof(Node));
-  node->op = ND_LVAR;
-  node->ty = ty;
-  node->offset = offset;
-  return node;
-}
-
-static Node *new_gvar_node(Type *ty, char *name) {
-  Node *node = calloc(1, sizeof(Node));
-  node->op = ND_GVAR;
-  node->ty = ty;
-  node->name = name;
-  return node;
-}
-
 static Var *find_var(char *name) {
   for (Env *e = env; e; e = e->next) {
     Var *var = map_get(e->vars, name);
@@ -101,7 +75,7 @@ static void warn_node(Node *node, char *msg) {
 
 static void check_lval(Node *node) {
   int op = node->op;
-  if (op != ND_LVAR && op != ND_GVAR && op != ND_DEREF && op != ND_DOT)
+  if (op != ND_VAR && op != ND_DEREF && op != ND_DOT)
     bad_node(node, "not an lvalue");
 }
 
@@ -132,34 +106,40 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_STR: {
     // A string literal is converted to a reference to an anonymous
     // global variable of type char array.
-    Var *var = new_global(node->ty, format(".L.str%d", str_label++), node->data,
-                          node->len);
+    Var *var = calloc(1, sizeof(Var));
+    var->ty = node->ty;
+    var->is_local = false;
+    var->name = format(".L.str%d", str_label++);
+    var->data = node->data;
+    var->len = node->len;
     vec_push(globals, var);
-    Node *n = new_gvar_node(node->ty, var->name);
+
+    Node *n = calloc(1, sizeof(Node));
+    n->op = ND_VAR;
+    n->var = var;
+    n->ty = var->ty;
+    n->token = node->token;
     return maybe_decay(n, decay);
   }
-  case ND_IDENT: {
+  case ND_VAR: {
     Var *var = find_var(node->name);
     if (!var)
       bad_node(node, "undefined variable");
 
-    Node *n;
-    if (var->is_local)
-      n = new_lvar_node(var->ty, var->offset);
-    else
-      n = new_gvar_node(var->ty, var->name);
-    return maybe_decay(n, decay);
+    node->var = var;
+    node->ty = var->ty;
+    return maybe_decay(node, decay);
   }
   case ND_VARDEF: {
     stacksize = roundup(stacksize, node->ty->align);
     stacksize += node->ty->size;
-    node->offset = stacksize;
 
     Var *var = calloc(1, sizeof(Var));
     var->ty = node->ty;
     var->is_local = true;
     var->offset = stacksize;
     map_put(env->vars, node->name, var);
+    node->var = var;
 
     if (node->init)
       node->init = walk(node->init);
@@ -207,7 +187,7 @@ static Node *do_walk(Node *node, bool decay) {
     Type *r = node->rhs->ty;
     if (l->ty == PTR && r->ty == PTR) {
       if (!same_type(r, l))
-	bad_node(node, "incompatible pointer");
+        bad_node(node, "incompatible pointer");
       node = scale_ptr('/', node, l);
     }
 
@@ -358,27 +338,35 @@ Vector *sema(Vector *nodes) {
     Node *node = nodes->data[i];
 
     if (node->op == ND_VARDEF) {
-      Var *var = new_global(node->ty, node->name, node->data, node->len);
+      Var *var = calloc(1, sizeof(Var));
+      var->ty = node->ty;
+      var->is_local = false;
       var->is_extern = node->is_extern;
+      var->name = node->name;
+      var->data = node->data;
+      var->len = node->len;
       vec_push(globals, var);
+
       map_put(env->vars, node->name, var);
       continue;
     }
 
-    assert(node->op == ND_DECL || node->op == ND_FUNC);
-
-    Var *var = new_global(node->ty, node->name, "", 0);
+    Var *var = calloc(1, sizeof(Var));
+    var->ty = node->ty;
+    var->is_local = false;
+    var->name = node->name;
     map_put(env->vars, node->name, var);
 
     if (node->op == ND_DECL)
       continue;
 
+    assert(node->op == ND_FUNC);
     stacksize = 0;
 
     for (int i = 0; i < node->args->len; i++)
       node->args->data[i] = walk(node->args->data[i]);
-    node->body = walk(node->body);
 
+    node->body = walk(node->body);
     node->stacksize = stacksize;
   }
 

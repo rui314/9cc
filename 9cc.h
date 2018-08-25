@@ -157,12 +157,10 @@ Vector *preprocess(Vector *tokens);
 enum {
   ND_NUM = 256, // Number literal
   ND_STR,       // String literal
-  ND_IDENT,     // Identifier
   ND_STRUCT,    // Struct
   ND_DECL,      // declaration
   ND_VARDEF,    // Variable definition
-  ND_LVAR,      // Local variable reference
-  ND_GVAR,      // Global variable reference
+  ND_VAR,       // Variable reference
   ND_IF,        // "if"
   ND_FOR,       // "for"
   ND_DO_WHILE,  // do ... while
@@ -212,6 +210,20 @@ enum {
   FUNC,
 };
 
+typedef struct {
+  Type *ty;
+  bool is_local;
+
+  // local
+  int offset;
+
+  // global
+  char *name;
+  bool is_extern;
+  char *data;
+  int len;
+} Var;
+
 typedef struct Node {
   int op;            // Node type
   Type *ty;          // C type
@@ -222,6 +234,7 @@ typedef struct Node {
   Vector *stmts;     // Compound statement
 
   char *name;
+  Var *var;
 
   // Global variable
   bool is_extern;
@@ -256,20 +269,6 @@ Vector *parse(Vector *tokens);
 Node *new_int_node(int val, Token *t);
 
 /// sema.c
-
-typedef struct {
-  Type *ty;
-  bool is_local;
-
-  // local
-  int offset;
-
-  // global
-  char *name;
-  bool is_extern;
-  char *data;
-  int len;
-} Var;
 
 Vector *sema(Vector *nodes);
 

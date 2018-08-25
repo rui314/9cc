@@ -240,7 +240,7 @@ static Node *primary() {
 
   if (t->ty == TK_IDENT) {
     if (!consume('(')) {
-      Node *node = new_node(ND_IDENT, t);
+      Node *node = new_node(ND_VAR, t);
       node->name = t->name;
       return node;
     }
