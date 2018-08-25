@@ -46,14 +46,18 @@ static void append(Vector *v) {
     vec_push(ctx->output, v->data[i]);
 }
 
-static void add(Token *t) { vec_push(ctx->output, t); }
+static void add(Token *t) {
+  vec_push(ctx->output, t);
+}
 
 static Token *next() {
   assert(ctx->pos < ctx->input->len);
   return ctx->input->data[ctx->pos++];
 }
 
-static bool eof() { return ctx->pos == ctx->input->len; }
+static bool eof() {
+  return ctx->pos == ctx->input->len;
+}
 
 static Token *get(int ty, char *msg) {
   Token *t = next();
@@ -67,7 +71,9 @@ static char *ident(char *msg) {
   return t->name;
 }
 
-static Token *peek() { return ctx->input->data[ctx->pos]; }
+static Token *peek() {
+  return ctx->input->data[ctx->pos];
+}
 
 static bool consume(int ty) {
   if (peek()->ty != ty)

@@ -85,7 +85,9 @@ void sb_add(StringBuilder *sb, char c) {
   sb->data[sb->len++] = c;
 }
 
-void sb_append(StringBuilder *sb, char *s) { sb_append_n(sb, s, strlen(s)); }
+void sb_append(StringBuilder *sb, char *s) {
+  sb_append_n(sb, s, strlen(s));
+}
 
 void sb_append_n(StringBuilder *sb, char *s, int len) {
   sb_grow(sb, len);
@@ -98,7 +100,9 @@ char *sb_get(StringBuilder *sb) {
   return sb->data;
 }
 
-int roundup(int x, int align) { return (x + align - 1) & ~(align - 1); }
+int roundup(int x, int align) {
+  return (x + align - 1) & ~(align - 1);
+}
 
 Type *ptr_to(Type *base) {
   Type *ty = calloc(1, sizeof(Type));

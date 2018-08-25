@@ -34,9 +34,17 @@ static IR *add_imm(int op, int lhs, int rhs) {
   return ir;
 }
 
-static void kill(int r) { add(IR_KILL, r, -1); }
-static void label(int x) { add(IR_LABEL, x, -1); }
-static void jmp(int x) { add(IR_JMP, x, -1); }
+static void kill(int r) {
+  add(IR_KILL, r, -1);
+}
+
+static void label(int x) {
+  add(IR_LABEL, x, -1);
+}
+
+static void jmp(int x) {
+  add(IR_JMP, x, -1);
+}
 
 static int gen_expr(Node *node);
 

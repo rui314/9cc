@@ -70,9 +70,17 @@ static Type *new_prim_ty(int ty, int size) {
   return ret;
 }
 
-static Type *void_ty() { return new_prim_ty(VOID, 0); }
-static Type *char_ty() { return new_prim_ty(CHAR, 1); }
-static Type *int_ty() { return new_prim_ty(INT, 4); }
+static Type *void_ty() {
+  return new_prim_ty(VOID, 0);
+}
+
+static Type *char_ty() {
+  return new_prim_ty(CHAR, 1);
+}
+
+static Type *int_ty() {
+  return new_prim_ty(INT, 4);
+}
 
 static bool consume(int ty) {
   Token *t = tokens->data[pos];

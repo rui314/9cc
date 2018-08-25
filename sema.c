@@ -95,7 +95,9 @@ noreturn static void bad_node(Node *node, char *msg) {
   bad_token(node->token, msg);
 }
 
-static void warn_node(Node *node, char *msg) { warn_token(node->token, msg); }
+static void warn_node(Node *node, char *msg) {
+  warn_token(node->token, msg);
+}
 
 static void check_lval(Node *node) {
   int op = node->op;

@@ -1,6 +1,8 @@
 #include "9cc.h"
 
-void usage() { error("Usage: 9cc [-test] [-dump-ir1] [-dump-ir2] <file>"); }
+void usage() {
+  error("Usage: 9cc [-test] [-dump-ir1] [-dump-ir2] <file>");
+}
 
 int main(int argc, char **argv) {
   if (argc == 1)
