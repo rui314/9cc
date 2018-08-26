@@ -747,17 +747,19 @@ Program *parse(Vector *tokens_) {
   pos = 0;
   env = new_env(env);
 
-  Program *prog = calloc(1, sizeof(Program));
-  prog->gvars = new_vec();
-  prog->nodes = new_vec();
-  prog->funcs = new_vec();
-
+  Vector *v = new_vec();
   for (;;) {
     Token *t = tokens->data[pos];
     if (t->ty == TK_EOF)
-      return prog;
+      break;
     Node *node = toplevel();
     if (node)
-      vec_push(prog->nodes, node);
+      vec_push(v, node);
   }
+
+  Program *prog = calloc(1, sizeof(Program));
+  prog->nodes = v;
+  prog->gvars = new_vec();
+  prog->funcs = new_vec();
+  return prog;
 }

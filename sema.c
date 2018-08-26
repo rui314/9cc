@@ -326,6 +326,35 @@ static Node *do_walk(Node *node, bool decay) {
   }
 }
 
+static Var *sema_gvar(Node *node) {
+  Var *var = calloc(1, sizeof(Var));
+  var->ty = node->ty;
+  var->is_local = false;
+  var->is_extern = node->is_extern;
+  var->name = node->name;
+  var->data = node->data;
+  var->len = node->len;
+  map_put(env->vars, node->name, var);
+  return var;
+}
+
+static void sema_funcdef(Node *node) {
+  locals = new_vec();
+
+  for (int i = 0; i < node->args->len; i++)
+    node->args->data[i] = walk(node->args->data[i]);
+  node->body = walk(node->body);
+
+  int off = 0;
+  for (int i = 0; i < locals->len; i++) {
+    Var *var = locals->data[i];
+    off = roundup(off, var->ty->align);
+    off += var->ty->size;
+    var->offset = off;
+  }
+  node->stacksize = off;
+}
+
 void sema(Program *prog_) {
   env = new_env(NULL);
   prog = prog_;
@@ -334,15 +363,7 @@ void sema(Program *prog_) {
     Node *node = prog->nodes->data[i];
 
     if (node->op == ND_VARDEF) {
-      Var *var = calloc(1, sizeof(Var));
-      var->ty = node->ty;
-      var->is_local = false;
-      var->is_extern = node->is_extern;
-      var->name = node->name;
-      var->data = node->data;
-      var->len = node->len;
-      map_put(env->vars, node->name, var);
-      vec_push(prog->gvars, var);
+      vec_push(prog->gvars, sema_gvar(node));
       continue;
     }
 
@@ -352,23 +373,10 @@ void sema(Program *prog_) {
     var->name = node->name;
     map_put(env->vars, node->name, var);
 
-    if (node->op == ND_DECL)
+    if (node->op == ND_FUNC) {
+      sema_funcdef(node);
       continue;
-
-    assert(node->op == ND_FUNC);
-    locals = new_vec();
-
-    for (int i = 0; i < node->args->len; i++)
-      node->args->data[i] = walk(node->args->data[i]);
-    node->body = walk(node->body);
-
-    int off = 0;
-    for (int i = 0; i < locals->len; i++) {
-      Var *var = locals->data[i];
-      off = roundup(off, var->ty->align);
-      off += var->ty->size;
-      var->offset = off;
     }
-    node->stacksize = off;
+    assert(node->op == ND_DECL);
   }
 }
