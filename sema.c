@@ -7,10 +7,6 @@
 //   typed as INT because the result type of an addition of two
 //   integers is integer.
 //
-// - Resolve variable names based on the C scope rules.
-//   Local variables are resolved to offsets from the base pointer.
-//   Global variables are resolved to their names.
-//
 // - Insert nodes to make array-to-pointer conversion explicit.
 //   Recall that, in C, "array of T" is automatically converted to
 //   "pointer to T" in most contexts.
