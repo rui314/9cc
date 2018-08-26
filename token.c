@@ -374,7 +374,7 @@ loop:
   }
 }
 
-static void canonicalize_newline(char *p) {
+static void replace_crlf(char *p) {
   for (char *q = p; *q;) {
     if (q[0] == '\r' && q[1] == '\n')
       q++;
@@ -444,7 +444,7 @@ Vector *tokenize(char *path, bool add_eof) {
 
   FILE *fp = open_file(path);
   char *buf = read_file(fp);
-  canonicalize_newline(buf);
+  replace_crlf(buf);
   remove_backslash_newline(buf);
 
   env = new_env(env, path, buf);
