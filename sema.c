@@ -330,7 +330,6 @@ static Var *sema_gvar(Node *node) {
   Var *var = calloc(1, sizeof(Var));
   var->ty = node->ty;
   var->is_local = false;
-  var->is_extern = node->is_extern;
   var->name = node->name;
   var->data = node->data;
   var->len = node->len;

@@ -732,8 +732,8 @@ static Node *toplevel() {
   Token *t = tokens->data[pos];
   Node *node = new_node(ND_VARDEF, t);
   node->ty = ty;
+  node->ty->is_extern = is_extern;
   node->name = name;
-  node->is_extern = is_extern;
 
   if (!is_extern) {
     node->data = calloc(1, node->ty->size);

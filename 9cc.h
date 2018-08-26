@@ -51,6 +51,7 @@ typedef struct Type {
   int ty;
   int size;  // sizeof
   int align; // alignof
+  bool is_extern;
 
   // Pointer
   struct Type *ptr_to;
@@ -219,7 +220,6 @@ typedef struct {
 
   // global
   char *name;
-  bool is_extern;
   char *data;
   int len;
 } Var;
@@ -236,8 +236,7 @@ typedef struct Node {
   char *name;
   Var *var;
 
-  // Global variable
-  bool is_extern;
+  // String literal
   char *data;
   int len;
 
