@@ -219,28 +219,16 @@ static char *string_literal(char *p) {
 
   while (*p != '"') {
     if (!*p)
-      goto err;
-
-    if (*p != '\\') {
-      sb_add(sb, *p++);
-      continue;
-    }
-
-    p++;
-    if (*p == '\0')
-      goto err;
-    int esc = escaped[(unsigned)*p];
-    sb_add(sb, esc ? esc : *p);
-    p++;
+      bad_token(t, "unclosed string literal");
+    int c;
+    p += c_char(&c, p);
+    sb_add(sb, c);
   }
 
   t->str = sb_get(sb);
   t->len = sb->len;
   t->end = p + 1;
   return p + 1;
-
-err:
-  bad_token(t, "unclosed string literal");
 }
 
 static char *ident(char *p) {
