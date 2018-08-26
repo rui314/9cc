@@ -32,6 +32,7 @@ static Node *maybe_decay(Node *base, bool decay) {
   node->op = ND_ADDR;
   node->ty = ptr_to(base->ty->ary_of);
   node->expr = base;
+  node->token = base->token;
   return node;
 }
 
@@ -45,12 +46,13 @@ static void check_lval(Node *node) {
     bad_node(node, "not an lvalue");
 }
 
-static Node *scale_ptr(int op, Node *node, Type *ty) {
-  Node *e = calloc(1, sizeof(Node));
-  e->op = op;
-  e->lhs = node;
-  e->rhs = new_int_node(ty->ptr_to->size, node->token);
-  return e;
+static Node *scale_ptr(int op, Node *base, Type *ty) {
+  Node *node = calloc(1, sizeof(Node));
+  node->op = op;
+  node->lhs = base;
+  node->rhs = new_int_node(ty->ptr_to->size, base->token);
+  node->token = base->token;
+  return node;
 }
 
 static void check_int(Node *node) {
@@ -191,7 +193,7 @@ static Node *do_walk(Node *node, bool decay) {
     node->rhs = walk(node->rhs);
     check_int(node->lhs);
     check_int(node->rhs);
-    node->ty = node->lhs->ty;
+    node->ty = &int_ty;
     return node;
   case ',':
     node->lhs = walk(node->lhs);
@@ -201,9 +203,13 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_POST_INC:
   case ND_POST_DEC:
   case ND_NEG:
+    node->expr = walk(node->expr);
+    node->ty = node->expr->ty;
+    return node;
   case '!':
   case '~':
     node->expr = walk(node->expr);
+    check_int(node->expr);
     node->ty = node->expr->ty;
     return node;
   case ND_ADDR:
