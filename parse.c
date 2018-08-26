@@ -255,6 +255,51 @@ static char *ident() {
   return t->name;
 }
 
+static Node *string_literal(Token *t) {
+  Type *ty = ary_of(char_ty(), t->len);
+  char *name = format(".L.str%d", label++);
+
+  Node *node = new_node(ND_VAR, t);
+  node->ty = ty;
+  node->var = add_gvar(ty, name, t->str, t->len);
+  return node;
+}
+
+static Node *local_variable(Token *t) {
+  Var *var = find_var(t->name);
+  if (!var)
+    bad_token(t, "undefined variable");
+  Node *node = new_node(ND_VAR, t);
+  node->ty = var->ty;
+  node->name = t->name;
+  node->var = var;
+  return node;
+}
+
+static Node *function_call(Token *t) {
+  Var *var = find_var(t->name);
+
+  Node *node = new_node(ND_CALL, t);
+  node->name = t->name;
+  node->args = new_vec();
+
+  if (var && var->ty->ty == FUNC) {
+    node->ty = var->ty;
+  } else {
+    warn_token(t, "undefined function");
+    node->ty = func_ty(int_ty());
+  }
+
+  if (consume(')'))
+    return node;
+
+  vec_push(node->args, assign());
+  while (consume(','))
+    vec_push(node->args, assign());
+  expect(')');
+  return node;
+}
+
 static Node *primary() {
   Token *t = tokens->data[pos++];
 
@@ -273,50 +318,13 @@ static Node *primary() {
   if (t->ty == TK_NUM)
     return new_int_node(t->val, t);
 
-  if (t->ty == TK_STR) {
-    Type *ty = ary_of(char_ty(), t->len);
-    char *name = format(".L.str%d", label++);
-
-    Node *node = new_node(ND_VAR, t);
-    node->ty = ty;
-    node->var = add_gvar(ty, name, t->str, t->len);
-    return node;
-  }
+  if (t->ty == TK_STR)
+    return string_literal(t);
 
   if (t->ty == TK_IDENT) {
-    Var *var = find_var(t->name);
-
-    // Variable
-    if (!consume('(')) {
-      if (!var)
-        bad_token(t, "undefined variable");
-      Node *node = new_node(ND_VAR, t);
-      node->ty = var->ty;
-      node->name = t->name;
-      node->var = var;
-      return node;
-    }
-
-    // Function call
-    Node *node = new_node(ND_CALL, t);
-    node->name = t->name;
-    node->args = new_vec();
-
-    if (var && var->ty->ty == FUNC) {
-      node->ty = var->ty;
-    } else {
-      warn_token(t, "undefined function");
-      node->ty = func_ty(int_ty());
-    }
-
-    if (consume(')'))
-      return node;
-
-    vec_push(node->args, assign());
-    while (consume(','))
-      vec_push(node->args, assign());
-    expect(')');
-    return node;
+    if (consume('('))
+      return function_call(t);
+    return local_variable(t);
   }
 
   bad_token(t, "primary expression expected");
@@ -810,21 +818,22 @@ static void toplevel() {
   add_gvar(ty, name, data, len);
 };
 
+static bool is_eof() {
+  Token *t = tokens->data[pos];
+  return t->ty == TK_EOF;
+}
+
 Program *parse(Vector *tokens_) {
   tokens = tokens_;
   pos = 0;
-  env = new_env(env);
+  env = new_env(NULL);
 
   prog = calloc(1, sizeof(Program));
   prog->nodes = new_vec();
   prog->gvars = new_vec();
   prog->funcs = new_vec();
 
-  for (;;) {
-    Token *t = tokens->data[pos];
-    if (t->ty == TK_EOF)
-      break;
+  while (!is_eof())
     toplevel();
-  }
   return prog;
 }
