@@ -237,10 +237,14 @@ typedef struct Node {
   Vector *stmts;     // Compound statement
 
   char *name;
+
+  // For ND_VAR
   Var *var;
 
   // "if" ( cond ) then "else" els
   // "for" ( init; cond; inc ) body
+  // "while" ( cond ) body
+  // "do" body "while" ( cond )
   struct Node *cond;
   struct Node *then;
   struct Node *els;
@@ -248,16 +252,10 @@ typedef struct Node {
   struct Node *inc;
   struct Node *body;
 
+  // For break and continue
   int break_label;
   int continue_label;
-
-  // For break and continue
   struct Node *target;
-
-  // Function definition
-  int stacksize;
-  Vector *globals;
-  Vector *lvars;
 
   // Function call
   Vector *args;
@@ -268,9 +266,10 @@ typedef struct Node {
 
 typedef struct {
   char *name;
-  int stacksize;
   Node *node;
+  Vector *lvars;
   Vector *ir;
+  int stacksize;
 } Function;
 
 // Represents toplevel constructs.

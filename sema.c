@@ -266,8 +266,8 @@ void sema(Program *prog) {
     node->body = walk(node->body);
 
     int off = 0;
-    for (int i = 0; i < node->lvars->len; i++) {
-      Var *var = node->lvars->data[i];
+    for (int i = 0; i < fn->lvars->len; i++) {
+      Var *var = fn->lvars->data[i];
       off = roundup(off, var->ty->align);
       off += var->ty->size;
       var->offset = off;

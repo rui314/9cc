@@ -460,7 +460,6 @@ void gen_ir(Program *prog) {
     }
 
     gen_stmt(node->body);
-    fn->stacksize = node->stacksize;
     fn->ir = code;
   }
 }
