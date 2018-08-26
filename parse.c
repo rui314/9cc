@@ -564,12 +564,12 @@ static int assignment_op() {
     return ND_SHL_EQ;
   if (consume(TK_SHR_EQ))
     return ND_SHR_EQ;
-  if (consume(TK_BITAND_EQ))
-    return ND_BITAND_EQ;
+  if (consume(TK_AND_EQ))
+    return ND_AND_EQ;
   if (consume(TK_XOR_EQ))
     return ND_XOR_EQ;
-  if (consume(TK_BITOR_EQ))
-    return ND_BITOR_EQ;
+  if (consume(TK_OR_EQ))
+    return ND_OR_EQ;
   return 0;
 }
 

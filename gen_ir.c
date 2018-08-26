@@ -149,12 +149,12 @@ static int to_assign_op(int op) {
     return IR_SHL;
   case ND_SHR_EQ:
     return IR_SHR;
-  case ND_BITAND_EQ:
+  case ND_AND_EQ:
     return IR_AND;
   case ND_XOR_EQ:
     return IR_XOR;
   default:
-    assert(op == ND_BITOR_EQ);
+    assert(op == ND_OR_EQ);
     return IR_OR;
   }
 }
@@ -266,9 +266,9 @@ static int gen_expr(Node *node) {
   case ND_SUB_EQ:
   case ND_SHL_EQ:
   case ND_SHR_EQ:
-  case ND_BITAND_EQ:
+  case ND_AND_EQ:
   case ND_XOR_EQ:
-  case ND_BITOR_EQ:
+  case ND_OR_EQ:
     return gen_assign_op(node);
   case '=': {
     int rhs = gen_expr(node->rhs);

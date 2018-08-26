@@ -115,9 +115,9 @@ enum {
   TK_SUB_EQ,    // -=
   TK_SHL_EQ,    // <<=
   TK_SHR_EQ,    // >>=
-  TK_BITAND_EQ, // &=
+  TK_AND_EQ,    // &=
   TK_XOR_EQ,    // ^=
-  TK_BITOR_EQ,  // |=
+  TK_OR_EQ,     // |=
   TK_RETURN,    // "return"
   TK_SIZEOF,    // "sizeof"
   TK_ALIGNOF,   // "_Alignof"
@@ -192,9 +192,9 @@ enum {
   ND_SUB_EQ,    // -=
   ND_SHL_EQ,    // <<=
   ND_SHR_EQ,    // >>=
-  ND_BITAND_EQ, // &=
+  ND_AND_EQ,    // &=
   ND_XOR_EQ,    // ^=
-  ND_BITOR_EQ,  // |=
+  ND_OR_EQ,     // |=
   ND_RETURN,    // "return"
   ND_CALL,      // Function call
   ND_FUNC,      // Function definition
@@ -257,7 +257,7 @@ typedef struct Node {
   int continue_label;
   struct Node *target;
 
-  // Function call
+  // Function definition and function call
   Vector *args;
 
   // For error reporting

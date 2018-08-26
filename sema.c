@@ -145,9 +145,9 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_MOD_EQ:
   case ND_SHL_EQ:
   case ND_SHR_EQ:
-  case ND_BITAND_EQ:
+  case ND_AND_EQ:
   case ND_XOR_EQ:
-  case ND_BITOR_EQ:
+  case ND_OR_EQ:
     node->lhs = walk_nodecay(node->lhs);
     check_lval(node->lhs);
     node->rhs = walk(node->rhs);
