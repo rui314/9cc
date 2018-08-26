@@ -236,10 +236,6 @@ typedef struct Node {
   char *name;
   Var *var;
 
-  // String literal
-  char *data;
-  int len;
-
   // "if" ( cond ) then "else" els
   // "for" ( init; cond; inc ) body
   struct Node *cond;

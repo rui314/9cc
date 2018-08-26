@@ -30,7 +30,6 @@ typedef struct Env {
 static Program *prog;
 static Vector *locals;
 static Env *env;
-static int str_label;
 
 static Env *new_env(Env *next) {
   Env *env = calloc(1, sizeof(Env));
@@ -103,30 +102,15 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_NULL:
   case ND_BREAK:
     return node;
-  case ND_STR: {
-    // A string literal is converted to a reference to an anonymous
-    // global variable of type char array.
-    Var *var = calloc(1, sizeof(Var));
-    var->ty = node->ty;
-    var->is_local = false;
-    var->name = format(".L.str%d", str_label++);
-    var->data = node->data;
-    var->len = node->len;
-    vec_push(prog->gvars, var);
-
-    Node *n = calloc(1, sizeof(Node));
-    n->op = ND_VAR;
-    n->var = var;
-    n->ty = var->ty;
-    n->token = node->token;
-    return maybe_decay(n, decay);
-  }
   case ND_VAR: {
-    Var *var = find_var(node->name);
-    if (!var)
-      bad_node(node, "undefined variable");
+    Var *var = node->var;
+    if (!var) {
+      var = find_var(node->name);
+      if (!var)
+        bad_node(node, "undefined variable");
+      node->var = var;
+    }
 
-    node->var = var;
     node->ty = var->ty;
     return maybe_decay(node, decay);
   }
@@ -326,17 +310,6 @@ static Node *do_walk(Node *node, bool decay) {
   }
 }
 
-static Var *sema_gvar(Node *node) {
-  Var *var = calloc(1, sizeof(Var));
-  var->ty = node->ty;
-  var->is_local = false;
-  var->name = node->name;
-  var->data = node->data;
-  var->len = node->len;
-  map_put(env->vars, node->name, var);
-  return var;
-}
-
 static void sema_funcdef(Node *node) {
   locals = new_vec();
 
@@ -358,13 +331,13 @@ void sema(Program *prog_) {
   env = new_env(NULL);
   prog = prog_;
 
+  for (int i = 0; i < prog->gvars->len; i++) {
+    Var *var = prog->gvars->data[i];
+    map_put(env->vars, var->name, var);
+  }
+
   for (int i = 0; i < prog->nodes->len; i++) {
     Node *node = prog->nodes->data[i];
-
-    if (node->op == ND_VARDEF) {
-      vec_push(prog->gvars, sema_gvar(node));
-      continue;
-    }
 
     Var *var = calloc(1, sizeof(Var));
     var->ty = node->ty;
@@ -372,10 +345,10 @@ void sema(Program *prog_) {
     var->name = node->name;
     map_put(env->vars, node->name, var);
 
-    if (node->op == ND_FUNC) {
-      sema_funcdef(node);
+    if (node->op == ND_DECL)
       continue;
-    }
-    assert(node->op == ND_DECL);
+
+    assert(node->op == ND_FUNC);
+    sema_funcdef(node);
   }
 }
