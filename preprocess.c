@@ -4,17 +4,17 @@
 
 static Map *macros;
 
-typedef struct Context {
+typedef struct Env {
   Vector *input;
   Vector *output;
   int pos;
-  struct Context *next;
-} Context;
+  struct Env *next;
+} Env;
 
-static Context *ctx;
+static Env *env;
 
-static Context *new_ctx(Context *next, Vector *input) {
-  Context *c = calloc(1, sizeof(Context));
+static Env *new_env(Env *next, Vector *input) {
+  Env *c = calloc(1, sizeof(Env));
   c->input = input;
   c->output = new_vec();
   c->next = next;
@@ -43,20 +43,20 @@ static Macro *new_macro(int ty, char *name) {
 
 static void append(Vector *v) {
   for (int i = 0; i < v->len; i++)
-    vec_push(ctx->output, v->data[i]);
+    vec_push(env->output, v->data[i]);
 }
 
 static void add(Token *t) {
-  vec_push(ctx->output, t);
+  vec_push(env->output, t);
 }
 
 static Token *next() {
-  assert(ctx->pos < ctx->input->len);
-  return ctx->input->data[ctx->pos++];
+  assert(env->pos < env->input->len);
+  return env->input->data[env->pos++];
 }
 
 static bool eof() {
-  return ctx->pos == ctx->input->len;
+  return env->pos == env->input->len;
 }
 
 static Token *get(int ty, char *msg) {
@@ -72,13 +72,13 @@ static char *ident(char *msg) {
 }
 
 static Token *peek() {
-  return ctx->input->data[ctx->pos];
+  return env->input->data[env->pos];
 }
 
 static bool consume(int ty) {
   if (peek()->ty != ty)
     return false;
-  ctx->pos++;
+  env->pos++;
   return true;
 }
 
@@ -297,7 +297,7 @@ static void include() {
 Vector *preprocess(Vector *tokens) {
   if (!macros)
     macros = new_map();
-  ctx = new_ctx(ctx, tokens);
+  env = new_env(env, tokens);
 
   while (!eof()) {
     Token *t = next();
@@ -326,7 +326,7 @@ Vector *preprocess(Vector *tokens) {
       bad_token(t, "unknown directive");
   }
 
-  Vector *v = ctx->output;
-  ctx = ctx->next;
+  Vector *v = env->output;
+  env = env->next;
   return v;
 }
