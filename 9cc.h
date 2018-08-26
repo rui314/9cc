@@ -22,6 +22,7 @@ typedef struct {
 
 Vector *new_vec(void);
 void vec_push(Vector *v, void *elem);
+void vec_pop(Vector *v);
 
 typedef struct {
   Vector *keys;
@@ -159,6 +160,8 @@ Vector *preprocess(Vector *tokens);
 
 /// parse.c
 
+extern int nlabel;
+
 enum {
   ND_NUM = 256, // Number literal
   ND_STR,       // String literal
@@ -247,6 +250,11 @@ typedef struct Node {
   struct Node *init;
   struct Node *inc;
   struct Node *body;
+
+  int break_label;
+
+  // For break
+  struct Node *target;
 
   // Function definition
   int stacksize;

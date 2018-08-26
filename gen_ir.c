@@ -13,11 +13,9 @@
 
 static Vector *code;
 static int nreg = 1;
-static int nlabel = 1;
 
 static int return_label;
 static int return_reg;
-static int break_label;
 
 static IR *add(int op, int lhs, int rhs) {
   IR *ir = calloc(1, sizeof(IR));
@@ -392,8 +390,6 @@ static void gen_stmt(Node *node) {
   case ND_FOR: {
     int x = nlabel++;
     int y = nlabel++;
-    int orig = break_label;
-    break_label = nlabel++;
 
     gen_stmt(node->init);
     label(x);
@@ -407,27 +403,21 @@ static void gen_stmt(Node *node) {
       gen_stmt(node->inc);
     jmp(x);
     label(y);
-    label(break_label);
-    break_label = orig;
+    label(node->break_label);
     return;
   }
   case ND_DO_WHILE: {
     int x = nlabel++;
-    int orig = break_label;
-    break_label = nlabel++;
     label(x);
     gen_stmt(node->body);
     int r = gen_expr(node->cond);
     add(IR_IF, r, x);
     kill(r);
-    label(break_label);
-    break_label = orig;
+    label(node->break_label);
     return;
   }
   case ND_BREAK:
-    if (!break_label)
-      error("stray 'break' statement");
-    jmp(break_label);
+    jmp(node->target->break_label);
     break;
   case ND_RETURN: {
     int r = gen_expr(node->expr);

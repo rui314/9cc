@@ -15,6 +15,8 @@
 // as `1+2=3`, are accepted at this stage. Such errors are detected in
 // a later pass.
 
+int nlabel = 1;
+
 typedef struct Env {
   Map *vars;
   Map *typedefs;
@@ -24,14 +26,13 @@ typedef struct Env {
 
 static Program *prog;
 static Vector *lvars;
+static Vector *breaks;
 
 static Vector *tokens;
 static int pos;
 struct Env *env;
 
-static int label = 1;
 static Node null_stmt = {ND_NULL};
-static Node break_stmt = {ND_BREAK};
 
 static Env *new_env(Env *next) {
   Env *env = calloc(1, sizeof(Env));
@@ -240,6 +241,12 @@ static Node *new_node(int op, Token *t) {
   return node;
 }
 
+static Node *new_loop(int op, Token *t) {
+  Node *node = new_node(op, t);
+  node->break_label = nlabel++;
+  return node;
+}
+
 static Node *new_binop(int op, Token *t, Node *lhs, Node *rhs) {
   Node *node = new_node(op, t);
   node->lhs = lhs;
@@ -271,7 +278,7 @@ static char *ident() {
 
 static Node *string_literal(Token *t) {
   Type *ty = ary_of(char_ty(), t->len);
-  char *name = format(".L.str%d", label++);
+  char *name = format(".L.str%d", nlabel++);
 
   Node *node = new_node(ND_VAR, t);
   node->ty = ty;
@@ -686,9 +693,10 @@ static Node *stmt() {
     return node;
   }
   case TK_FOR: {
-    Node *node = new_node(ND_FOR, t);
+    Node *node = new_loop(ND_FOR, t);
     expect('(');
     env = new_env(env);
+    vec_push(breaks, node);
 
     if (is_typename())
       node->init = declaration(true);
@@ -708,31 +716,46 @@ static Node *stmt() {
     }
 
     node->body = stmt();
+
+    vec_pop(breaks);
     env = env->next;
     return node;
   }
   case TK_WHILE: {
-    Node *node = new_node(ND_FOR, t);
+    Node *node = new_loop(ND_FOR, t);
+    vec_push(breaks, node);
+
     node->init = &null_stmt;
     node->inc = &null_stmt;
     expect('(');
     node->cond = expr();
     expect(')');
     node->body = stmt();
+
+    vec_pop(breaks);
     return node;
   }
   case TK_DO: {
-    Node *node = new_node(ND_DO_WHILE, t);
+    Node *node = new_loop(ND_DO_WHILE, t);
+    vec_push(breaks, node);
+
     node->body = stmt();
     expect(TK_WHILE);
     expect('(');
     node->cond = expr();
     expect(')');
     expect(';');
+
+    vec_pop(breaks);
     return node;
   }
-  case TK_BREAK:
-    return &break_stmt;
+  case TK_BREAK: {
+    if (breaks->len == 0)
+      bad_token(t, "stray break");
+    Node *node = new_node(ND_BREAK, t);
+    node->target = breaks->data[breaks->len - 1];
+    return node;
+  }
   case TK_RETURN: {
     Node *node = new_node(ND_RETURN, t);
     node->expr = expr();
@@ -787,6 +810,7 @@ static void toplevel() {
     vec_push(prog->nodes, node);
 
     lvars = new_vec();
+    breaks = new_vec();
 
     node->name = name;
     node->args = new_vec();

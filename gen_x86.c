@@ -8,8 +8,6 @@ char *regs32[] = {"r10d", "r11d", "ebx", "r12d", "r13d", "r14d", "r15d"};
 
 int num_regs = sizeof(regs) / sizeof(*regs);
 
-static int nlabel;
-
 static char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static char *argregs8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 static char *argregs32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
