@@ -53,6 +53,11 @@ static Node *scale_ptr(int op, Node *node, Type *ty) {
   return e;
 }
 
+static void check_int(Node *node) {
+  if (node->ty->ty != INT && node->ty->ty != CHAR)
+    bad_node(node, "not an integer");
+}
+
 static Node *do_walk(Node *node, bool decay);
 
 static Node *walk(Node *node) {
@@ -99,8 +104,7 @@ static Node *do_walk(Node *node, bool decay) {
 
     if (node->rhs->ty->ty == PTR)
       swap(&node->lhs, &node->rhs);
-    if (node->rhs->ty->ty == PTR)
-      bad_node(node, "pointer + pointer");
+    check_int(node->rhs);
 
     if (node->lhs->ty->ty == PTR)
       node->rhs = scale_ptr('*', node->rhs, node->lhs->ty);
@@ -185,6 +189,8 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_LOGOR:
     node->lhs = walk(node->lhs);
     node->rhs = walk(node->rhs);
+    check_int(node->lhs);
+    check_int(node->rhs);
     node->ty = node->lhs->ty;
     return node;
   case ',':
@@ -223,6 +229,7 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_CALL:
     for (int i = 0; i < node->args->len; i++)
       node->args->data[i] = walk(node->args->data[i]);
+    node->ty = node->ty->returning;
     return node;
   case ND_COMP_STMT: {
     for (int i = 0; i < node->stmts->len; i++)
