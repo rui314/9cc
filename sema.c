@@ -28,9 +28,9 @@ typedef struct Env {
 } Env;
 
 static Vector *globals;
+static Vector *locals;
 static Env *env;
 static int str_label;
-static int stacksize;
 
 static Env *new_env(Env *next) {
   Env *env = calloc(1, sizeof(Env));
@@ -131,14 +131,11 @@ static Node *do_walk(Node *node, bool decay) {
     return maybe_decay(node, decay);
   }
   case ND_VARDEF: {
-    stacksize = roundup(stacksize, node->ty->align);
-    stacksize += node->ty->size;
-
     Var *var = calloc(1, sizeof(Var));
     var->ty = node->ty;
     var->is_local = true;
-    var->offset = stacksize;
     map_put(env->vars, node->name, var);
+    vec_push(locals, var);
     node->var = var;
 
     if (node->init)
@@ -360,13 +357,20 @@ Vector *sema(Vector *nodes) {
       continue;
 
     assert(node->op == ND_FUNC);
-    stacksize = 0;
+    locals = new_vec();
 
     for (int i = 0; i < node->args->len; i++)
       node->args->data[i] = walk(node->args->data[i]);
-
     node->body = walk(node->body);
-    node->stacksize = stacksize;
+
+    int off = 0;
+    for (int i = 0; i < locals->len; i++) {
+      Var *var = locals->data[i];
+      off = roundup(off, var->ty->align);
+      off += var->ty->size;
+      var->offset = off;
+    }
+    node->stacksize = off;
   }
 
   return globals;
