@@ -237,13 +237,19 @@ void gen(Function *fn) {
 void gen_x86(Program *prog) {
   printf(".intel_syntax noprefix\n");
 
-  printf(".data\n");
   for (int i = 0; i < prog->gvars->len; i++) {
     Var *var = prog->gvars->data[i];
     if (var->ty->is_extern)
       continue;
-    printf("%s:\n", var->name);
-    emit(".ascii \"%s\"", backslash_escape(var->data, var->len));
+    if (var->data) {
+      printf(".data\n");
+      printf("%s:\n", var->name);
+      emit(".ascii \"%s\"", backslash_escape(var->data, var->len));
+    } else {
+      printf(".bss\n");
+      printf("%s:\n", var->name);
+      emit(".zero %d", var->len);
+    }
   }
 
   printf(".text\n");
