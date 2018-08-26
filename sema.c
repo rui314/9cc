@@ -251,31 +251,27 @@ static Node *do_walk(Node *node, bool decay) {
   }
 }
 
-static void sema_funcdef(Node *node) {
-  for (int i = 0; i < node->args->len; i++)
-    node->args->data[i] = walk(node->args->data[i]);
-  node->body = walk(node->body);
-
-  int off = 0;
-  for (int i = 0; i < node->lvars->len; i++) {
-    Var *var = node->lvars->data[i];
-    off = roundup(off, var->ty->align);
-    off += var->ty->size;
-    var->offset = off;
-  }
-  node->stacksize = off;
-}
-
 Type *get_type(Node *node) {
   return walk_nodecay(node)->ty;
 }
 
 void sema(Program *prog) {
-  for (int i = 0; i < prog->nodes->len; i++) {
-    Node *node = prog->nodes->data[i];
-    if (node->op == ND_DECL)
-      continue;
+  for (int i = 0; i < prog->funcs->len; i++) {
+    Function *fn = prog->funcs->data[i];
+    Node *node = fn->node;
     assert(node->op == ND_FUNC);
-    sema_funcdef(node);
+
+    for (int i = 0; i < node->args->len; i++)
+      node->args->data[i] = walk(node->args->data[i]);
+    node->body = walk(node->body);
+
+    int off = 0;
+    for (int i = 0; i < node->lvars->len; i++) {
+      Var *var = node->lvars->data[i];
+      off = roundup(off, var->ty->align);
+      off += var->ty->size;
+      var->offset = off;
+    }
+    fn->stacksize = off;
   }
 }

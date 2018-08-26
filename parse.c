@@ -808,6 +808,13 @@ static Node *compound_stmt() {
   return node;
 }
 
+static Function *new_function(Node *node, char *name) {
+  Function *fn = malloc(sizeof(Function));
+  fn->name = name;
+  fn->node = node;
+  return fn;
+}
+
 static void toplevel() {
   bool is_typedef = consume(TK_TYPEDEF);
   bool is_extern = consume(TK_EXTERN);
@@ -822,7 +829,6 @@ static void toplevel() {
   if (consume('(')) {
     Token *t = tokens->data[pos];
     Node *node = new_node(ND_DECL, t);
-    vec_push(prog->nodes, node);
 
     lvars = new_vec();
     breaks = new_vec();
@@ -846,6 +852,8 @@ static void toplevel() {
 
     if (consume(';'))
       return;
+
+    vec_push(prog->funcs, new_function(node, name));
 
     node->op = ND_FUNC;
     t = tokens->data[pos];
@@ -882,7 +890,6 @@ Program *parse(Vector *tokens_) {
   env = new_env(NULL);
 
   prog = calloc(1, sizeof(Program));
-  prog->nodes = new_vec();
   prog->gvars = new_vec();
   prog->funcs = new_vec();
 

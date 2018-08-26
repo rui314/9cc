@@ -444,8 +444,9 @@ static void gen_stmt(Node *node) {
 }
 
 void gen_ir(Program *prog) {
-  for (int i = 0; i < prog->nodes->len; i++) {
-    Node *node = prog->nodes->data[i];
+  for (int i = 0; i < prog->funcs->len; i++) {
+    Function *fn = prog->funcs->data[i];
+    Node *node = fn->node;
 
     if (node->op == ND_VARDEF || node->op == ND_DECL)
       continue;
@@ -459,11 +460,7 @@ void gen_ir(Program *prog) {
     }
 
     gen_stmt(node->body);
-
-    Function *fn = malloc(sizeof(Function));
-    fn->name = node->name;
     fn->stacksize = node->stacksize;
     fn->ir = code;
-    vec_push(prog->funcs, fn);
   }
 }

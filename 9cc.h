@@ -67,9 +67,6 @@ typedef struct Type {
 
   // Function
   struct Type *returning;
-
-  // Typeof
-  struct Node *node;
 } Type;
 
 Type *ptr_to(Type *base);
@@ -270,10 +267,16 @@ typedef struct Node {
   Token *token;
 } Node;
 
+typedef struct {
+  char *name;
+  int stacksize;
+  Node *node;
+  Vector *ir;
+} Function;
+
 // Represents toplevel constructs.
 typedef struct {
   Vector *gvars;
-  Vector *nodes;
   Vector *funcs;
 } Program;
 
@@ -363,13 +366,6 @@ enum {
   IR_TY_REG_LABEL,
   IR_TY_CALL,
 };
-
-typedef struct {
-  char *name;
-  int stacksize;
-  Vector *ir;
-  Vector *globals;
-} Function;
 
 void gen_ir(Program *prog);
 
