@@ -27,6 +27,7 @@ typedef struct Env {
 static Program *prog;
 static Vector *lvars;
 static Vector *breaks;
+static Vector *continues;
 
 static Vector *tokens;
 static int pos;
@@ -244,6 +245,7 @@ static Node *new_node(int op, Token *t) {
 static Node *new_loop(int op, Token *t) {
   Node *node = new_node(op, t);
   node->break_label = nlabel++;
+  node->continue_label = nlabel++;
   return node;
 }
 
@@ -697,6 +699,7 @@ static Node *stmt() {
     expect('(');
     env = new_env(env);
     vec_push(breaks, node);
+    vec_push(continues, node);
 
     if (is_typename())
       node->init = declaration(true);
@@ -718,12 +721,14 @@ static Node *stmt() {
     node->body = stmt();
 
     vec_pop(breaks);
+    vec_pop(continues);
     env = env->next;
     return node;
   }
   case TK_WHILE: {
     Node *node = new_loop(ND_FOR, t);
     vec_push(breaks, node);
+    vec_push(continues, node);
 
     node->init = &null_stmt;
     node->inc = &null_stmt;
@@ -733,11 +738,13 @@ static Node *stmt() {
     node->body = stmt();
 
     vec_pop(breaks);
+    vec_pop(continues);
     return node;
   }
   case TK_DO: {
     Node *node = new_loop(ND_DO_WHILE, t);
     vec_push(breaks, node);
+    vec_push(continues, node);
 
     node->body = stmt();
     expect(TK_WHILE);
@@ -747,12 +754,20 @@ static Node *stmt() {
     expect(';');
 
     vec_pop(breaks);
+    vec_pop(continues);
     return node;
   }
   case TK_BREAK: {
     if (breaks->len == 0)
       bad_token(t, "stray break");
     Node *node = new_node(ND_BREAK, t);
+    node->target = breaks->data[breaks->len - 1];
+    return node;
+  }
+  case TK_CONTINUE: {
+    if (continues->len == 0)
+      bad_token(t, "stray continue");
+    Node *node = new_node(ND_CONTINUE, t);
     node->target = breaks->data[breaks->len - 1];
     return node;
   }
@@ -811,6 +826,7 @@ static void toplevel() {
 
     lvars = new_vec();
     breaks = new_vec();
+    continues = new_vec();
 
     node->name = name;
     node->args = new_vec();

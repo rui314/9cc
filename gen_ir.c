@@ -389,20 +389,18 @@ static void gen_stmt(Node *node) {
   }
   case ND_FOR: {
     int x = nlabel++;
-    int y = nlabel++;
-
     gen_stmt(node->init);
     label(x);
     if (node->cond) {
       int r = gen_expr(node->cond);
-      add(IR_UNLESS, r, y);
+      add(IR_UNLESS, r, node->break_label);
       kill(r);
     }
     gen_stmt(node->body);
+    label(node->continue_label);
     if (node->inc)
       gen_stmt(node->inc);
     jmp(x);
-    label(y);
     label(node->break_label);
     return;
   }
@@ -410,6 +408,7 @@ static void gen_stmt(Node *node) {
     int x = nlabel++;
     label(x);
     gen_stmt(node->body);
+    label(node->continue_label);
     int r = gen_expr(node->cond);
     add(IR_IF, r, x);
     kill(r);
@@ -418,6 +417,9 @@ static void gen_stmt(Node *node) {
   }
   case ND_BREAK:
     jmp(node->target->break_label);
+    break;
+  case ND_CONTINUE:
+    jmp(node->target->continue_label);
     break;
   case ND_RETURN: {
     int r = gen_expr(node->expr);

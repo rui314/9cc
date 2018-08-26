@@ -156,6 +156,7 @@ static Map *keyword_map() {
   map_puti(map, "_Alignof", TK_ALIGNOF);
   map_puti(map, "break", TK_BREAK);
   map_puti(map, "char", TK_CHAR);
+  map_puti(map, "continue", TK_CONTINUE);
   map_puti(map, "do", TK_DO);
   map_puti(map, "else", TK_ELSE);
   map_puti(map, "extern", TK_EXTERN);

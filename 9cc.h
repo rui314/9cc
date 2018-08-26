@@ -100,6 +100,7 @@ enum {
   TK_DO,        // "do"
   TK_WHILE,     // "while"
   TK_BREAK,     // "break"
+  TK_CONTINUE,  // "continue"
   TK_EQ,        // ==
   TK_NE,        // !=
   TK_LE,        // <=
@@ -173,6 +174,7 @@ enum {
   ND_FOR,       // "for"
   ND_DO_WHILE,  // do ... while
   ND_BREAK,     // break
+  ND_CONTINUE,  // continue
   ND_ADDR,      // address-of operator ("&")
   ND_DEREF,     // pointer dereference ("*")
   ND_DOT,       // Struct member access
@@ -252,8 +254,9 @@ typedef struct Node {
   struct Node *body;
 
   int break_label;
+  int continue_label;
 
-  // For break
+  // For break and continue
   struct Node *target;
 
   // Function definition

@@ -129,12 +129,16 @@ int main() {
   EXPECT(3, ({ int x; int y; x=y=3; return y; }));
 
   EXPECT(45, ({ int x=0; int y=0; do { y=y+x; x=x+1; } while (x < 10); return y; }));
+  EXPECT(1, ({ int x=0; do {x++; break;} while (1); return x; }));
+  EXPECT(1, ({ int x=0; do {x++; continue;} while (0); return x; }));
 
   EXPECT(60, ({ int sum=0; int i; for (i=10; i<15; i=i+1) sum = sum + i; return sum;}));
   EXPECT(89, ({ int i=1; int j=1; for (int k=0; k<10; k=k+1) { int m=i+j; i=j; j=m; } return i;}));
   EXPECT(1, ({ int i=1; for (int i = 5; i < 10; i++); return i; }));
-  EXPECT(5, ({ int i=0; for (0; i < 10; i++) if (i==5) break; return i; }));
+  EXPECT(5, ({ int i=0; for (; i < 10; i++) if (i==5) break; return i; }));
   EXPECT(10, ({ int i=0; for (;;) { i++; if (i==10) break; } return i; }));
+
+  EXPECT(7, ({ int i=0; for (int j=0; j < 10; j++) { if (j<3) continue; i++; } return i; }));
 
   EXPECT(45, ({ int i=0; int j=0; while (i<10) { j=j+i; i=i+1; } return j;}));
 

@@ -75,6 +75,7 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_NUM:
   case ND_NULL:
   case ND_BREAK:
+  case ND_CONTINUE:
     return node;
   case ND_VAR:
     return maybe_decay(node, decay);
