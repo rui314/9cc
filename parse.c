@@ -398,9 +398,9 @@ static Node *unary() {
   if (consume('~'))
     return new_expr('~', t, unary());
   if (consume(TK_SIZEOF))
-    return new_expr(ND_SIZEOF, t, unary());
+    return new_int_node(get_type(unary())->size, t);
   if (consume(TK_ALIGNOF))
-    return new_expr(ND_ALIGNOF, t, unary());
+    return new_int_node(get_type(unary())->align, t);
   if (consume(TK_INC))
     return new_binop(ND_ADD_EQ, t, unary(), new_int_node(1, t));
   if (consume(TK_DEC))

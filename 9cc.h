@@ -195,9 +195,6 @@ enum {
   ND_XOR_EQ,    // ^=
   ND_BITOR_EQ,  // |=
   ND_RETURN,    // "return"
-  ND_SIZEOF,    // "sizeof"
-  ND_ALIGNOF,   // "_Alignof"
-  ND_TYPEOF,    // "typeof"
   ND_CALL,      // Function call
   ND_FUNC,      // Function definition
   ND_COMP_STMT, // Compound statement

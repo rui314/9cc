@@ -220,14 +220,6 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_EXPR_STMT:
     node->expr = walk(node->expr);
     return node;
-  case ND_SIZEOF: {
-    Node *expr = walk_noconv(node->expr);
-    return new_int_node(expr->ty->size, expr->token);
-  }
-  case ND_ALIGNOF: {
-    Node *expr = walk_noconv(node->expr);
-    return new_int_node(expr->ty->align, expr->token);
-  }
   case ND_CALL:
     for (int i = 0; i < node->args->len; i++)
       node->args->data[i] = walk(node->args->data[i]);
@@ -262,7 +254,7 @@ static void sema_funcdef(Node *node) {
 }
 
 Type *get_type(Node *node) {
-  return walk(node)->ty;
+  return walk_noconv(node)->ty;
 }
 
 void sema(Program *prog) {
