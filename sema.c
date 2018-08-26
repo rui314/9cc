@@ -66,7 +66,7 @@ static Node *walk(Node *node) {
   return do_walk(node, true);
 }
 
-static Node *walk_noconv(Node *node) {
+static Node *walk_nodecay(Node *node) {
   return do_walk(node, false);
 }
 
@@ -131,7 +131,7 @@ static Node *do_walk(Node *node, bool decay) {
   }
   case ND_ADD_EQ:
   case ND_SUB_EQ:
-    node->lhs = walk_noconv(node->lhs);
+    node->lhs = walk_nodecay(node->lhs);
     check_lval(node->lhs);
     node->rhs = walk(node->rhs);
     node->ty = node->lhs->ty;
@@ -148,7 +148,7 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_BITAND_EQ:
   case ND_XOR_EQ:
   case ND_BITOR_EQ:
-    node->lhs = walk_noconv(node->lhs);
+    node->lhs = walk_nodecay(node->lhs);
     check_lval(node->lhs);
     node->rhs = walk(node->rhs);
     node->ty = node->lhs->ty;
@@ -268,7 +268,7 @@ static void sema_funcdef(Node *node) {
 }
 
 Type *get_type(Node *node) {
-  return walk_noconv(node)->ty;
+  return walk_nodecay(node)->ty;
 }
 
 void sema(Program *prog) {
