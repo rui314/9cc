@@ -203,7 +203,6 @@ static Node *do_walk(Node *node, bool decay) {
     return node;
   case ND_POST_INC:
   case ND_POST_DEC:
-  case ND_NEG:
     node->expr = walk(node->expr);
     node->ty = node->expr->ty;
     return node;

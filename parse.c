@@ -397,7 +397,7 @@ static Node *unary() {
   Token *t = tokens->data[pos];
 
   if (consume('-'))
-    return new_expr(ND_NEG, t, unary());
+    return new_binop('-', t, new_int_node(0, t), unary());
   if (consume('*'))
     return new_expr(ND_DEREF, t, unary());
   if (consume('&'))

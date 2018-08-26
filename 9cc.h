@@ -186,7 +186,6 @@ enum {
   ND_SHL,       // <<
   ND_SHR,       // >>
   ND_MOD,       // %
-  ND_NEG,       // -
   ND_POST_INC,  // post ++
   ND_POST_DEC,  // post --
   ND_MUL_EQ,    // *=
@@ -322,7 +321,6 @@ enum {
   IR_SHL,
   IR_SHR,
   IR_MOD,
-  IR_NEG,
   IR_JMP,
   IR_IF,
   IR_UNLESS,

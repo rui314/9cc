@@ -306,11 +306,6 @@ static int gen_expr(Node *node) {
     add_imm(IR_XOR, r, -1);
     return r;
   }
-  case ND_NEG: {
-    int r = gen_expr(node->expr);
-    add(IR_NEG, r, -1);
-    return r;
-  }
   case ND_POST_INC:
     return gen_post_inc(node, 1);
   case ND_POST_DEC:

@@ -20,7 +20,6 @@ IRInfo irinfo[] = {
         [IR_SHR] = {"SHR", IR_TY_REG_REG},
         [IR_LOAD] = {"LOAD", IR_TY_MEM},
         [IR_MOD] = {"MOD", IR_TY_REG_REG},
-        [IR_NEG] = {"NEG", IR_TY_REG},
         [IR_MOV] = {"MOV", IR_TY_REG_REG},
         [IR_MUL] = {"MUL", IR_TY_BINARY},
         [IR_NOP] = {"NOP", IR_TY_NOARG},
