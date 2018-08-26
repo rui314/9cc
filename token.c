@@ -177,29 +177,40 @@ static char *block_comment(char *pos) {
   bad_position(pos, "unclosed comment");
 }
 
-static char *char_literal(char *p) {
-  Token *t = add(TK_NUM, p++);
-
-  if (!*p)
-    goto err;
-
+static int c_char(int *res, char *p) {
   if (*p != '\\') {
-    t->val = *p++;
-  } else {
-    if (!p[1])
-      goto err;
-    int esc = escaped[(unsigned)p[1]];
-    t->val = esc ? esc : p[1];
-    p += 2;
+    *res = *p;
+    return 1;
   }
 
+  char *start = p++;
+  int esc = escaped[(unsigned)*p];
+  if (esc) {
+    *res = esc;
+    return 2;
+  }
+
+  if ('0' <= *p && *p <= '7') {
+    int i = *p++ - '0';
+    if ('0' <= *p && *p <= '7')
+      i = i * 8 + *p++ - '0';
+    if ('0' <= *p && *p <= '7')
+      i = i * 8 + *p++ - '0';
+    *res = i;
+    return p - start;
+  }
+
+  *res = *p;
+  return 2;
+}
+
+static char *char_literal(char *p) {
+  Token *t = add(TK_NUM, p++);
+  p += c_char(&t->val, p);
   if (*p != '\'')
-    goto err;
+    bad_token(t, "unclosed character literal");
   t->end = p + 1;
   return p + 1;
-
-err:
-  bad_token(t, "unclosed character literal");
 }
 
 static char *string_literal(char *p) {
