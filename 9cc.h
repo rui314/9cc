@@ -212,7 +212,6 @@ enum {
   ARY,
   STRUCT,
   FUNC,
-  TYPEOF,
 };
 
 typedef struct {
