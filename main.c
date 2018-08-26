@@ -31,18 +31,18 @@ int main(int argc, char **argv) {
 
   // Tokenize and parse.
   Vector *tokens = tokenize(path, true);
-  Vector *nodes = parse(tokens);
-  Vector *globals = sema(nodes);
-  Vector *fns = gen_ir(nodes);
+  Program *prog = parse(tokens);
+  sema(prog);
+  gen_ir(prog);
 
   if (dump_ir1)
-    dump_ir(fns);
+    dump_ir(prog->funcs);
 
-  alloc_regs(fns);
+  alloc_regs(prog);
 
   if (dump_ir2)
-    dump_ir(fns);
+    dump_ir(prog->funcs);
 
-  gen_x86(globals, fns);
+  gen_x86(prog);
   return 0;
 }

@@ -742,18 +742,22 @@ static Node *toplevel() {
   return node;
 };
 
-Vector *parse(Vector *tokens_) {
+Program *parse(Vector *tokens_) {
   tokens = tokens_;
   pos = 0;
   env = new_env(env);
 
-  Vector *v = new_vec();
+  Program *prog = calloc(1, sizeof(Program));
+  prog->gvars = new_vec();
+  prog->nodes = new_vec();
+  prog->funcs = new_vec();
+
   for (;;) {
     Token *t = tokens->data[pos];
     if (t->ty == TK_EOF)
-      return v;
+      return prog;
     Node *node = toplevel();
     if (node)
-      vec_push(v, node);
+      vec_push(prog->nodes, node);
   }
 }

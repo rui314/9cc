@@ -456,11 +456,9 @@ static void gen_stmt(Node *node) {
   }
 }
 
-Vector *gen_ir(Vector *nodes) {
-  Vector *v = new_vec();
-
-  for (int i = 0; i < nodes->len; i++) {
-    Node *node = nodes->data[i];
+void gen_ir(Program *prog) {
+  for (int i = 0; i < prog->nodes->len; i++) {
+    Node *node = prog->nodes->data[i];
 
     if (node->op == ND_VARDEF || node->op == ND_DECL)
       continue;
@@ -479,8 +477,6 @@ Vector *gen_ir(Vector *nodes) {
     fn->name = node->name;
     fn->stacksize = node->stacksize;
     fn->ir = code;
-    fn->globals = node->globals;
-    vec_push(v, fn);
+    vec_push(prog->funcs, fn);
   }
-  return v;
 }

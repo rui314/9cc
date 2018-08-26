@@ -261,13 +261,20 @@ typedef struct Node {
   Token *token;
 } Node;
 
-Vector *parse(Vector *tokens);
+// Represents toplevel constructs.
+typedef struct {
+  Vector *gvars;
+  Vector *nodes;
+  Vector *funcs;
+} Program;
+
+Program *parse(Vector *tokens);
 
 Node *new_int_node(int val, Token *t);
 
 /// sema.c
 
-Vector *sema(Vector *nodes);
+void sema(Program *prog);
 
 /// ir_dump.c
 
@@ -355,11 +362,11 @@ typedef struct {
   Vector *globals;
 } Function;
 
-Vector *gen_ir(Vector *fns);
+void gen_ir(Program *prog);
 
 /// regalloc.c
 
-void alloc_regs(Vector *irv);
+void alloc_regs(Program *prog);
 
 /// gen_x86.c
 
@@ -368,4 +375,4 @@ extern char *regs8[];
 extern char *regs32[];
 extern int num_regs;
 
-void gen_x86(Vector *globals, Vector *fns);
+void gen_x86(Program *prog);

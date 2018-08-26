@@ -27,7 +27,7 @@ typedef struct Env {
   struct Env *next;
 } Env;
 
-static Vector *globals;
+static Program *prog;
 static Vector *locals;
 static Env *env;
 static int str_label;
@@ -112,7 +112,7 @@ static Node *do_walk(Node *node, bool decay) {
     var->name = format(".L.str%d", str_label++);
     var->data = node->data;
     var->len = node->len;
-    vec_push(globals, var);
+    vec_push(prog->gvars, var);
 
     Node *n = calloc(1, sizeof(Node));
     n->op = ND_VAR;
@@ -326,12 +326,12 @@ static Node *do_walk(Node *node, bool decay) {
   }
 }
 
-Vector *sema(Vector *nodes) {
+void sema(Program *prog_) {
   env = new_env(NULL);
-  globals = new_vec();
+  prog = prog_;
 
-  for (int i = 0; i < nodes->len; i++) {
-    Node *node = nodes->data[i];
+  for (int i = 0; i < prog->nodes->len; i++) {
+    Node *node = prog->nodes->data[i];
 
     if (node->op == ND_VARDEF) {
       Var *var = calloc(1, sizeof(Var));
@@ -341,9 +341,8 @@ Vector *sema(Vector *nodes) {
       var->name = node->name;
       var->data = node->data;
       var->len = node->len;
-      vec_push(globals, var);
-
       map_put(env->vars, node->name, var);
+      vec_push(prog->gvars, var);
       continue;
     }
 
@@ -372,6 +371,4 @@ Vector *sema(Vector *nodes) {
     }
     node->stacksize = off;
   }
-
-  return globals;
 }

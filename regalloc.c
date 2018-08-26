@@ -72,13 +72,13 @@ static void visit(Vector *irv) {
   }
 }
 
-void alloc_regs(Vector *fns) {
+void alloc_regs(Program *prog) {
   used = calloc(1, num_regs);
   for (int i = 0; i < reg_map_sz; i++)
     reg_map[i] = -1;
 
-  for (int i = 0; i < fns->len; i++) {
-    Function *fn = fns->data[i];
+  for (int i = 0; i < prog->funcs->len; i++) {
+    Function *fn = prog->funcs->data[i];
     visit(fn->ir);
   }
 }
