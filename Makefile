@@ -22,4 +22,7 @@ test: 9cc test/test.c
 clean:
 	rm -f 9cc *.o *~ tmp* a.out test/*~
 
-.PHONY: test clean
+format:
+	clang-format -i *.c *.h
+
+.PHONY: test clean format
