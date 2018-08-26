@@ -11,8 +11,8 @@
 
 /// util.c
 
-noreturn void error(char *fmt, ...);
-char *format(char *fmt, ...);
+noreturn void error(char *fmt, ...) __attribute__((format(printf, 1, 2)));
+char *format(char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 typedef struct {
   void **data;

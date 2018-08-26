@@ -59,7 +59,7 @@ static void expect(int ty) {
   if (isprint(ty))
     bad_token(t, format("%c expected", ty));
   assert(ty == TK_WHILE);
-  bad_token(t, format("'while' expected", ty));
+  bad_token(t, "'while' expected");
 }
 
 static Type *new_prim_ty(int ty, int size) {
