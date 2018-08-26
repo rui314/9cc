@@ -202,7 +202,7 @@ enum {
 };
 
 enum {
-  INT,
+  INT = 1,
   CHAR,
   VOID,
   PTR,
@@ -248,6 +248,7 @@ typedef struct Node {
   // Function definition
   int stacksize;
   Vector *globals;
+  Vector *lvars;
 
   // Function call
   Vector *args;

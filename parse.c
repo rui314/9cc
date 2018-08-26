@@ -9,25 +9,39 @@
 // Semantic errors are detected in a later pass.
 
 typedef struct Env {
+  Map *vars;
   Map *typedefs;
   Map *tags;
   struct Env *next;
 } Env;
 
 static Program *prog;
+static Vector *lvars;
+
 static Vector *tokens;
 static int pos;
 struct Env *env;
-static int str_label = 1;
+
+static int label = 1;
 static Node null_stmt = {ND_NULL};
 static Node break_stmt = {ND_BREAK};
 
 static Env *new_env(Env *next) {
   Env *env = calloc(1, sizeof(Env));
+  env->vars = new_map();
   env->typedefs = new_map();
   env->tags = new_map();
   env->next = next;
   return env;
+}
+
+static Var *find_var(char *name) {
+  for (Env *e = env; e; e = e->next) {
+    Var *var = map_get(e->vars, name);
+    if (var)
+      return var;
+  }
+  return NULL;
 }
 
 static Type *find_typedef(char *name) {
@@ -48,6 +62,15 @@ static Type *find_tag(char *name) {
   return NULL;
 }
 
+static Var *add_lvar(Type *ty, char *name) {
+  Var *var = calloc(1, sizeof(Var));
+  var->ty = ty;
+  var->is_local = true;
+  vec_push(lvars, var);
+  map_put(env->vars, name, var);
+  return var;
+}
+
 static Var *add_gvar(Type *ty, char *name, char *data, int len) {
   Var *var = calloc(1, sizeof(Var));
   var->ty = ty;
@@ -56,6 +79,7 @@ static Var *add_gvar(Type *ty, char *name, char *data, int len) {
   var->data = data;
   var->len = len;
   vec_push(prog->gvars, var);
+  map_put(env->vars, name, var);
   return var;
 }
 
@@ -95,6 +119,12 @@ static Type *int_ty() {
   return new_prim_ty(INT, 4);
 }
 
+static Type *func_ty(Type *base) {
+  Type *ty = calloc(1, sizeof(Type));
+  ty->returning = base;
+  return ty;
+}
+
 static bool consume(int ty) {
   Token *t = tokens->data[pos];
   if (t->ty != ty)
@@ -111,7 +141,7 @@ static bool is_typename() {
          t->ty == TK_STRUCT;
 }
 
-static Node *declaration();
+static Node *declaration(bool define);
 
 static void add_members(Type *ty, Vector *members) {
   int off = 0;
@@ -163,7 +193,7 @@ static Type *decl_specifiers() {
     if (consume('{')) {
       members = new_vec();
       while (!consume('}'))
-        vec_push(members, declaration());
+        vec_push(members, declaration(false));
     }
 
     if (!tag && !members)
@@ -245,7 +275,7 @@ static Node *primary() {
 
   if (t->ty == TK_STR) {
     Type *ty = ary_of(char_ty(), t->len);
-    char *name = format(".L.str%d", str_label++);
+    char *name = format(".L.str%d", label++);
 
     Node *node = new_node(ND_VAR, t);
     node->ty = ty;
@@ -254,15 +284,31 @@ static Node *primary() {
   }
 
   if (t->ty == TK_IDENT) {
+    Var *var = find_var(t->name);
+
+    // Variable
     if (!consume('(')) {
+      if (!var)
+        bad_token(t, "undefined variable");
       Node *node = new_node(ND_VAR, t);
+      node->ty = var->ty;
       node->name = t->name;
+      node->var = var;
       return node;
     }
 
+    // Function call
     Node *node = new_node(ND_CALL, t);
     node->name = t->name;
     node->args = new_vec();
+
+    if (var && var->ty->ty == FUNC) {
+      node->ty = var->ty;
+    } else {
+      warn_token(t, "undefined function");
+      node->ty = func_ty(int_ty());
+    }
+
     if (consume(')'))
       return node;
 
@@ -570,10 +616,12 @@ static Node *declarator(Type *ty) {
   return direct_decl(ty);
 }
 
-static Node *declaration() {
+static Node *declaration(bool define) {
   Type *ty = decl_specifiers();
   Node *node = declarator(ty);
   expect(';');
+  if (define)
+    node->var = add_lvar(node->ty, node->name);
   return node;
 }
 
@@ -582,6 +630,7 @@ static Node *param_declaration() {
   Node *node = declarator(ty);
   if (node->ty->ty == ARY)
     node->ty = ptr_to(node->ty->ary_of);
+  node->var = add_lvar(node->ty, node->name);
   return node;
 }
 
@@ -597,7 +646,7 @@ static Node *stmt() {
 
   switch (t->ty) {
   case TK_TYPEDEF: {
-    Node *node = declaration();
+    Node *node = declaration(false);
     assert(node->name);
     map_put(env->typedefs, node->name, node->ty);
     return &null_stmt;
@@ -617,9 +666,10 @@ static Node *stmt() {
   case TK_FOR: {
     Node *node = new_node(ND_FOR, t);
     expect('(');
+    env = new_env(env);
 
     if (is_typename())
-      node->init = declaration();
+      node->init = declaration(true);
     else if (consume(';'))
       node->init = &null_stmt;
     else
@@ -636,6 +686,7 @@ static Node *stmt() {
     }
 
     node->body = stmt();
+    env = env->next;
     return node;
   }
   case TK_WHILE: {
@@ -667,10 +718,12 @@ static Node *stmt() {
     return node;
   }
   case '{': {
+    env = new_env(env);
     Node *node = new_node(ND_COMP_STMT, t);
     node->stmts = new_vec();
     while (!consume('}'))
       vec_push(node->stmts, stmt());
+    env = env->next;
     return node;
   }
   case ';':
@@ -678,7 +731,7 @@ static Node *stmt() {
   default:
     pos--;
     if (is_typename())
-      return declaration();
+      return declaration(true);
     return expr_stmt();
   }
 }
@@ -711,6 +764,8 @@ static void toplevel() {
     Node *node = new_node(ND_DECL, t);
     vec_push(prog->nodes, node);
 
+    lvars = new_vec();
+
     node->name = name;
     node->args = new_vec();
 
@@ -725,6 +780,8 @@ static void toplevel() {
       expect(')');
     }
 
+    add_lvar(node->ty, name);
+
     if (consume(';'))
       return;
 
@@ -734,6 +791,7 @@ static void toplevel() {
     if (is_typedef)
       bad_token(t, "typedef has function definition");
     node->body = compound_stmt();
+    node->lvars = lvars;
     return;
   }
 

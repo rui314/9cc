@@ -22,31 +22,6 @@
 
 static Type int_ty = {INT, 4, 4};
 
-typedef struct Env {
-  Map *vars;
-  struct Env *next;
-} Env;
-
-static Program *prog;
-static Vector *locals;
-static Env *env;
-
-static Env *new_env(Env *next) {
-  Env *env = calloc(1, sizeof(Env));
-  env->vars = new_map();
-  env->next = next;
-  return env;
-}
-
-static Var *find_var(char *name) {
-  for (Env *e = env; e; e = e->next) {
-    Var *var = map_get(e->vars, name);
-    if (var)
-      return var;
-  }
-  return NULL;
-}
-
 static void swap(Node **p, Node **q) {
   Node *r = *p;
   *p = *q;
@@ -66,10 +41,6 @@ static Node *maybe_decay(Node *base, bool decay) {
 
 noreturn static void bad_node(Node *node, char *msg) {
   bad_token(node->token, msg);
-}
-
-static void warn_node(Node *node, char *msg) {
-  warn_token(node->token, msg);
 }
 
 static void check_lval(Node *node) {
@@ -102,30 +73,12 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_NULL:
   case ND_BREAK:
     return node;
-  case ND_VAR: {
-    Var *var = node->var;
-    if (!var) {
-      var = find_var(node->name);
-      if (!var)
-        bad_node(node, "undefined variable");
-      node->var = var;
-    }
-
-    node->ty = var->ty;
+  case ND_VAR:
     return maybe_decay(node, decay);
-  }
-  case ND_VARDEF: {
-    Var *var = calloc(1, sizeof(Var));
-    var->ty = node->ty;
-    var->is_local = true;
-    map_put(env->vars, node->name, var);
-    vec_push(locals, var);
-    node->var = var;
-
+  case ND_VARDEF:
     if (node->init)
       node->init = walk(node->init);
     return node;
-  }
   case ND_IF:
     node->cond = walk(node->cond);
     node->then = walk(node->then);
@@ -133,14 +86,12 @@ static Node *do_walk(Node *node, bool decay) {
       node->els = walk(node->els);
     return node;
   case ND_FOR:
-    env = new_env(env);
     node->init = walk(node->init);
     if (node->cond)
       node->cond = walk(node->cond);
     if (node->inc)
       node->inc = walk(node->inc);
     node->body = walk(node->body);
-    env = env->next;
     return node;
   case ND_DO_WHILE:
     node->cond = walk(node->cond);
@@ -281,24 +232,13 @@ static Node *do_walk(Node *node, bool decay) {
     Node *expr = walk_noconv(node->expr);
     return new_int_node(expr->ty->align, expr->token);
   }
-  case ND_CALL: {
-    Var *var = find_var(node->name);
-    if (var && var->ty->ty == FUNC) {
-      node->ty = var->ty->returning;
-    } else {
-      warn_node(node, "undefined function");
-      node->ty = &int_ty;
-    }
-
+  case ND_CALL:
     for (int i = 0; i < node->args->len; i++)
       node->args->data[i] = walk(node->args->data[i]);
     return node;
-  }
   case ND_COMP_STMT: {
-    env = new_env(env);
     for (int i = 0; i < node->stmts->len; i++)
       node->stmts->data[i] = walk(node->stmts->data[i]);
-    env = env->next;
     return node;
   }
   case ND_STMT_EXPR:
@@ -311,15 +251,13 @@ static Node *do_walk(Node *node, bool decay) {
 }
 
 static void sema_funcdef(Node *node) {
-  locals = new_vec();
-
   for (int i = 0; i < node->args->len; i++)
     node->args->data[i] = walk(node->args->data[i]);
   node->body = walk(node->body);
 
   int off = 0;
-  for (int i = 0; i < locals->len; i++) {
-    Var *var = locals->data[i];
+  for (int i = 0; i < node->lvars->len; i++) {
+    Var *var = node->lvars->data[i];
     off = roundup(off, var->ty->align);
     off += var->ty->size;
     var->offset = off;
@@ -327,24 +265,9 @@ static void sema_funcdef(Node *node) {
   node->stacksize = off;
 }
 
-void sema(Program *prog_) {
-  env = new_env(NULL);
-  prog = prog_;
-
-  for (int i = 0; i < prog->gvars->len; i++) {
-    Var *var = prog->gvars->data[i];
-    map_put(env->vars, var->name, var);
-  }
-
+void sema(Program *prog) {
   for (int i = 0; i < prog->nodes->len; i++) {
     Node *node = prog->nodes->data[i];
-
-    Var *var = calloc(1, sizeof(Var));
-    var->ty = node->ty;
-    var->is_local = false;
-    var->name = node->name;
-    map_put(env->vars, node->name, var);
-
     if (node->op == ND_DECL)
       continue;
 
