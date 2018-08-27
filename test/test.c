@@ -241,6 +241,15 @@ int main() {
   EXPECT(1, ({ char x; typeof(x) y = 257; y; }));
   EXPECT(2, ({ char x; typeof(x) y[2]; y[0]=257; y[1]=1; y[0]+y[1]; }));
 
+  EXPECT(0, ({ _Bool x = 0; x; }));
+  EXPECT(1, ({ _Bool x = 1; x; }));
+  EXPECT(0, ({ _Bool x; x = 0; x; }));
+  EXPECT(1, ({ _Bool x; x = 2; x; }));
+  EXPECT(0, ({ _Bool x; int y = 0; x = y; x; }));
+  EXPECT(1, ({ _Bool x; int y = -1; x = y; x; }));
+  EXPECT(0, ({ _Bool x; _Bool y = 0; x = y; x; }));
+  EXPECT(1, ({ _Bool x; _Bool y = 1; x = y; x; }));
+
   printf("OK\n");
   return 0;
 }

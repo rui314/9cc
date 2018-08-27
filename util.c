@@ -139,6 +139,10 @@ Type *void_ty() {
   return new_ty(VOID, 0);
 }
 
+Type *bool_ty() {
+  return new_ty(BOOL, 1);
+}
+
 Type *char_ty() {
   return new_ty(CHAR, 1);
 }

@@ -72,6 +72,7 @@ typedef struct Type {
 Type *ptr_to(Type *base);
 Type *ary_of(Type *base, int len);
 Type *void_ty();
+Type *bool_ty();
 Type *char_ty();
 Type *int_ty();
 Type *func_ty(Type *returning);
@@ -95,6 +96,7 @@ enum {
   TK_CHAR,      // "char"
   TK_VOID,      // "void"
   TK_STRUCT,    // "struct"
+  TK_BOOL,      // "_Bool"
   TK_IF,        // "if"
   TK_ELSE,      // "else"
   TK_FOR,       // "for"
@@ -171,6 +173,7 @@ enum {
   ND_DECL,      // declaration
   ND_VARDEF,    // Variable definition
   ND_VAR,       // Variable reference
+  ND_CAST,      // Cast
   ND_IF,        // "if"
   ND_FOR,       // "for"
   ND_DO_WHILE,  // do ... while
@@ -209,9 +212,10 @@ enum {
 };
 
 enum {
-  INT = 1,
+  VOID = 1,
+  BOOL,
   CHAR,
-  VOID,
+  INT,
   PTR,
   ARY,
   STRUCT,

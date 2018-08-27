@@ -11,6 +11,9 @@
 //   Recall that, in C, "array of T" is automatically converted to
 //   "pointer to T" in most contexts.
 //
+// - Insert nodes for implicit cast so that they are explicitly
+//   represented in AST.
+//
 // - Scales operands for pointer arithmetic. E.g. ptr+1 becomes ptr+4
 //   for integer and becomes ptr+8 for pointer.
 //
@@ -43,6 +46,15 @@ static Node *scale_ptr(int op, Node *base, Type *ty) {
   node->op = op;
   node->lhs = base;
   node->rhs = new_int_node(ty->ptr_to->size, base->token);
+  node->token = base->token;
+  return node;
+}
+
+static Node *cast(Node *base, Type *ty) {
+  Node *node = calloc(1, sizeof(Node));
+  node->op = ND_CAST;
+  node->ty = ty;
+  node->expr = base;
   node->token = base->token;
   return node;
 }
@@ -143,6 +155,13 @@ static Node *do_walk(Node *node, bool decay) {
     }
     return node;
   case '=':
+    node->lhs = walk_nodecay(node->lhs);
+    check_lval(node->lhs);
+    node->rhs = walk(node->rhs);
+    if (node->lhs->ty->ty == BOOL)
+      node->rhs = cast(node->rhs, bool_ty());
+    node->ty = node->lhs->ty;
+    return node;
   case ND_MUL_EQ:
   case ND_DIV_EQ:
   case ND_MOD_EQ:

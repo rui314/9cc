@@ -121,7 +121,7 @@ static bool is_typename() {
   if (t->ty == TK_IDENT)
     return find_typedef(t->name);
   return t->ty == TK_INT || t->ty == TK_CHAR || t->ty == TK_VOID ||
-         t->ty == TK_STRUCT || t->ty == TK_TYPEOF;
+         t->ty == TK_STRUCT || t->ty == TK_TYPEOF || t->ty == TK_BOOL;
 }
 
 static Node *declaration(bool define);
@@ -155,14 +155,14 @@ static Type *decl_specifiers() {
     return ty;
   }
 
-  if (t->ty == TK_INT)
-    return int_ty();
-
-  if (t->ty == TK_CHAR)
-    return char_ty();
-
   if (t->ty == TK_VOID)
     return void_ty();
+  if (t->ty == TK_BOOL)
+    return bool_ty();
+  if (t->ty == TK_CHAR)
+    return char_ty();
+  if (t->ty == TK_INT)
+    return int_ty();
 
   if (t->ty == TK_TYPEOF) {
     expect('(');

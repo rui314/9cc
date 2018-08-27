@@ -240,6 +240,16 @@ static int gen_expr(Node *node) {
     load(node, r, r);
     return r;
   }
+  case ND_CAST: {
+    int r = gen_expr(node->expr);
+    if (node->ty->ty != BOOL)
+      return r;
+    int r2 = nreg++;
+    add(IR_IMM, r2, 0);
+    add(IR_NE, r, r2);
+    kill(r2);
+    return r;
+  }
   case ND_STMT_EXPR:
     gen_stmt(node->body);
     return gen_expr(node->expr);

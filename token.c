@@ -143,6 +143,7 @@ static struct {
 static Map *keyword_map() {
   Map *map = new_map();
   map_puti(map, "_Alignof", TK_ALIGNOF);
+  map_puti(map, "_Bool", TK_BOOL);
   map_puti(map, "break", TK_BREAK);
   map_puti(map, "char", TK_CHAR);
   map_puti(map, "continue", TK_CONTINUE);
