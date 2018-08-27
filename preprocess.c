@@ -144,7 +144,7 @@ static void replace_macro_params(Macro *m) {
   }
 }
 
-// Process '#' followed by a macro parameter with one token.
+// Replaces '#' followed by a macro parameter with one token.
 static void replace_hash_ident(Macro *m) {
   Vector *tokens = m->tokens;
   Vector *v = new_vec();
