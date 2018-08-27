@@ -264,9 +264,9 @@ static void apply(Macro *m, Token *start) {
 
 static void define_funclike(char *name) {
   Macro *m = new_macro(FUNCLIKE, name);
-  vec_push(m->params, ident("parameter name expected"));
   while (!consume(')')) {
-    get(',', "comma expected");
+    if (m->params->len > 0)
+      get(',', ", expected");
     vec_push(m->params, ident("parameter name expected"));
   }
 
