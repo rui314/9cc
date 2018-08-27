@@ -3,7 +3,6 @@
 typedef struct Env {
   char *path;
   char *buf;
-  char *pos;
   Vector *tokens;
   struct Env *next;
 } Env;
@@ -43,7 +42,6 @@ static Env *new_env(Env *next, char *path, char *buf) {
   Env *env = calloc(1, sizeof(Env));
   env->path = strcmp(path, "-") ? path : "(stdin)";
   env->buf = buf;
-  env->pos = env->buf;
   env->tokens = new_vec();
   env->next = next;
   return env;
