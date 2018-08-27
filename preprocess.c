@@ -14,11 +14,11 @@ typedef struct Env {
 static Env *env;
 
 static Env *new_env(Env *next, Vector *input) {
-  Env *c = calloc(1, sizeof(Env));
-  c->input = input;
-  c->output = new_vec();
-  c->next = next;
-  return c;
+  Env *env = calloc(1, sizeof(Env));
+  env->input = input;
+  env->output = new_vec();
+  env->next = next;
+  return env;
 }
 
 enum {
