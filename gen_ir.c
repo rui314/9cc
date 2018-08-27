@@ -53,11 +53,6 @@ static void store(Node *node, int dst, int src) {
   ir->size = node->ty->size;
 }
 
-static void store_arg(Node *node, int bpoff, int argreg) {
-  IR *ir = add(IR_STORE_ARG, bpoff, argreg);
-  ir->size = node->ty->size;
-}
-
 // In C, all expressions that can be written on the left-hand side of
 // the '=' operator must have an address in memory. In other words, if
 // you can apply the '&' operator to take an address of some
@@ -428,9 +423,10 @@ void gen_ir(Program *prog) {
     assert(node->op == ND_FUNC);
     code = new_vec();
 
-    for (int i = 0; i < node->args->len; i++) {
-      Node *arg = node->args->data[i];
-      store_arg(arg, arg->var->offset, i);
+    for (int i = 0; i < node->params->len; i++) {
+      Var *var = node->params->data[i];
+      IR *ir = add(IR_STORE_ARG, var->offset, i);
+      ir->size = var->ty->size;
     }
 
     gen_stmt(node->body);

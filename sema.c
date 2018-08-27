@@ -77,7 +77,6 @@ static Node *walk_nodecay(Node *node) {
 
 static Node *do_walk(Node *node, bool decay) {
   switch (node->op) {
-  case ND_VARDEF:
   case ND_NUM:
   case ND_NULL:
   case ND_BREAK:
@@ -289,8 +288,6 @@ void sema(Program *prog) {
     Node *node = fn->node;
     assert(node->op == ND_FUNC);
 
-    for (int i = 0; i < node->args->len; i++)
-      node->args->data[i] = walk(node->args->data[i]);
     node->body = walk(node->body);
 
     int off = 0;

@@ -224,13 +224,13 @@ enum {
 
 typedef struct {
   Type *ty;
+  char *name;
   bool is_local;
 
   // local
   int offset;
 
   // global
-  char *name;
   char *data;
   int len;
 } Var;
@@ -265,7 +265,10 @@ typedef struct Node {
   int continue_label;
   struct Node *target;
 
-  // Function definition and function call
+  // Function definition
+  Vector *params;
+
+  // Function call
   Vector *args;
 
   // For error reporting
