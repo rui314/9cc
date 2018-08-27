@@ -184,6 +184,8 @@ int main() {
   EXPECT('0', "\10000"[1]);
   EXPECT('0', "\10000"[2]);
   EXPECT(0, "\10000"[3]);
+  EXPECT(255, "\xffxyz"[0]);
+  EXPECT('x', "\xffxyz"[1]);
 
   EXPECT('a', ({ char *p = "abc"; return p[0]; }));
   EXPECT('b', ({ char *p = "abc"; return p[1]; }));

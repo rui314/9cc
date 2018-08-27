@@ -20,14 +20,15 @@ static char *backslash_escape(char *s, int len) {
 
   StringBuilder *sb = new_sb();
   for (int i = 0; i < len; i++) {
-    char esc = escaped[(unsigned)s[i]];
+    uint8_t c = s[i];
+    char esc = escaped[c];
     if (esc) {
       sb_add(sb, '\\');
       sb_add(sb, esc);
-    } else if (isgraph(s[i]) || s[i] == ' ') {
-      sb_add(sb, s[i]);
+    } else if (isgraph(c) || c == ' ') {
+      sb_add(sb, c);
     } else {
-      sb_append(sb, format("\\%03o", s[i]));
+      sb_append(sb, format("\\%03o", c));
     }
   }
   return sb_get(sb);
