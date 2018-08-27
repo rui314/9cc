@@ -342,17 +342,6 @@ static void gen_stmt(Node *node) {
   switch (node->op) {
   case ND_NULL:
     return;
-  case ND_VARDEF: {
-    if (!node->init)
-      return;
-    int rhs = gen_expr(node->init);
-    int lhs = nreg++;
-    add(IR_BPREL, lhs, node->var->offset);
-    store(node, lhs, rhs);
-    kill(lhs);
-    kill(rhs);
-    return;
-  }
   case ND_IF: {
     if (node->els) {
       int x = nlabel++;
@@ -433,7 +422,7 @@ void gen_ir(Program *prog) {
     Function *fn = prog->funcs->data[i];
     Node *node = fn->node;
 
-    if (node->op == ND_VARDEF || node->op == ND_DECL)
+    if (node->op == ND_DECL)
       continue;
 
     assert(node->op == ND_FUNC);

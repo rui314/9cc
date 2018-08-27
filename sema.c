@@ -81,13 +81,10 @@ static Node *do_walk(Node *node, bool decay) {
   case ND_NULL:
   case ND_BREAK:
   case ND_CONTINUE:
+  case ND_VARDEF:
     return node;
   case ND_VARREF:
     return maybe_decay(node, decay);
-  case ND_VARDEF:
-    if (node->init)
-      node->init = walk(node->init);
-    return node;
   case ND_IF:
     node->cond = walk(node->cond);
     node->then = walk(node->then);
