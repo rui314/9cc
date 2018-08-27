@@ -362,7 +362,8 @@ static void gen_stmt(Node *node) {
   }
   case ND_FOR: {
     int x = nlabel++;
-    gen_stmt(node->init);
+    if (node->init)
+      gen_stmt(node->init);
     label(x);
     if (node->cond) {
       int r = gen_expr(node->cond);
@@ -372,7 +373,7 @@ static void gen_stmt(Node *node) {
     gen_stmt(node->body);
     label(node->continue_label);
     if (node->inc)
-      gen_stmt(node->inc);
+      kill(gen_expr(node->inc));
     jmp(x);
     label(node->break_label);
     return;

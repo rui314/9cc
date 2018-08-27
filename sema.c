@@ -91,7 +91,8 @@ static Node *do_walk(Node *node, bool decay) {
       node->els = walk(node->els);
     return node;
   case ND_FOR:
-    node->init = walk(node->init);
+    if (node->init)
+      node->init = walk(node->init);
     if (node->cond)
       node->cond = walk(node->cond);
     if (node->inc)
