@@ -16,9 +16,6 @@
 //
 // - Reject bad assignments, such as `1=2+3`.
 
-static Type int_ty = {INT, 4, 4};
-static Type void_ty = {VOID, 0, 0};
-
 static void swap(Node **p, Node **q) {
   Node *r = *p;
   *p = *q;
@@ -195,7 +192,7 @@ static Node *do_walk(Node *node, bool decay) {
     node->rhs = walk(node->rhs);
     check_int(node->lhs);
     check_int(node->rhs);
-    node->ty = &int_ty;
+    node->ty = int_ty();
     return node;
   case ',':
     node->lhs = walk(node->lhs);
@@ -250,7 +247,7 @@ static Node *do_walk(Node *node, bool decay) {
       Node *last = stmts->data[stmts->len - 1];
       node->ty = last->ty;
     } else {
-      node->ty = &void_ty;
+      node->ty = void_ty();
     }
     return node;
   }

@@ -127,6 +127,32 @@ Type *ary_of(Type *base, int len) {
   return ty;
 }
 
+static Type *new_ty(int ty, int size) {
+  Type *ret = calloc(1, sizeof(Type));
+  ret->ty = ty;
+  ret->size = size;
+  ret->align = size;
+  return ret;
+}
+
+Type *void_ty() {
+  return new_ty(VOID, 0);
+}
+
+Type *char_ty() {
+  return new_ty(CHAR, 1);
+}
+
+Type *int_ty() {
+  return new_ty(INT, 4);
+}
+
+Type *func_ty(Type *returning) {
+  Type *ty = calloc(1, sizeof(Type));
+  ty->returning = returning;
+  return ty;
+}
+
 bool same_type(Type *x, Type *y) {
   if (x->ty != y->ty)
     return false;

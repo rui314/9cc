@@ -108,32 +108,6 @@ static void expect(int ty) {
   bad_token(t, "'while' expected");
 }
 
-static Type *new_prim_ty(int ty, int size) {
-  Type *ret = calloc(1, sizeof(Type));
-  ret->ty = ty;
-  ret->size = size;
-  ret->align = size;
-  return ret;
-}
-
-static Type *void_ty() {
-  return new_prim_ty(VOID, 0);
-}
-
-static Type *char_ty() {
-  return new_prim_ty(CHAR, 1);
-}
-
-static Type *int_ty() {
-  return new_prim_ty(INT, 4);
-}
-
-static Type *func_ty(Type *base) {
-  Type *ty = calloc(1, sizeof(Type));
-  ty->returning = base;
-  return ty;
-}
-
 static bool consume(int ty) {
   Token *t = tokens->data[pos];
   if (t->ty != ty)
