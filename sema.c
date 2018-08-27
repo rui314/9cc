@@ -60,7 +60,8 @@ static Node *cast(Node *base, Type *ty) {
 }
 
 static void check_int(Node *node) {
-  if (node->ty->ty != INT && node->ty->ty != CHAR)
+  int t = node->ty->ty;
+  if (t != INT && t != CHAR && t != BOOL)
     bad_node(node, "not an integer");
 }
 
