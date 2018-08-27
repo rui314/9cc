@@ -62,7 +62,7 @@ typedef struct Type {
   int len;
 
   // Struct
-  Vector *members;
+  Map *members;
   int offset;
 
   // Function

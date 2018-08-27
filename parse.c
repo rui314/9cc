@@ -126,22 +126,19 @@ static bool is_typename() {
 
 static Node *declaration_type();
 
-static void add_members(Type *ty, Vector *members) {
+static void fix_struct_offsets(Type *ty) {
+  Vector *types = ty->members->vals;
+
   int off = 0;
-  for (int i = 0; i < members->len; i++) {
-    Node *node = members->data[i];
-    assert(node->op == ND_VARDEF);
+  for (int i = 0; i < types->len; i++) {
+    Type *t2 = types->data[i];
+    off = roundup(off, t2->align);
+    t2->offset = off;
+    off += t2->size;
 
-    Type *t = node->ty;
-    off = roundup(off, t->align);
-    t->offset = off;
-    off += t->size;
-
-    if (ty->align < node->ty->align)
-      ty->align = node->ty->align;
+    if (ty->align < t2->align)
+      ty->align = t2->align;
   }
-
-  ty->members = members;
   ty->size = roundup(off, ty->align);
 }
 
@@ -172,37 +169,34 @@ static Type *decl_specifiers() {
   }
 
   if (t->ty == TK_STRUCT) {
-    char *tag = NULL;
     Token *t = tokens->data[pos];
+    Type *ty = NULL;
+    char *tag = NULL;
+
     if (t->ty == TK_IDENT) {
       pos++;
       tag = t->name;
-    }
-
-    Vector *members = NULL;
-    if (consume('{')) {
-      members = new_vec();
-      while (!consume('}'))
-        vec_push(members, declaration_type());
-    }
-
-    if (!tag && !members)
-      bad_token(t, "bad struct definition");
-
-    Type *ty = NULL;
-    if (tag && !members)
       ty = find_tag(tag);
+    }
 
     if (!ty) {
       ty = calloc(1, sizeof(Type));
       ty->ty = STRUCT;
     }
 
-    if (members) {
-      add_members(ty, members);
-      if (tag)
-        map_put(env->tags, tag, ty);
+    if (consume('{')) {
+      ty->members = new_map();
+      while (!consume('}')) {
+        Node *node = declaration_type();
+	map_put(ty->members, node->name, node->ty);
+      }
+      fix_struct_offsets(ty);
     }
+
+    if (!tag && !ty->members)
+      bad_token(t, "bad struct definition");
+    if (tag)
+      map_put(env->tags, tag, ty);
     return ty;
   }
 

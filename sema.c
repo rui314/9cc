@@ -77,11 +77,11 @@ static Node *walk_nodecay(Node *node) {
 
 static Node *do_walk(Node *node, bool decay) {
   switch (node->op) {
+  case ND_VARDEF:
   case ND_NUM:
   case ND_NULL:
   case ND_BREAK:
   case ND_CONTINUE:
-  case ND_VARDEF:
     return node;
   case ND_VARREF:
     return maybe_decay(node, decay);
@@ -173,7 +173,7 @@ static Node *do_walk(Node *node, bool decay) {
     node->rhs = walk(node->rhs);
     node->ty = node->lhs->ty;
     return node;
-  case ND_DOT:
+  case ND_DOT: {
     node->expr = walk(node->expr);
     if (node->expr->ty->ty != STRUCT)
       bad_node(node, "struct expected before '.'");
@@ -182,14 +182,11 @@ static Node *do_walk(Node *node, bool decay) {
     if (!ty->members)
       bad_node(node, "incomplete type");
 
-    for (int i = 0; i < ty->members->len; i++) {
-      Node *m = ty->members->data[i];
-      if (strcmp(m->name, node->name))
-        continue;
-      node->ty = m->ty;
-      return maybe_decay(node, decay);
-    }
-    bad_node(node, format("member missing: %s", node->name));
+    node->ty = map_get(ty->members, node->name);
+    if (!node->ty)
+      bad_node(node, format("member missing: %s", node->name));
+    return maybe_decay(node, decay);
+  }
   case '?':
     node->cond = walk(node->cond);
     node->then = walk(node->then);
