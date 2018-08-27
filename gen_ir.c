@@ -85,7 +85,7 @@ static int gen_lval(Node *node) {
     return r;
   }
 
-  assert(node->op == ND_VAR);
+  assert(node->op == ND_VARREF);
   Var *var = node->var;
 
   int r = nreg++;
@@ -211,7 +211,7 @@ static int gen_expr(Node *node) {
     label(y);
     return r1;
   }
-  case ND_VAR:
+  case ND_VARREF:
   case ND_DOT: {
     int r = gen_lval(node);
     load(node, r, r);

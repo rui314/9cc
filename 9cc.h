@@ -172,7 +172,7 @@ enum {
   ND_STRUCT,    // Struct
   ND_DECL,      // declaration
   ND_VARDEF,    // Variable definition
-  ND_VAR,       // Variable reference
+  ND_VARREF,    // Variable reference
   ND_CAST,      // Cast
   ND_IF,        // "if"
   ND_FOR,       // "for"
@@ -246,7 +246,7 @@ typedef struct Node {
 
   char *name;
 
-  // For ND_VAR
+  // For ND_VARREF
   Var *var;
 
   // "if" ( cond ) then "else" els
