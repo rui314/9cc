@@ -16,12 +16,6 @@
 //
 // - Reject bad assignments, such as `1=2+3`.
 
-static void swap(Node **p, Node **q) {
-  Node *r = *p;
-  *p = *q;
-  *q = r;
-}
-
 static Node *maybe_decay(Node *base, bool decay) {
   if (!decay || base->ty->ty != ARY)
     return base;
@@ -103,8 +97,11 @@ static Node *do_walk(Node *node, bool decay) {
     node->lhs = walk(node->lhs);
     node->rhs = walk(node->rhs);
 
-    if (node->rhs->ty->ty == PTR)
-      swap(&node->lhs, &node->rhs);
+    if (node->rhs->ty->ty == PTR) {
+      Node *n = node->lhs;
+      node->lhs = node->rhs;
+      node->rhs = n;
+    }
     check_int(node->rhs);
 
     if (node->lhs->ty->ty == PTR)
