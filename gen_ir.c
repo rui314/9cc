@@ -14,9 +14,6 @@
 static Vector *code;
 static int nreg = 1;
 
-static int return_label;
-static int return_reg;
-
 static IR *add(int op, int lhs, int rhs) {
   IR *ir = calloc(1, sizeof(IR));
   ir->op = op;
@@ -246,17 +243,16 @@ static int gen_expr(Node *node) {
     return r;
   }
   case ND_STMT_EXPR: {
-    int orig_label = return_label;
-    int orig_reg = return_reg;
-    return_label = nlabel++;
+    Vector *stmts = node->body->stmts;
+    for (int i = 0; i < stmts->len - 1; i++)
+      gen_stmt(stmts->data[i]);
+
+    Node *last = stmts->data[stmts->len - 1];
+    if (last->op == ND_EXPR_STMT)
+      return gen_expr(last->expr);
+
     int r = nreg++;
-    return_reg = r;
-
-    gen_stmt(node->body);
-    label(return_label);
-
-    return_label = orig_label;
-    return_reg = orig_reg;
+    add(IR_IMM, r, 0);
     return r;
   }
   case ND_MUL_EQ:
@@ -418,15 +414,6 @@ static void gen_stmt(Node *node) {
     break;
   case ND_RETURN: {
     int r = gen_expr(node->expr);
-
-    // Statement expression (GNU extension)
-    if (return_label) {
-      add(IR_MOV, return_reg, r);
-      kill(r);
-      jmp(return_label);
-      return;
-    }
-
     add(IR_RETURN, r, -1);
     kill(r);
     return;
