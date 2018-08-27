@@ -239,13 +239,17 @@ static Node *do_walk(Node *node, bool decay) {
   }
   case ND_STMT_EXPR: {
     node->body = walk(node->body);
+
     Vector *stmts = node->body->stmts;
-    if (stmts->len > 0) {
-      Node *last = stmts->data[stmts->len - 1];
-      node->ty = last->ty;
-    } else {
-      node->ty = void_ty();
-    }
+    if (stmts->len == 0)
+      bad_node(node, "empty statement expression");
+
+    Node *n = vec_pop(stmts);
+    if (n->op != ND_EXPR_STMT)
+      bad_node(node, "statement expression returning void");
+
+    node->expr = n->expr;
+    node->ty = n->expr->ty;
     return node;
   }
   default:

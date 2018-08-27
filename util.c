@@ -33,8 +33,8 @@ void vec_push(Vector *v, void *elem) {
   v->data[v->len++] = elem;
 }
 
-void vec_pop(Vector *v) {
-  v->len--;
+void *vec_pop(Vector *v) {
+  return v->data[--v->len];
 }
 
 Map *new_map(void) {

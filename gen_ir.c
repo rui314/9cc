@@ -240,19 +240,9 @@ static int gen_expr(Node *node) {
     load(node, r, r);
     return r;
   }
-  case ND_STMT_EXPR: {
-    Vector *stmts = node->body->stmts;
-    for (int i = 0; i < stmts->len - 1; i++)
-      gen_stmt(stmts->data[i]);
-
-    Node *last = stmts->data[stmts->len - 1];
-    if (last->op == ND_EXPR_STMT)
-      return gen_expr(last->expr);
-
-    int r = nreg++;
-    add(IR_IMM, r, 0);
-    return r;
-  }
+  case ND_STMT_EXPR:
+    gen_stmt(node->body);
+    return gen_expr(node->expr);
   case ND_MUL_EQ:
   case ND_DIV_EQ:
   case ND_MOD_EQ:
