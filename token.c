@@ -81,16 +81,16 @@ static void print_line(char *buf, char *path, char *pos) {
   }
 }
 
-noreturn void bad_token(Token *t, char *msg) {
-  warn_token(t, msg);
-  exit(1);
-}
-
 void warn_token(Token *t, char *msg) {
   if (t->start)
     print_line(t->buf, t->path, t->start);
   fprintf(stderr, msg);
   fprintf(stderr, "\n");
+}
+
+noreturn void bad_token(Token *t, char *msg) {
+  warn_token(t, msg);
+  exit(1);
 }
 
 noreturn static void bad_position(char *p, char *msg) {
@@ -162,9 +162,14 @@ static Map *keyword_map() {
   return map;
 }
 
+// Returns true if s1 starts with s2.
+static bool startswith(char *s1, char *s2) {
+  return !strncmp(s1, s2, strlen(s2));
+}
+
 static char *block_comment(char *pos) {
   for (char *p = pos + 2; *p; p++)
-    if (!strncmp(p, "*/", 2))
+    if (startswith(p, "*/"))
       return p + 2;
   bad_position(pos, "unclosed comment");
 }
@@ -298,7 +303,7 @@ static char *decimal(char *p) {
 }
 
 static char *number(char *p) {
-  if (!strncasecmp(p, "0x", 2))
+  if (startswith(p, "0x") || startswith(p, "0X"))
     return hexadecimal(p);
   if (*p == '0')
     return octal(p);
@@ -325,14 +330,14 @@ loop:
     }
 
     // Line comment
-    if (!strncmp(p, "//", 2)) {
+    if (startswith(p, "//")) {
       while (*p && *p != '\n')
         p++;
       continue;
     }
 
     // Block comment
-    if (!strncmp(p, "/*", 2)) {
+    if (startswith(p, "/*")) {
       p = block_comment(p);
       continue;
     }
@@ -352,12 +357,11 @@ loop:
     // Multi-letter symbol
     for (int i = 0; symbols[i].name; i++) {
       char *name = symbols[i].name;
-      int len = strlen(name);
-      if (strncmp(p, name, len))
+      if (!startswith(p, name))
         continue;
 
       Token *t = add(symbols[i].ty, p);
-      p += len;
+      p += strlen(name);
       t->end = p;
       goto loop;
     }
@@ -388,7 +392,7 @@ loop:
 
 static void replace_crlf(char *p) {
   for (char *q = p; *q;) {
-    if (q[0] == '\r' && q[1] == '\n')
+    if (startswith(q, "\r\n"))
       q++;
     *p++ = *q++;
   }
@@ -400,17 +404,19 @@ static void replace_crlf(char *p) {
 static void remove_backslash_newline(char *p) {
   int cnt = 0;
   for (char *q = p; *q;) {
-    if (q[0] == '\\' && q[1] == '\n') {
+    if (startswith(q, "\\\n")) {
       cnt++;
       q += 2;
-    } else if (*q == '\n') {
+      continue;
+    }
+    if (*q == '\n') {
       for (int i = 0; i < cnt + 1; i++)
         *p++ = '\n';
       q++;
       cnt = 0;
-    } else {
-      *p++ = *q++;
+      continue;
     }
+    *p++ = *q++;
   }
   *p = '\0';
 }
