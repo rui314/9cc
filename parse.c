@@ -95,6 +95,7 @@ static Var *add_gvar(Type *ty, char *name, char *data, bool is_extern) {
 
 static Node *assign();
 static Node *expr();
+static Node *stmt();
 
 static void expect(int ty) {
   Token *t = tokens->data[pos];
@@ -303,18 +304,21 @@ static Node *function_call(Token *t) {
 
 static Node *stmt_expr() {
   Token *t = tokens->data[pos];
-  Node *n = compound_stmt();
+  Vector *v = new_vec();
+
+  env = new_env(env);
+  do {
+    vec_push(v, stmt());
+  } while (!consume('}'));
   expect(')');
+  env = env->next;
 
-  if (n->stmts->len == 0)
-    bad_token(t, "empty statement expression");
-
-  Node *last = vec_pop(n->stmts);
+  Node *last = vec_pop(v);
   if (last->op != ND_EXPR_STMT)
-    bad_token(t, "statement expression returning void");
+    bad_token(last->token, "statement expression returning void");
 
   Node *node = new_node(ND_STMT_EXPR, t);
-  node->stmts = n->stmts;
+  node->stmts = v;
   node->expr = last->expr;
   return node;
 }
