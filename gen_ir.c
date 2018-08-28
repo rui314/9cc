@@ -404,6 +404,11 @@ static void gen_stmt(Node *node) {
   }
 }
 
+static void gen_param(Var *var, int i) {
+  IR *ir = add(IR_STORE_ARG, var->offset, i);
+  ir->size = var->ty->size;
+}
+
 void gen_ir(Program *prog) {
   for (int i = 0; i < prog->funcs->len; i++) {
     Function *fn = prog->funcs->data[i];
@@ -411,14 +416,27 @@ void gen_ir(Program *prog) {
 
     assert(fn->node->op == ND_FUNC);
 
-    Vector *params = fn->node->params;
-    for (int i = 0; i < params->len; i++) {
-      Var *var = params->data[i];
-      IR *ir = add(IR_STORE_ARG, var->offset, i);
-      ir->size = var->ty->size;
+    // Assign an offset from RBP to each local variable.
+    int off = 0;
+    for (int i = 0; i < fn->lvars->len; i++) {
+      Var *var = fn->lvars->data[i];
+      off = roundup(off, var->ty->align);
+      off += var->ty->size;
+      var->offset = off;
     }
+    fn->stacksize = off;
+
+    // Emit IR.
+    Vector *params = fn->node->params;
+    for (int i = 0; i < params->len; i++)
+      gen_param(params->data[i], i);
 
     gen_stmt(fn->node->body);
     fn->ir = code;
+
+    // Later passes shouldn't need the following members,
+    // so make it explicit.
+    fn->lvars = NULL;
+    fn->node = NULL;
   }
 }

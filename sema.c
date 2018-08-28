@@ -288,16 +288,6 @@ void sema(Program *prog) {
     Function *fn = prog->funcs->data[i];
     Node *node = fn->node;
     assert(node->op == ND_FUNC);
-
     node->body = walk(node->body);
-
-    int off = 0;
-    for (int i = 0; i < fn->lvars->len; i++) {
-      Var *var = fn->lvars->data[i];
-      off = roundup(off, var->ty->align);
-      off += var->ty->size;
-      var->offset = off;
-    }
-    fn->stacksize = off;
   }
 }
