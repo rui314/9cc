@@ -37,6 +37,10 @@ void *vec_pop(Vector *v) {
   return v->data[--v->len];
 }
 
+void *vec_last(Vector *v) {
+  return v->data[v->len - 1];
+}
+
 Map *new_map(void) {
   Map *map = malloc(sizeof(Map));
   map->keys = new_vec();

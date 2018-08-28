@@ -23,6 +23,7 @@ typedef struct {
 Vector *new_vec(void);
 void vec_push(Vector *v, void *elem);
 void *vec_pop(Vector *v);
+void *vec_last(Vector *v);
 
 typedef struct {
   Vector *keys;
