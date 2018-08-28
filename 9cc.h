@@ -52,7 +52,6 @@ typedef struct Type {
   int ty;
   int size;  // sizeof
   int align; // alignof
-  bool is_extern;
 
   // Pointer
   struct Type *ptr_to;

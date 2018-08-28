@@ -75,19 +75,20 @@ static Var *add_lvar(Type *ty, char *name) {
   Var *var = calloc(1, sizeof(Var));
   var->ty = ty;
   var->is_local = true;
-  vec_push(lvars, var);
   map_put(env->vars, name, var);
+  vec_push(lvars, var);
   return var;
 }
 
-static Var *add_gvar(Type *ty, char *name, char *data) {
+static Var *add_gvar(Type *ty, char *name, char *data, bool is_extern) {
   Var *var = calloc(1, sizeof(Var));
   var->ty = ty;
   var->is_local = false;
   var->name = name;
   var->data = data;
-  vec_push(prog->gvars, var);
   map_put(env->vars, name, var);
+  if (!is_extern)
+    vec_push(prog->gvars, var);
   return var;
 }
 
@@ -251,7 +252,7 @@ static Node *string_literal(Token *t) {
 
   Node *node = new_node(ND_VARREF, t);
   node->ty = ty;
-  node->var = add_gvar(ty, name, t->str);
+  node->var = add_gvar(ty, name, t->str, false);
   return node;
 }
 
@@ -844,9 +845,8 @@ static void toplevel() {
   }
 
   // Global variable
-  ty->is_extern = is_extern;
-  add_gvar(ty, name, NULL);
-};
+  add_gvar(ty, name, NULL, is_extern);
+}
 
 static bool is_eof() {
   Token *t = tokens->data[pos];

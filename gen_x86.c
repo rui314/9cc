@@ -232,9 +232,6 @@ void emit_code(Function *fn) {
 }
 
 static void emit_data(Var *var) {
-  if (var->ty->is_extern)
-    return;
-
   if (var->data) {
     char *data = backslash_escape(var->data, var->ty->size);
     printf(".data\n");
