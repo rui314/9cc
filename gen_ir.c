@@ -407,21 +407,18 @@ static void gen_stmt(Node *node) {
 void gen_ir(Program *prog) {
   for (int i = 0; i < prog->funcs->len; i++) {
     Function *fn = prog->funcs->data[i];
-    Node *node = fn->node;
-
-    if (node->op == ND_DECL)
-      continue;
-
-    assert(node->op == ND_FUNC);
     code = new_vec();
 
-    for (int i = 0; i < node->params->len; i++) {
-      Var *var = node->params->data[i];
+    assert(fn->node->op == ND_FUNC);
+
+    Vector *params = fn->node->params;
+    for (int i = 0; i < params->len; i++) {
+      Var *var = params->data[i];
       IR *ir = add(IR_STORE_ARG, var->offset, i);
       ir->size = var->ty->size;
     }
 
-    gen_stmt(node->body);
+    gen_stmt(fn->node->body);
     fn->ir = code;
   }
 }
