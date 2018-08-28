@@ -338,26 +338,17 @@ static void gen_stmt(Node *node) {
   case ND_NULL:
     return;
   case ND_IF: {
-    if (node->els) {
-      int x = nlabel++;
-      int y = nlabel++;
-      int r = gen_expr(node->cond);
-      add(IR_UNLESS, r, x);
-      kill(r);
-      gen_stmt(node->then);
-      jmp(y);
-      label(x);
-      gen_stmt(node->els);
-      label(y);
-      return;
-    }
-
     int x = nlabel++;
+    int y = nlabel++;
     int r = gen_expr(node->cond);
     add(IR_UNLESS, r, x);
     kill(r);
     gen_stmt(node->then);
+    jmp(y);
     label(x);
+    if (node->els)
+      gen_stmt(node->els);
+    label(y);
     return;
   }
   case ND_FOR: {
