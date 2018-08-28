@@ -102,28 +102,6 @@ static int gen_binop(int ty, Node *node) {
   return lhs;
 }
 
-int get_inc_scale(Node *node) {
-  if (node->ty->ty == PTR)
-    return node->ty->ptr_to->size;
-  return 1;
-}
-
-static int gen_pre_inc(Node *node, int num) {
-  int addr = gen_lval(node->expr);
-  int val = nreg++;
-  load(node, val, addr);
-  gen_imm(IR_ADD, val, num * get_inc_scale(node));
-  store(node, addr, val);
-  kill(addr);
-  return val;
-}
-
-static int gen_post_inc(Node *node, int num) {
-  int val = gen_pre_inc(node, num);
-  gen_imm(IR_SUB, val, num * get_inc_scale(node));
-  return val;
-}
-
 static void gen_stmt(Node *node);
 
 static int gen_expr(Node *node) {
@@ -208,7 +186,8 @@ static int gen_expr(Node *node) {
     return r;
   }
   case ND_STMT_EXPR:
-    gen_stmt(node->body);
+    for (int i = 0; i < node->stmts->len; i++)
+      gen_stmt(node->stmts->data[i]);
     return gen_expr(node->expr);
   case '=': {
     int rhs = gen_expr(node->rhs);
@@ -246,10 +225,6 @@ static int gen_expr(Node *node) {
     gen_imm(IR_XOR, r, -1);
     return r;
   }
-  case ND_POST_INC:
-    return gen_post_inc(node, 1);
-  case ND_POST_DEC:
-    return gen_post_inc(node, -1);
   case ',':
     kill(gen_expr(node->lhs));
     return gen_expr(node->rhs);

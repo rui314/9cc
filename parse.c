@@ -230,6 +230,17 @@ static Node *new_expr(int op, Token *t, Node *expr) {
   return node;
 }
 
+static Node *new_varref(Token *t, Var *var) {
+  Node *node = new_node(ND_VARREF, t);
+  node->ty = var->ty;
+  node->var = var;
+  return node;
+}
+
+static Node *new_deref(Token *t, Var *var) {
+  return new_expr(ND_DEREF, t, new_varref(t, var));
+}
+
 Node *new_int_node(int val, Token *t) {
   Node *node = new_node(ND_NUM, t);
   node->ty = int_ty();
@@ -289,16 +300,30 @@ static Node *function_call(Token *t) {
   return node;
 }
 
+static Node *stmt_expr() {
+  Token *t = tokens->data[pos];
+  Node *n = compound_stmt();
+  expect(')');
+
+  if (n->stmts->len == 0)
+    bad_token(t, "empty statement expression");
+
+  Node *last = vec_pop(n->stmts);
+  if (last->op != ND_EXPR_STMT)
+    bad_token(t, "statement expression returning void");
+
+  Node *node = new_node(ND_STMT_EXPR, t);
+  node->stmts = n->stmts;
+  node->expr = last->expr;
+  return node;
+}
+
 static Node *primary() {
   Token *t = tokens->data[pos++];
 
   if (t->ty == '(') {
-    if (consume('{')) {
-      Node *node = new_node(ND_STMT_EXPR, t);
-      node->body = compound_stmt();
-      expect(')');
-      return node;
-    }
+    if (consume('{'))
+      return stmt_expr();
     Node *node = expr();
     expect(')');
     return node;
@@ -321,6 +346,36 @@ static Node *primary() {
 
 static Node *mul();
 
+static Node *new_stmt_expr(Token *t, Vector *exprs) {
+  Node *last = vec_pop(exprs);
+
+  Vector *v = new_vec();
+  for (int i = 0; i < exprs->len; i++)
+    vec_push(v, new_expr(ND_EXPR_STMT, t, exprs->data[i]));
+
+  Node *node = new_node(ND_STMT_EXPR, t);
+  node->stmts = v;
+  node->expr = last;
+  return node;
+}
+
+// `x++` where x is of type T is compiled as
+// `({ T *y = &x; T z = *y; *y = *y + 1; *z; })`.
+static Node *new_post_inc(Token *t, Node *e, int imm) {
+  Vector *v = new_vec();
+
+  Var *var1 = add_lvar(ptr_to(e->ty), "tmp");
+  Var *var2 = add_lvar(e->ty, "tmp");
+
+  vec_push(v, new_binop('=', t, new_varref(t, var1), new_expr(ND_ADDR, t, e)));
+  vec_push(v, new_binop('=', t, new_varref(t, var2), new_deref(t, var1)));
+  vec_push(v, new_binop(
+                  '=', t, new_deref(t, var1),
+                  new_binop('+', t, new_deref(t, var1), new_int_node(imm, t))));
+  vec_push(v, new_varref(t, var2));
+  return new_stmt_expr(t, v);
+}
+
 static Node *postfix() {
   Node *lhs = primary();
 
@@ -328,12 +383,12 @@ static Node *postfix() {
     Token *t = tokens->data[pos];
 
     if (consume(TK_INC)) {
-      lhs = new_expr(ND_POST_INC, t, lhs);
+      lhs = new_post_inc(t, lhs, 1);
       continue;
     }
 
     if (consume(TK_DEC)) {
-      lhs = new_expr(ND_POST_DEC, t, lhs);
+      lhs = new_post_inc(t, lhs, -1);
       continue;
     }
 
@@ -515,42 +570,20 @@ static Node *conditional() {
   return node;
 }
 
-static Node *new_stmt_expr(Token *t, Vector *stmts) {
-  Node *node = new_node(ND_STMT_EXPR, t);
-  node->body = new_node(ND_COMP_STMT, t);
-  node->body->stmts = stmts;
-  return node;
-}
-
-static Node *new_varref(Token *t, Var *var) {
-  Node *node = new_node(ND_VARREF, t);
-  node->ty = var->ty;
-  node->var = var;
-  return node;
-}
-
-// `x op= y` where x is of type T is comipled as
-// `({T *z = &x; *z = *z op y; *z})`.
+// `x op= y` where x is of type T is compiled as
+// `({ T *z = &x; *z = *z op y; })`.
 static Node *new_assign_eq(int op, Node *lhs, Node *rhs) {
-  Vector *stmts = new_vec();
+  Vector *v = new_vec();
   Token *t = lhs->token;
 
   // T *z = &x
   Var *var = add_lvar(ptr_to(lhs->ty), "tmp");
-  Node *e1 = new_binop('=', t, new_varref(t, var), new_expr(ND_ADDR, t, lhs));
-  vec_push(stmts, new_expr(ND_EXPR_STMT, t, e1));
+  vec_push(v, new_binop('=', t, new_varref(t, var), new_expr(ND_ADDR, t, lhs)));
 
   // *z = *z op y
-  Node *lhs2 = new_expr(ND_DEREF, t, new_varref(t, var));
-  Node *rhs2 = new_binop(op, t, new_expr(ND_DEREF, t, new_varref(t, var)), rhs);
-  Node *e2 = new_binop('=', t, lhs2, rhs2);
-  vec_push(stmts, new_expr(ND_EXPR_STMT, t, e2));
-
-  // *z
-  Node *ref3 = new_varref(t, var);
-  Node *e3 = new_expr(ND_DEREF, t, ref3);
-  vec_push(stmts, new_expr(ND_EXPR_STMT, t, e3));
-  return new_stmt_expr(t, stmts);
+  vec_push(v, new_binop('=', t, new_deref(t, var),
+                        new_binop(op, t, new_deref(t, var), rhs)));
+  return new_stmt_expr(t, v);
 }
 
 static Node *assign() {

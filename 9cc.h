@@ -167,7 +167,6 @@ extern int nlabel;
 
 enum {
   ND_NUM = 256, // Number literal
-  ND_STR,       // String literal
   ND_STRUCT,    // Struct
   ND_DECL,      // declaration
   ND_VARDEF,    // Variable definition
@@ -189,8 +188,6 @@ enum {
   ND_SHL,       // <<
   ND_SHR,       // >>
   ND_MOD,       // %
-  ND_POST_INC,  // post ++
-  ND_POST_DEC,  // post --
   ND_RETURN,    // "return"
   ND_CALL,      // Function call
   ND_FUNC,      // Function definition
