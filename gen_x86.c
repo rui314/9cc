@@ -34,7 +34,14 @@ static char *backslash_escape(char *s, int len) {
   return sb_get(sb);
 }
 
-static void emit(char *fmt, ...) {
+__attribute__((format(printf, 1, 2))) static void p(char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vprintf(fmt, ap);
+  printf("\n");
+}
+
+__attribute__((format(printf, 1, 2))) static void emit(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   printf("\t");
@@ -69,9 +76,9 @@ static char *argreg(int r, int size) {
 void emit_code(Function *fn) {
   char *ret = format(".Lend%d", nlabel++);
 
-  printf(".text\n");
-  printf(".global %s\n", fn->name);
-  printf("%s:\n", fn->name);
+  p(".text");
+  p(".global %s", fn->name);
+  p("%s:", fn->name);
   emit("push rbp");
   emit("mov rbp, rsp");
   emit("sub rsp, %d", roundup(fn->stacksize, 16));
@@ -114,7 +121,7 @@ void emit_code(Function *fn) {
       break;
     }
     case IR_LABEL:
-      printf(".L%d:\n", lhs);
+      p(".L%d:", lhs);
       break;
     case IR_LABEL_ADDR:
       emit("lea %s, %s", regs[lhs], ir->name);
@@ -221,7 +228,7 @@ void emit_code(Function *fn) {
     }
   }
 
-  printf("%s:\n", ret);
+  p("%s:", ret);
   emit("pop r15");
   emit("pop r14");
   emit("pop r13");
@@ -233,20 +240,19 @@ void emit_code(Function *fn) {
 
 static void emit_data(Var *var) {
   if (var->data) {
-    char *data = backslash_escape(var->data, var->ty->size);
-    printf(".data\n");
-    printf("%s:\n", var->name);
-    emit(".ascii \"%s\"", data);
+    p(".data");
+    p("%s:", var->name);
+    emit(".ascii \"%s\"", backslash_escape(var->data, var->ty->size));
     return;
   }
 
-  printf(".bss\n");
-  printf("%s:\n", var->name);
+  p(".bss");
+  p("%s:", var->name);
   emit(".zero %d", var->ty->size);
 }
 
 void gen_x86(Program *prog) {
-  printf(".intel_syntax noprefix\n");
+  p(".intel_syntax noprefix");
 
   for (int i = 0; i < prog->gvars->len; i++)
     emit_data(prog->gvars->data[i]);
