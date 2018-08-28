@@ -71,11 +71,15 @@ static void print_line(char *buf, char *path, char *pos) {
 
     fprintf(stderr, "error at %s:%d:%d\n\n", path, line + 1, col + 1);
 
+    // Print out the line containing the error location.
     int linelen = strchr(p, '\n') - start;
     fprintf(stderr, "%.*s\n", linelen, start);
 
+    // Show tabs for tabs and spaces for other characters
+    // so that the column matches.
     for (int i = 0; i < col; i++)
-      fprintf(stderr, " ");
+      fprintf(stderr, (start[i] == '\t') ? "\t" : " ");
+
     fprintf(stderr, "^\n\n");
     return;
   }
