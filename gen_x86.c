@@ -66,9 +66,10 @@ static char *argreg(int r, int size) {
   return argregs[r];
 }
 
-void gen(Function *fn) {
+void emit_code(Function *fn) {
   char *ret = format(".Lend%d", nlabel++);
 
+  printf(".text\n");
   printf(".global %s\n", fn->name);
   printf("%s:\n", fn->name);
   emit("push rbp");
@@ -230,25 +231,29 @@ void gen(Function *fn) {
   emit("ret");
 }
 
+static void emit_data(Var *var) {
+  if (var->ty->is_extern)
+    return;
+
+  if (var->data) {
+    char *data = backslash_escape(var->data, var->ty->size);
+    printf(".data\n");
+    printf("%s:\n", var->name);
+    emit(".ascii \"%s\"", data);
+    return;
+  }
+
+  printf(".bss\n");
+  printf("%s:\n", var->name);
+  emit(".zero %d", var->ty->size);
+}
+
 void gen_x86(Program *prog) {
   printf(".intel_syntax noprefix\n");
 
-  for (int i = 0; i < prog->gvars->len; i++) {
-    Var *var = prog->gvars->data[i];
-    if (var->ty->is_extern)
-      continue;
-    if (var->data) {
-      printf(".data\n");
-      printf("%s:\n", var->name);
-      emit(".ascii \"%s\"", backslash_escape(var->data, var->len));
-    } else {
-      printf(".bss\n");
-      printf("%s:\n", var->name);
-      emit(".zero %d", var->len);
-    }
-  }
+  for (int i = 0; i < prog->gvars->len; i++)
+    emit_data(prog->gvars->data[i]);
 
-  printf(".text\n");
   for (int i = 0; i < prog->funcs->len; i++)
-    gen(prog->funcs->data[i]);
+    emit_code(prog->funcs->data[i]);
 }

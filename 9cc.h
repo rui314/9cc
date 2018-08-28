@@ -232,7 +232,6 @@ typedef struct {
 
   // global
   char *data;
-  int len;
 } Var;
 
 typedef struct Node {
