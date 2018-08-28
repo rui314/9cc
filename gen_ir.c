@@ -306,6 +306,26 @@ static void gen_stmt(Node *node) {
     label(node->break_label);
     return;
   }
+  case ND_SWITCH: {
+    int r = gen_expr(node->cond);
+    for (int i = 0; i < node->cases->len; i++) {
+      Node *case_ = node->cases->data[i];
+      int r2 = nreg++;
+      emit(IR_IMM, r2, case_->val);
+      emit(IR_EQ, r2, r);
+      emit(IR_IF, r2, case_->case_label);
+      kill(r2);
+    }
+    kill(r);
+    jmp(node->break_label);
+    gen_stmt(node->body);
+    label(node->break_label);
+    return;
+  }
+  case ND_CASE:
+    label(node->case_label);
+    gen_stmt(node->body);
+    break;
   case ND_BREAK:
     jmp(node->target->break_label);
     break;

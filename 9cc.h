@@ -103,6 +103,8 @@ enum {
   TK_FOR,       // "for"
   TK_DO,        // "do"
   TK_WHILE,     // "while"
+  TK_SWITCH,    // "switch"
+  TK_CASE,      // "case"
   TK_BREAK,     // "break"
   TK_CONTINUE,  // "continue"
   TK_EQ,        // ==
@@ -177,6 +179,8 @@ enum {
   ND_IF,        // "if"
   ND_FOR,       // "for"
   ND_DO_WHILE,  // do ... while
+  ND_SWITCH,    // switch
+  ND_CASE,      // case
   ND_BREAK,     // break
   ND_CONTINUE,  // continue
   ND_ADDR,      // address-of operator ("&")
@@ -242,6 +246,8 @@ typedef struct Node {
   // "for" ( init; cond; inc ) body
   // "while" ( cond ) body
   // "do" body "while" ( cond )
+  // "switch" ( cond ) body
+  // "case" val ":" body
   Node *cond;
   Node *then;
   Node *els;
@@ -249,7 +255,11 @@ typedef struct Node {
   Node *inc;
   Node *body;
 
-  // For break and continue
+  // For switch and case
+  Vector *cases;
+  int case_label;
+
+  // For case, break and continue
   int break_label;
   int continue_label;
   Node *target;

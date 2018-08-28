@@ -149,6 +149,7 @@ static Map *keyword_map() {
   map_puti(map, "_Alignof", TK_ALIGNOF);
   map_puti(map, "_Bool", TK_BOOL);
   map_puti(map, "break", TK_BREAK);
+  map_puti(map, "case", TK_CASE);
   map_puti(map, "char", TK_CHAR);
   map_puti(map, "continue", TK_CONTINUE);
   map_puti(map, "do", TK_DO);
@@ -160,6 +161,7 @@ static Map *keyword_map() {
   map_puti(map, "return", TK_RETURN);
   map_puti(map, "sizeof", TK_SIZEOF);
   map_puti(map, "struct", TK_STRUCT);
+  map_puti(map, "switch", TK_SWITCH);
   map_puti(map, "typedef", TK_TYPEDEF);
   map_puti(map, "typeof", TK_TYPEOF);
   map_puti(map, "void", TK_VOID);

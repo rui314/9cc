@@ -100,7 +100,11 @@ static Node *do_walk(Node *node, bool decay) {
     node->body = walk(node->body);
     return node;
   case ND_DO_WHILE:
+  case ND_SWITCH:
     node->cond = walk(node->cond);
+    node->body = walk(node->body);
+    return node;
+  case ND_CASE:
     node->body = walk(node->body);
     return node;
   case '+':
