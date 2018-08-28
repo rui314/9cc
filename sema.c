@@ -138,39 +138,12 @@ static Node *do_walk(Node *node, bool decay) {
     }
     return node;
   }
-  case ND_ADD_EQ:
-  case ND_SUB_EQ:
-    node->lhs = walk_nodecay(node->lhs);
-    check_lval(node->lhs);
-    node->rhs = walk(node->rhs);
-    node->ty = node->lhs->ty;
-
-    if (node->lhs->ty->ty == PTR) {
-      node->rhs = scale_ptr('*', node->rhs, node->lhs->ty);
-      node->ty = node->lhs->ty;
-    } else {
-      node->ty = int_ty();
-    }
-    return node;
   case '=':
     node->lhs = walk_nodecay(node->lhs);
     check_lval(node->lhs);
     node->rhs = walk(node->rhs);
     if (node->lhs->ty->ty == BOOL)
       node->rhs = cast(node->rhs, bool_ty());
-    node->ty = node->lhs->ty;
-    return node;
-  case ND_MUL_EQ:
-  case ND_DIV_EQ:
-  case ND_MOD_EQ:
-  case ND_SHL_EQ:
-  case ND_SHR_EQ:
-  case ND_AND_EQ:
-  case ND_XOR_EQ:
-  case ND_OR_EQ:
-    node->lhs = walk_nodecay(node->lhs);
-    check_lval(node->lhs);
-    node->rhs = walk(node->rhs);
     node->ty = node->lhs->ty;
     return node;
   case ND_DOT: {

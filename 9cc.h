@@ -191,16 +191,6 @@ enum {
   ND_MOD,       // %
   ND_POST_INC,  // post ++
   ND_POST_DEC,  // post --
-  ND_MUL_EQ,    // *=
-  ND_DIV_EQ,    // /=
-  ND_MOD_EQ,    // %=
-  ND_ADD_EQ,    // +=
-  ND_SUB_EQ,    // -=
-  ND_SHL_EQ,    // <<=
-  ND_SHR_EQ,    // >>=
-  ND_AND_EQ,    // &=
-  ND_XOR_EQ,    // ^=
-  ND_OR_EQ,     // |=
   ND_RETURN,    // "return"
   ND_CALL,      // Function call
   ND_FUNC,      // Function definition

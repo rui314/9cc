@@ -359,6 +359,8 @@ static Node *postfix() {
   }
 }
 
+static Node *new_assign_eq(int op, Node *lhs, Node *rhs);
+
 static Node *unary() {
   Token *t = tokens->data[pos];
 
@@ -377,9 +379,9 @@ static Node *unary() {
   if (consume(TK_ALIGNOF))
     return new_int_node(get_type(unary())->align, t);
   if (consume(TK_INC))
-    return new_binop(ND_ADD_EQ, t, unary(), new_int_node(1, t));
+    return new_assign_eq('+', unary(), new_int_node(1, t));
   if (consume(TK_DEC))
-    return new_binop(ND_SUB_EQ, t, unary(), new_int_node(1, t));
+    return new_assign_eq('-', unary(), new_int_node(1, t));
   return postfix();
 }
 
@@ -513,38 +515,70 @@ static Node *conditional() {
   return node;
 }
 
-static int assignment_op() {
-  if (consume('='))
-    return '=';
-  if (consume(TK_MUL_EQ))
-    return ND_MUL_EQ;
-  if (consume(TK_DIV_EQ))
-    return ND_DIV_EQ;
-  if (consume(TK_MOD_EQ))
-    return ND_MOD_EQ;
-  if (consume(TK_ADD_EQ))
-    return ND_ADD_EQ;
-  if (consume(TK_SUB_EQ))
-    return ND_SUB_EQ;
-  if (consume(TK_SHL_EQ))
-    return ND_SHL_EQ;
-  if (consume(TK_SHR_EQ))
-    return ND_SHR_EQ;
-  if (consume(TK_AND_EQ))
-    return ND_AND_EQ;
-  if (consume(TK_XOR_EQ))
-    return ND_XOR_EQ;
-  if (consume(TK_OR_EQ))
-    return ND_OR_EQ;
-  return 0;
+static Node *new_stmt_expr(Token *t, Vector *stmts) {
+  Node *node = new_node(ND_STMT_EXPR, t);
+  node->body = new_node(ND_COMP_STMT, t);
+  node->body->stmts = stmts;
+  return node;
+}
+
+static Node *new_varref(Token *t, Var *var) {
+  Node *node = new_node(ND_VARREF, t);
+  node->ty = var->ty;
+  node->var = var;
+  return node;
+}
+
+// `x op= y` where x is of type T is comipled as
+// `({T *z = &x; *z = *z op y; *z})`.
+static Node *new_assign_eq(int op, Node *lhs, Node *rhs) {
+  Vector *stmts = new_vec();
+  Token *t = lhs->token;
+
+  // T *z = &x
+  Var *var = add_lvar(ptr_to(lhs->ty), "tmp");
+  Node *e1 = new_binop('=', t, new_varref(t, var), new_expr(ND_ADDR, t, lhs));
+  vec_push(stmts, new_expr(ND_EXPR_STMT, t, e1));
+
+  // *z = *z op y
+  Node *lhs2 = new_expr(ND_DEREF, t, new_varref(t, var));
+  Node *rhs2 = new_binop(op, t, new_expr(ND_DEREF, t, new_varref(t, var)), rhs);
+  Node *e2 = new_binop('=', t, lhs2, rhs2);
+  vec_push(stmts, new_expr(ND_EXPR_STMT, t, e2));
+
+  // *z
+  Node *ref3 = new_varref(t, var);
+  Node *e3 = new_expr(ND_DEREF, t, ref3);
+  vec_push(stmts, new_expr(ND_EXPR_STMT, t, e3));
+  return new_stmt_expr(t, stmts);
 }
 
 static Node *assign() {
   Node *lhs = conditional();
   Token *t = tokens->data[pos];
-  int op = assignment_op();
-  if (op)
-    return new_binop(op, t, lhs, assign());
+
+  if (consume('='))
+    return new_binop('=', t, lhs, assign());
+  if (consume(TK_MUL_EQ))
+    return new_assign_eq('*', lhs, assign());
+  if (consume(TK_DIV_EQ))
+    return new_assign_eq('/', lhs, assign());
+  if (consume(TK_MOD_EQ))
+    return new_assign_eq('%', lhs, assign());
+  if (consume(TK_ADD_EQ))
+    return new_assign_eq('+', lhs, assign());
+  if (consume(TK_SUB_EQ))
+    return new_assign_eq('-', lhs, assign());
+  if (consume(TK_SHL_EQ))
+    return new_assign_eq(ND_SHL, lhs, assign());
+  if (consume(TK_SHR_EQ))
+    return new_assign_eq(ND_SHR, lhs, assign());
+  if (consume(TK_AND_EQ))
+    return new_assign_eq(ND_LOGAND, lhs, assign());
+  if (consume(TK_XOR_EQ))
+    return new_assign_eq('^', lhs, assign());
+  if (consume(TK_OR_EQ))
+    return new_assign_eq('|', lhs, assign());
   return lhs;
 }
 
@@ -631,10 +665,7 @@ static Node *declaration() {
 
   // Convert `T var = init` to `T var; var = init`.
   Token *t = node->token;
-  Node *lhs = new_node(ND_VARREF, t);
-  lhs->ty = var->ty;
-  lhs->var = var;
-
+  Node *lhs = new_varref(t, var);
   Node *rhs = node->init;
   node->init = NULL;
 
