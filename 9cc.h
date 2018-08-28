@@ -214,20 +214,23 @@ enum {
   FUNC,
 };
 
+// Represents a variable.
 typedef struct {
   Type *ty;
   char *name;
   bool is_local;
 
-  // local
+  // Local variables are compiled to offsets from RBP.
   int offset;
 
-  // global
+  // Global variables are compiled to labels with optional
+  // initialized data.
   char *data;
 } Var;
 
 typedef struct Node Node;
 
+// AST node
 typedef struct Node {
   int op;        // Node type
   Type *ty;      // C type
