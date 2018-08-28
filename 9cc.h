@@ -48,16 +48,18 @@ void sb_append(StringBuilder *sb, char *s);
 void sb_append_n(StringBuilder *sb, char *s, int len);
 char *sb_get(StringBuilder *sb);
 
+typedef struct Type Type;
+
 typedef struct Type {
   int ty;
   int size;  // sizeof
   int align; // alignof
 
   // Pointer
-  struct Type *ptr_to;
+  Type *ptr_to;
 
   // Array
-  struct Type *ary_of;
+  Type *ary_of;
   int len;
 
   // Struct
@@ -65,7 +67,7 @@ typedef struct Type {
   int offset;
 
   // Function
-  struct Type *returning;
+  Type *returning;
 } Type;
 
 Type *ptr_to(Type *base);
@@ -220,14 +222,16 @@ typedef struct {
   char *data;
 } Var;
 
+typedef struct Node Node;
+
 typedef struct Node {
-  int op;            // Node type
-  Type *ty;          // C type
-  struct Node *lhs;  // left-hand side
-  struct Node *rhs;  // right-hand side
-  int val;           // Number literal
-  struct Node *expr; // "return" or expresson stmt
-  Vector *stmts;     // Compound statement
+  int op;        // Node type
+  Type *ty;      // C type
+  Node *lhs;     // left-hand side
+  Node *rhs;     // right-hand side
+  int val;       // Number literal
+  Node *expr;    // "return" or expresson stmt
+  Vector *stmts; // Compound statement
 
   char *name;
 
@@ -238,17 +242,17 @@ typedef struct Node {
   // "for" ( init; cond; inc ) body
   // "while" ( cond ) body
   // "do" body "while" ( cond )
-  struct Node *cond;
-  struct Node *then;
-  struct Node *els;
-  struct Node *init;
-  struct Node *inc;
-  struct Node *body;
+  Node *cond;
+  Node *then;
+  Node *els;
+  Node *init;
+  Node *inc;
+  Node *body;
 
   // For break and continue
   int break_label;
   int continue_label;
-  struct Node *target;
+  Node *target;
 
   // Function definition
   Vector *params;
