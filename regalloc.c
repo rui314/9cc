@@ -43,8 +43,7 @@ static void visit(Vector *irv) {
     switch (irinfo[ir->op].ty) {
     case IR_TY_BINARY:
       ir->lhs = alloc(ir->lhs);
-      if (!ir->is_imm)
-        ir->rhs = alloc(ir->rhs);
+      ir->rhs = alloc(ir->rhs);
       break;
     case IR_TY_REG:
     case IR_TY_REG_IMM:

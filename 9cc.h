@@ -349,9 +349,6 @@ typedef struct {
   // Load/store size in bytes
   int size;
 
-  // For binary operator. If true, rhs is an immediate.
-  bool is_imm;
-
   // Function call
   char *name;
   int nargs;

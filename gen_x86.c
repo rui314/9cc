@@ -106,7 +106,7 @@ void emit_code(Function *fn) {
       emit("mov rax, %s", regs[lhs]);
       emit("jmp %s", ret);
       break;
-    case IR_CALL: {
+    case IR_CALL:
       for (int i = 0; i < ir->nargs; i++)
         emit("mov %s, %s", argregs[i], regs[ir->args[i]]);
 
@@ -116,10 +116,8 @@ void emit_code(Function *fn) {
       emit("call %s", ir->name);
       emit("pop r11");
       emit("pop r10");
-
       emit("mov %s, rax", regs[lhs]);
       break;
-    }
     case IR_LABEL:
       p(".L%d:", lhs);
       break;
@@ -145,10 +143,7 @@ void emit_code(Function *fn) {
       emit("or %s, %s", regs[lhs], regs[rhs]);
       break;
     case IR_XOR:
-      if (ir->is_imm)
-        emit("xor %s, %d", regs[lhs], rhs);
-      else
-        emit("xor %s, %s", regs[lhs], regs[rhs]);
+      emit("xor %s, %s", regs[lhs], regs[rhs]);
       break;
     case IR_SHL:
       emit("mov cl, %s", regs8[rhs]);
@@ -181,31 +176,13 @@ void emit_code(Function *fn) {
       emit("mov [rbp%d], %s", lhs, argreg(rhs, ir->size));
       break;
     case IR_ADD:
-      if (ir->is_imm)
-        emit("add %s, %d", regs[lhs], rhs);
-      else
-        emit("add %s, %s", regs[lhs], regs[rhs]);
+      emit("add %s, %s", regs[lhs], regs[rhs]);
       break;
     case IR_SUB:
-      if (ir->is_imm)
-        emit("sub %s, %d", regs[lhs], rhs);
-      else
-        emit("sub %s, %s", regs[lhs], regs[rhs]);
+      emit("sub %s, %s", regs[lhs], regs[rhs]);
       break;
     case IR_MUL:
-      if (!ir->is_imm) {
-        emit("mov rax, %s", regs[rhs]);
-        emit("imul %s", regs[lhs]);
-        emit("mov %s, rax", regs[lhs]);
-        break;
-      }
-
-      if (__builtin_popcount(rhs) == 1) {
-        emit("shl %s, %d", regs[lhs], __builtin_ctz(rhs));
-        break;
-      }
-
-      emit("mov rax, %d", rhs);
+      emit("mov rax, %s", regs[rhs]);
       emit("imul %s", regs[lhs]);
       emit("mov %s, rax", regs[lhs]);
       break;
