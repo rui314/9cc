@@ -41,37 +41,33 @@ static void kill(int r) {
   used[r] = false;
 }
 
-static void visit(Vector *irv) {
-  for (int i = 0; i < irv->len; i++) {
-    IR *ir = irv->data[i];
+static void visit(IR *ir) {
+  switch (irinfo[ir->op].ty) {
+  case IR_TY_BINARY:
+    ir->lhs = alloc(ir->lhs);
+    ir->rhs = alloc(ir->rhs);
+    break;
+  case IR_TY_REG:
+  case IR_TY_REG_IMM:
+  case IR_TY_REG_LABEL:
+  case IR_TY_LABEL_ADDR:
+    ir->lhs = alloc(ir->lhs);
+    break;
+  case IR_TY_MEM:
+  case IR_TY_REG_REG:
+    ir->lhs = alloc(ir->lhs);
+    ir->rhs = alloc(ir->rhs);
+    break;
+  case IR_TY_CALL:
+    ir->lhs = alloc(ir->lhs);
+    for (int i = 0; i < ir->nargs; i++)
+      ir->args[i] = alloc(ir->args[i]);
+    break;
+  }
 
-    switch (irinfo[ir->op].ty) {
-    case IR_TY_BINARY:
-      ir->lhs = alloc(ir->lhs);
-      ir->rhs = alloc(ir->rhs);
-      break;
-    case IR_TY_REG:
-    case IR_TY_REG_IMM:
-    case IR_TY_REG_LABEL:
-    case IR_TY_LABEL_ADDR:
-      ir->lhs = alloc(ir->lhs);
-      break;
-    case IR_TY_MEM:
-    case IR_TY_REG_REG:
-      ir->lhs = alloc(ir->lhs);
-      ir->rhs = alloc(ir->rhs);
-      break;
-    case IR_TY_CALL:
-      ir->lhs = alloc(ir->lhs);
-      for (int i = 0; i < ir->nargs; i++)
-        ir->args[i] = alloc(ir->args[i]);
-      break;
-    }
-
-    for (int i = 0; i < ir->kill->len; i++) {
-      int r = (intptr_t)ir->kill->data[i];
-      kill(reg_map[r]);
-    }
+  for (int i = 0; i < ir->kill->len; i++) {
+    int r = (intptr_t)ir->kill->data[i];
+    kill(reg_map[r]);
   }
 }
 
@@ -82,6 +78,9 @@ void alloc_regs(Program *prog) {
 
   for (int i = 0; i < prog->funcs->len; i++) {
     Function *fn = prog->funcs->data[i];
-    visit(fn->ir);
+    for (int i = 0; i < fn->ir->len; i++) {
+      IR *ir = fn->ir->data[i];
+      visit(ir);
+    }
   }
 }
