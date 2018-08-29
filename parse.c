@@ -212,13 +212,6 @@ static Node *new_node(int op, Token *t) {
   return node;
 }
 
-static Node *new_loop(int op, Token *t) {
-  Node *node = new_node(op, t);
-  node->break_label = nlabel++;
-  node->continue_label = nlabel++;
-  return node;
-}
-
 static Node *new_binop(int op, Token *t, Node *lhs, Node *rhs) {
   Node *node = new_node(op, t);
   node->lhs = lhs;
@@ -753,7 +746,7 @@ static Node *stmt() {
     return node;
   }
   case TK_FOR: {
-    Node *node = new_loop(ND_FOR, t);
+    Node *node = new_node(ND_FOR, t);
     expect('(');
     env = new_env(env);
     vec_push(breaks, node);
@@ -782,7 +775,7 @@ static Node *stmt() {
     return node;
   }
   case TK_WHILE: {
-    Node *node = new_loop(ND_FOR, t);
+    Node *node = new_node(ND_FOR, t);
     vec_push(breaks, node);
     vec_push(continues, node);
 
@@ -796,7 +789,7 @@ static Node *stmt() {
     return node;
   }
   case TK_DO: {
-    Node *node = new_loop(ND_DO_WHILE, t);
+    Node *node = new_node(ND_DO_WHILE, t);
     vec_push(breaks, node);
     vec_push(continues, node);
 
@@ -814,7 +807,6 @@ static Node *stmt() {
   case TK_SWITCH: {
     Node *node = new_node(ND_SWITCH, t);
     node->cases = new_vec();
-    node->break_label = nlabel++;
 
     expect('(');
     node->cond = expr();
@@ -831,7 +823,6 @@ static Node *stmt() {
     if (switches->len == 0)
       bad_token(t, "stray case");
     Node *node = new_node(ND_CASE, t);
-    node->case_label = nlabel++;
     node->val = const_expr();
     expect(':');
     node->body = stmt();
@@ -934,6 +925,7 @@ static void toplevel() {
     fn->name = name;
     fn->node = node;
     fn->lvars = lvars;
+    fn->bbs = new_vec();
     vec_push(prog->funcs, fn);
     return;
   }

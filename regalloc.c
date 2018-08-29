@@ -51,6 +51,7 @@ static void visit(IR *ir) {
   case IR_TY_REG_IMM:
   case IR_TY_REG_LABEL:
   case IR_TY_LABEL_ADDR:
+  case IR_TY_BR:
     ir->lhs = alloc(ir->lhs);
     break;
   case IR_TY_MEM:
@@ -78,9 +79,12 @@ void alloc_regs(Program *prog) {
 
   for (int i = 0; i < prog->funcs->len; i++) {
     Function *fn = prog->funcs->data[i];
-    for (int i = 0; i < fn->ir->len; i++) {
-      IR *ir = fn->ir->data[i];
-      visit(ir);
+    for (int i = 0; i < fn->bbs->len; i++) {
+      BB *bb = fn->bbs->data[i];
+      for (int i = 0; i < bb->ir->len; i++) {
+        IR *ir = bb->ir->data[i];
+        visit(ir);
+      }
     }
   }
 }

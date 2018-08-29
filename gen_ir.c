@@ -11,8 +11,17 @@
 // Such infinite number of registers are mapped to a finite registers
 // in a later pass.
 
-static Vector *code;
+static Function *fn;
+static BB *out;
 static int nreg = 1;
+
+static BB *new_bb() {
+  BB *bb = calloc(1, sizeof(BB));
+  bb->label = nlabel++;
+  bb->ir = new_vec();
+  vec_push(fn->bbs, bb);
+  return bb;
+}
 
 static IR *emit(int op, int lhs, int rhs) {
   IR *ir = calloc(1, sizeof(IR));
@@ -20,21 +29,32 @@ static IR *emit(int op, int lhs, int rhs) {
   ir->lhs = lhs;
   ir->rhs = rhs;
   ir->kill = new_vec();
-  vec_push(code, ir);
+  vec_push(out->ir, ir);
+  return ir;
+}
+
+static IR *br(int r, BB *then, BB *els) {
+  IR *ir = calloc(1, sizeof(IR));
+  ir->op = IR_BR;
+  ir->lhs = r;
+  ir->bb1 = then;
+  ir->bb2 = els;
+  ir->kill = new_vec();
+  vec_push(out->ir, ir);
   return ir;
 }
 
 static void kill(int r) {
-  IR *ir = vec_last(code);
+  IR *ir = vec_last(out->ir);
   vec_pushi(ir->kill, r);
 }
 
-static void label(int x) {
-  emit(IR_LABEL, x, -1);
-}
-
-static void jmp(int x) {
-  emit(IR_JMP, x, -1);
+static void jmp(BB *bb) {
+  IR *ir = calloc(1, sizeof(IR));
+  ir->op = IR_JMP;
+  ir->bb1 = bb;
+  ir->kill = new_vec();
+  vec_push(out->ir, ir);
 }
 
 static int gen_expr(Node *node);
@@ -118,35 +138,51 @@ static int gen_expr(Node *node) {
   case ND_NE:
     return gen_binop(IR_NE, node);
   case ND_LOGAND: {
-    int x = nlabel++;
+    BB *bb1 = new_bb();
+    BB *bb2 = new_bb();
+    BB *last = new_bb();
 
-    int r1 = gen_expr(node->lhs);
-    emit(IR_UNLESS, r1, x);
+    int r = gen_expr(node->lhs);
+    br(r, bb1, last);
+
+    out = bb1;
     int r2 = gen_expr(node->rhs);
-    emit(IR_MOV, r1, r2);
+    emit(IR_MOV, r, r2);
     kill(r2);
-    emit(IR_UNLESS, r1, x);
-    emit(IR_IMM, r1, 1);
-    label(x);
-    return r1;
+    br(r, bb2, last);
+
+    out = bb2;
+    emit(IR_IMM, r, 1);
+    jmp(last);
+
+    out = last;
+    return r;
   }
   case ND_LOGOR: {
-    int x = nlabel++;
-    int y = nlabel++;
+    BB *bb = new_bb();
+    BB *set0 = new_bb();
+    BB *set1 = new_bb();
+    BB *last = new_bb();
 
-    int r1 = gen_expr(node->lhs);
-    emit(IR_UNLESS, r1, x);
-    emit(IR_IMM, r1, 1);
-    jmp(y);
-    label(x);
+    int r = gen_expr(node->lhs);
+    br(r, set1, bb);
 
+    out = set0;
+    emit(IR_IMM, r, 0);
+    jmp(last);
+
+    out = set1;
+    emit(IR_IMM, r, 1);
+    jmp(last);
+
+    out = bb;
     int r2 = gen_expr(node->rhs);
-    emit(IR_MOV, r1, r2);
+    emit(IR_MOV, r, r2);
     kill(r2);
-    emit(IR_UNLESS, r1, y);
-    emit(IR_IMM, r1, 1);
-    label(y);
-    return r1;
+    br(r, set1, set0);
+
+    out = last;
+    return r;
   }
   case ND_VARREF:
   case ND_DOT: {
@@ -231,21 +267,26 @@ static int gen_expr(Node *node) {
     kill(gen_expr(node->lhs));
     return gen_expr(node->rhs);
   case '?': {
-    int x = nlabel++;
-    int y = nlabel++;
-    int r = gen_expr(node->cond);
+    BB *then = new_bb();
+    BB *els = new_bb();
+    BB *last = new_bb();
 
-    emit(IR_UNLESS, r, x);
+    int r = gen_expr(node->cond);
+    br(r, then, els);
+
+    out = then;
     int r2 = gen_expr(node->then);
     emit(IR_MOV, r, r2);
     kill(r2);
-    jmp(y);
+    jmp(last);
 
-    label(x);
+    out = els;
     int r3 = gen_expr(node->els);
     emit(IR_MOV, r, r3);
     kill(r2);
-    label(y);
+    jmp(last);
+
+    out = last;
     return r;
   }
   case '!': {
@@ -266,78 +307,122 @@ static void gen_stmt(Node *node) {
   case ND_NULL:
     return;
   case ND_IF: {
-    int x = nlabel++;
-    int y = nlabel++;
+    BB *then = new_bb();
+    BB *els = new_bb();
+    BB *last = new_bb();
+
     int r = gen_expr(node->cond);
-    emit(IR_UNLESS, r, x);
+    br(r, then, els);
     kill(r);
+
+    out = then;
     gen_stmt(node->then);
-    jmp(y);
-    label(x);
+    jmp(last);
+
+    out = els;
     if (node->els)
       gen_stmt(node->els);
-    label(y);
+    jmp(last);
+
+    out = last;
     return;
   }
   case ND_FOR: {
-    int x = nlabel++;
+    BB *cond = new_bb();
+    BB *body = new_bb();
+    node->break_ = new_bb();
+    node->continue_ = new_bb();
+
     if (node->init)
       gen_stmt(node->init);
-    label(x);
+    jmp(cond);
+
+    out = cond;
     if (node->cond) {
       int r = gen_expr(node->cond);
-      emit(IR_UNLESS, r, node->break_label);
+      br(r, body, node->break_);
       kill(r);
+    } else {
+      jmp(body);
     }
+
+    out = body;
     gen_stmt(node->body);
-    label(node->continue_label);
+    jmp(node->continue_);
+
+    out = node->continue_;
     if (node->inc)
       kill(gen_expr(node->inc));
-    jmp(x);
-    label(node->break_label);
+    jmp(cond);
+
+    out = node->break_;
     return;
   }
   case ND_DO_WHILE: {
-    int x = nlabel++;
-    label(x);
+    BB *body = new_bb();
+    node->continue_ = new_bb();
+    node->break_ = new_bb();
+
+    jmp(body);
+
+    out = body;
     gen_stmt(node->body);
-    label(node->continue_label);
+    jmp(node->continue_);
+
+    out = node->continue_;
     int r = gen_expr(node->cond);
-    emit(IR_IF, r, x);
+    br(r, body, node->break_);
     kill(r);
-    label(node->break_label);
+
+    out = node->break_;
     return;
   }
   case ND_SWITCH: {
+    node->break_ = new_bb();
+    node->continue_ = new_bb();
+
     int r = gen_expr(node->cond);
     for (int i = 0; i < node->cases->len; i++) {
       Node *case_ = node->cases->data[i];
+      case_->bb = new_bb();
+
+      BB *next = new_bb();
       int r2 = nreg++;
+
       emit(IR_IMM, r2, case_->val);
       emit(IR_EQ, r2, r);
-      emit(IR_IF, r2, case_->case_label);
+      br(r2, case_->bb, next);
       kill(r2);
+      out = next;
     }
+    jmp(node->break_);
     kill(r);
-    jmp(node->break_label);
+
     gen_stmt(node->body);
-    label(node->break_label);
+    jmp(node->break_);
+
+    out = node->break_;
     return;
   }
   case ND_CASE:
-    label(node->case_label);
+    jmp(node->bb);
+    out = node->bb;
     gen_stmt(node->body);
     break;
   case ND_BREAK:
-    jmp(node->target->break_label);
+    jmp(node->target->break_);
     break;
   case ND_CONTINUE:
-    jmp(node->target->continue_label);
+    jmp(node->target->continue_);
     break;
   case ND_RETURN: {
     int r = gen_expr(node->expr);
     emit(IR_RETURN, r, -1);
     kill(r);
+
+    BB *bb = new_bb();
+    jmp(bb);
+    out = bb;
     return;
   }
   case ND_EXPR_STMT:
@@ -359,8 +444,8 @@ static void gen_param(Var *var, int i) {
 
 void gen_ir(Program *prog) {
   for (int i = 0; i < prog->funcs->len; i++) {
-    Function *fn = prog->funcs->data[i];
-    code = new_vec();
+    fn = prog->funcs->data[i];
+    out = new_bb();
 
     assert(fn->node->op == ND_FUNC);
 
@@ -380,7 +465,6 @@ void gen_ir(Program *prog) {
       gen_param(params->data[i], i);
 
     gen_stmt(fn->node->body);
-    fn->ir = code;
 
     // Later passes shouldn't need the following members,
     // so make it explicit.

@@ -27,8 +27,7 @@ IRInfo irinfo[] = {
         [IR_STORE_ARG] = {"STORE_ARG", IR_TY_STORE_ARG},
         [IR_SUB] = {"SUB", IR_TY_BINARY},
         [IR_BPREL] = {"BPREL", IR_TY_REG_IMM},
-        [IR_IF] = {"IF", IR_TY_REG_LABEL},
-        [IR_UNLESS] = {"UNLESS", IR_TY_REG_LABEL},
+        [IR_BR] = {"BR", IR_TY_BR},
 };
 
 static char *tostr(IR *ir) {
@@ -46,7 +45,7 @@ static char *tostr(IR *ir) {
   case IR_TY_REG:
     return format("  %s r%d", info.name, ir->lhs);
   case IR_TY_JMP:
-    return format("  %s .L%d", info.name, ir->lhs);
+    return format("  %s .L%d", info.name, ir->bb1->label);
   case IR_TY_REG_REG:
     return format("  %s r%d, r%d", info.name, ir->lhs, ir->rhs);
   case IR_TY_MEM:
@@ -57,6 +56,9 @@ static char *tostr(IR *ir) {
     return format("  %s%d %d, %d", info.name, ir->size, ir->lhs, ir->rhs);
   case IR_TY_REG_LABEL:
     return format("  %s r%d, .L%d", info.name, ir->lhs, ir->rhs);
+  case IR_TY_BR:
+    return format("  %s r%d, .L%d. L%d", info.name, ir->lhs, ir->bb1->label,
+                  ir->bb2->label);
   case IR_TY_CALL: {
     StringBuilder *sb = new_sb();
     sb_append(sb, format("  r%d = %s(", ir->lhs, ir->name));
@@ -77,8 +79,16 @@ static char *tostr(IR *ir) {
 void dump_ir(Vector *irv) {
   for (int i = 0; i < irv->len; i++) {
     Function *fn = irv->data[i];
-    fprintf(stderr, "%s():\n", fn->name);
-    for (int j = 0; j < fn->ir->len; j++)
-      fprintf(stderr, "%s\n", tostr(fn->ir->data[j]));
+    fprintf(stderr, "%s:\n", fn->name);
+
+    for (int i = 0; i < fn->bbs->len; i++) {
+      BB *bb = fn->bbs->data[i];
+      fprintf(stderr, ".L%d:\n", bb->label);
+
+      for (int i = 0; i < bb->ir->len; i++) {
+        IR *ir = bb->ir->data[i];
+        fprintf(stderr, "%s\n", tostr(ir));
+      }
+    }
   }
 }

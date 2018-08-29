@@ -139,15 +139,12 @@ static void emit_ir(IR *ir, char *ret) {
     emit("shr %s, cl", regs[lhs]);
     break;
   case IR_JMP:
-    emit("jmp .L%d", lhs);
+    emit("jmp .L%d", ir->bb1->label);
     break;
-  case IR_IF:
+  case IR_BR:
     emit("cmp %s, 0", regs[lhs]);
-    emit("jne .L%d", rhs);
-    break;
-  case IR_UNLESS:
-    emit("cmp %s, 0", regs[lhs]);
-    emit("je .L%d", rhs);
+    emit("jne .L%d", ir->bb1->label);
+    emit("jmp .L%d", ir->bb2->label);
     break;
   case IR_LOAD:
     emit("mov %s, [%s]", reg(lhs, ir->size), regs[rhs]);
@@ -204,9 +201,13 @@ void emit_code(Function *fn) {
   emit("push r14");
   emit("push r15");
 
-  for (int i = 0; i < fn->ir->len; i++) {
-    IR *ir = fn->ir->data[i];
-    emit_ir(ir, ret);
+  for (int i = 0; i < fn->bbs->len; i++) {
+    BB *bb = fn->bbs->data[i];
+    p(".L%d:\n", bb->label);
+    for (int i = 0; i < bb->ir->len; i++) {
+      IR *ir = bb->ir->data[i];
+      emit_ir(ir, ret);
+    }
   }
 
   p("%s:", ret);
