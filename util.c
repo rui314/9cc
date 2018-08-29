@@ -33,6 +33,10 @@ void vec_push(Vector *v, void *elem) {
   v->data[v->len++] = elem;
 }
 
+void vec_pushi(Vector *v, int val) {
+  vec_push(v, (void *)(intptr_t)val);
+}
+
 void *vec_pop(Vector *v) {
   return v->data[--v->len];
 }

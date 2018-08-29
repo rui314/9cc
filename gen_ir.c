@@ -19,12 +19,14 @@ static IR *emit(int op, int lhs, int rhs) {
   ir->op = op;
   ir->lhs = lhs;
   ir->rhs = rhs;
+  ir->kill = new_vec();
   vec_push(code, ir);
   return ir;
 }
 
 static void kill(int r) {
-  emit(IR_KILL, r, -1);
+  IR *ir = vec_last(code);
+  vec_pushi(ir->kill, r);
 }
 
 static void label(int x) {

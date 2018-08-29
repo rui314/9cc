@@ -36,6 +36,11 @@ static int alloc(int ir_reg) {
   error("register exhausted");
 }
 
+static void kill(int r) {
+  assert(used[r]);
+  used[r] = false;
+}
+
 static void visit(Vector *irv) {
   for (int i = 0; i < irv->len; i++) {
     IR *ir = irv->data[i];
@@ -63,10 +68,9 @@ static void visit(Vector *irv) {
       break;
     }
 
-    if (ir->op == IR_KILL) {
-      assert(used[ir->lhs]);
-      used[ir->lhs] = false;
-      ir->op = IR_NOP;
+    for (int i = 0; i < ir->kill->len; i++) {
+      int r = (intptr_t)ir->kill->data[i];
+      kill(reg_map[r]);
     }
   }
 }

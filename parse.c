@@ -641,10 +641,10 @@ static Type *read_array(Type *ty) {
 
   while (consume('[')) {
     if (consume(']')) {
-      vec_push(v, (void *)(intptr_t)-1);
+      vec_pushi(v, -1);
       continue;
     }
-    vec_push(v, (void *)(intptr_t)const_expr());
+    vec_pushi(v, const_expr());
     expect(']');
   }
 
