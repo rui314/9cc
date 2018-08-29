@@ -47,6 +47,11 @@ static Env *new_env(Env *next, char *path, char *buf) {
   return env;
 }
 
+// Returns true if s1 starts with s2.
+static bool startswith(char *s1, char *s2) {
+  return !strncmp(s1, s2, strlen(s2));
+}
+
 // Error reporting
 
 // Finds a line pointed by a given pointer from the input file
@@ -110,13 +115,26 @@ int get_line_number(Token *t) {
   return n;
 }
 
+// Returns true if Token t followed a space or a comment
+// in an original source file.
+static bool need_space(Token *t) {
+  char *s = t->start;
+  if (isspace(s[-1]))
+    return true;
+  return t->buf <= s - 2 && startswith(s - 2, "*/");
+}
+
+// For C preprocessor.
 char *stringize(Vector *tokens) {
   StringBuilder *sb = new_sb();
 
   for (int i = 0; i < tokens->len; i++) {
     Token *t = tokens->data[i];
-    if (i)
+    if (t->ty == '\n')
+      continue;
+    if (i > 0 && need_space(t))
       sb_add(sb, ' ');
+
     assert(t->start && t->end);
     sb_append_n(sb, t->start, t->end - t->start);
   }
@@ -175,11 +193,6 @@ static Map *keyword_map() {
   map_puti(map, "void", TK_VOID);
   map_puti(map, "while", TK_WHILE);
   return map;
-}
-
-// Returns true if s1 starts with s2.
-static bool startswith(char *s1, char *s2) {
-  return !strncmp(s1, s2, strlen(s2));
 }
 
 static char *block_comment(char *pos) {
