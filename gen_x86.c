@@ -73,6 +73,123 @@ static char *argreg(int r, int size) {
   return argregs[r];
 }
 
+static void emit_ir(IR *ir, char *ret) {
+  int lhs = ir->lhs;
+  int rhs = ir->rhs;
+
+  switch (ir->op) {
+  case IR_IMM:
+    emit("mov %s, %d", regs[lhs], rhs);
+    break;
+  case IR_BPREL:
+    emit("lea %s, [rbp%d]", regs[lhs], rhs);
+    break;
+  case IR_MOV:
+    emit("mov %s, %s", regs[lhs], regs[rhs]);
+    break;
+  case IR_RETURN:
+    emit("mov rax, %s", regs[lhs]);
+    emit("jmp %s", ret);
+    break;
+  case IR_CALL:
+    for (int i = 0; i < ir->nargs; i++)
+      emit("mov %s, %s", argregs[i], regs[ir->args[i]]);
+
+    emit("push r10");
+    emit("push r11");
+    emit("mov rax, 0");
+    emit("call %s", ir->name);
+    emit("pop r11");
+    emit("pop r10");
+    emit("mov %s, rax", regs[lhs]);
+    break;
+  case IR_LABEL:
+    p(".L%d:", lhs);
+    break;
+  case IR_LABEL_ADDR:
+    emit("lea %s, %s", regs[lhs], ir->name);
+    break;
+  case IR_EQ:
+    emit_cmp("sete", ir);
+    break;
+  case IR_NE:
+    emit_cmp("setne", ir);
+    break;
+  case IR_LT:
+    emit_cmp("setl", ir);
+    break;
+  case IR_LE:
+    emit_cmp("setle", ir);
+    break;
+  case IR_AND:
+    emit("and %s, %s", regs[lhs], regs[rhs]);
+    break;
+  case IR_OR:
+    emit("or %s, %s", regs[lhs], regs[rhs]);
+    break;
+  case IR_XOR:
+    emit("xor %s, %s", regs[lhs], regs[rhs]);
+    break;
+  case IR_SHL:
+    emit("mov cl, %s", regs8[rhs]);
+    emit("shl %s, cl", regs[lhs]);
+    break;
+  case IR_SHR:
+    emit("mov cl, %s", regs8[rhs]);
+    emit("shr %s, cl", regs[lhs]);
+    break;
+  case IR_JMP:
+    emit("jmp .L%d", lhs);
+    break;
+  case IR_IF:
+    emit("cmp %s, 0", regs[lhs]);
+    emit("jne .L%d", rhs);
+    break;
+  case IR_UNLESS:
+    emit("cmp %s, 0", regs[lhs]);
+    emit("je .L%d", rhs);
+    break;
+  case IR_LOAD:
+    emit("mov %s, [%s]", reg(lhs, ir->size), regs[rhs]);
+    if (ir->size == 1)
+      emit("movzb %s, %s", regs[lhs], regs8[lhs]);
+    break;
+  case IR_STORE:
+    emit("mov [%s], %s", regs[lhs], reg(rhs, ir->size));
+    break;
+  case IR_STORE_ARG:
+    emit("mov [rbp%d], %s", lhs, argreg(rhs, ir->size));
+    break;
+  case IR_ADD:
+    emit("add %s, %s", regs[lhs], regs[rhs]);
+    break;
+  case IR_SUB:
+    emit("sub %s, %s", regs[lhs], regs[rhs]);
+    break;
+  case IR_MUL:
+    emit("mov rax, %s", regs[rhs]);
+    emit("imul %s", regs[lhs]);
+    emit("mov %s, rax", regs[lhs]);
+    break;
+  case IR_DIV:
+    emit("mov rax, %s", regs[lhs]);
+    emit("cqo");
+    emit("idiv %s", regs[rhs]);
+    emit("mov %s, rax", regs[lhs]);
+    break;
+  case IR_MOD:
+    emit("mov rax, %s", regs[lhs]);
+    emit("cqo");
+    emit("idiv %s", regs[rhs]);
+    emit("mov %s, rdx", regs[lhs]);
+    break;
+  case IR_NOP:
+    break;
+  default:
+    assert(0 && "unknown operator");
+  }
+}
+
 void emit_code(Function *fn) {
   char *ret = format(".Lend%d", nlabel++);
 
@@ -89,120 +206,7 @@ void emit_code(Function *fn) {
 
   for (int i = 0; i < fn->ir->len; i++) {
     IR *ir = fn->ir->data[i];
-    int lhs = ir->lhs;
-    int rhs = ir->rhs;
-
-    switch (ir->op) {
-    case IR_IMM:
-      emit("mov %s, %d", regs[lhs], rhs);
-      break;
-    case IR_BPREL:
-      emit("lea %s, [rbp%d]", regs[lhs], rhs);
-      break;
-    case IR_MOV:
-      emit("mov %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_RETURN:
-      emit("mov rax, %s", regs[lhs]);
-      emit("jmp %s", ret);
-      break;
-    case IR_CALL:
-      for (int i = 0; i < ir->nargs; i++)
-        emit("mov %s, %s", argregs[i], regs[ir->args[i]]);
-
-      emit("push r10");
-      emit("push r11");
-      emit("mov rax, 0");
-      emit("call %s", ir->name);
-      emit("pop r11");
-      emit("pop r10");
-      emit("mov %s, rax", regs[lhs]);
-      break;
-    case IR_LABEL:
-      p(".L%d:", lhs);
-      break;
-    case IR_LABEL_ADDR:
-      emit("lea %s, %s", regs[lhs], ir->name);
-      break;
-    case IR_EQ:
-      emit_cmp("sete", ir);
-      break;
-    case IR_NE:
-      emit_cmp("setne", ir);
-      break;
-    case IR_LT:
-      emit_cmp("setl", ir);
-      break;
-    case IR_LE:
-      emit_cmp("setle", ir);
-      break;
-    case IR_AND:
-      emit("and %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_OR:
-      emit("or %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_XOR:
-      emit("xor %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_SHL:
-      emit("mov cl, %s", regs8[rhs]);
-      emit("shl %s, cl", regs[lhs]);
-      break;
-    case IR_SHR:
-      emit("mov cl, %s", regs8[rhs]);
-      emit("shr %s, cl", regs[lhs]);
-      break;
-    case IR_JMP:
-      emit("jmp .L%d", lhs);
-      break;
-    case IR_IF:
-      emit("cmp %s, 0", regs[lhs]);
-      emit("jne .L%d", rhs);
-      break;
-    case IR_UNLESS:
-      emit("cmp %s, 0", regs[lhs]);
-      emit("je .L%d", rhs);
-      break;
-    case IR_LOAD:
-      emit("mov %s, [%s]", reg(lhs, ir->size), regs[rhs]);
-      if (ir->size == 1)
-        emit("movzb %s, %s", regs[lhs], regs8[lhs]);
-      break;
-    case IR_STORE:
-      emit("mov [%s], %s", regs[lhs], reg(rhs, ir->size));
-      break;
-    case IR_STORE_ARG:
-      emit("mov [rbp%d], %s", lhs, argreg(rhs, ir->size));
-      break;
-    case IR_ADD:
-      emit("add %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_SUB:
-      emit("sub %s, %s", regs[lhs], regs[rhs]);
-      break;
-    case IR_MUL:
-      emit("mov rax, %s", regs[rhs]);
-      emit("imul %s", regs[lhs]);
-      emit("mov %s, rax", regs[lhs]);
-      break;
-    case IR_DIV:
-      emit("mov rax, %s", regs[lhs]);
-      emit("cqo");
-      emit("idiv %s", regs[rhs]);
-      emit("mov %s, rax", regs[lhs]);
-      break;
-    case IR_MOD:
-      emit("mov rax, %s", regs[lhs]);
-      emit("cqo");
-      emit("idiv %s", regs[rhs]);
-      emit("mov %s, rdx", regs[lhs]);
-      break;
-    case IR_NOP:
-      break;
-    default:
-      assert(0 && "unknown operator");
-    }
+    emit_ir(ir, ret);
   }
 
   p("%s:", ret);
