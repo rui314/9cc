@@ -12,36 +12,17 @@ static char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static char *argregs8[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 static char *argregs32[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 
-static char *backslash_escape(char *s, int len) {
-  static char escaped[256] = {
-          ['\b'] = 'b', ['\f'] = 'f',  ['\n'] = 'n',  ['\r'] = 'r',
-          ['\t'] = 't', ['\\'] = '\\', ['\''] = '\'', ['"'] = '"',
-  };
+__attribute__((format(printf, 1, 2))) static void p(char *fmt, ...);
+__attribute__((format(printf, 1, 2))) static void emit(char *fmt, ...);
 
-  StringBuilder *sb = new_sb();
-  for (int i = 0; i < len; i++) {
-    uint8_t c = s[i];
-    char esc = escaped[c];
-    if (esc) {
-      sb_add(sb, '\\');
-      sb_add(sb, esc);
-    } else if (isgraph(c) || c == ' ') {
-      sb_add(sb, c);
-    } else {
-      sb_append(sb, format("\\%03o", c));
-    }
-  }
-  return sb_get(sb);
-}
-
-__attribute__((format(printf, 1, 2))) static void p(char *fmt, ...) {
+static void p(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   vprintf(fmt, ap);
   printf("\n");
 }
 
-__attribute__((format(printf, 1, 2))) static void emit(char *fmt, ...) {
+static void emit(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   printf("\t");
@@ -215,6 +196,28 @@ void emit_code(Function *fn) {
   emit("mov rsp, rbp");
   emit("pop rbp");
   emit("ret");
+}
+
+static char *backslash_escape(char *s, int len) {
+  static char escaped[256] = {
+          ['\b'] = 'b', ['\f'] = 'f',  ['\n'] = 'n',  ['\r'] = 'r',
+          ['\t'] = 't', ['\\'] = '\\', ['\''] = '\'', ['"'] = '"',
+  };
+
+  StringBuilder *sb = new_sb();
+  for (int i = 0; i < len; i++) {
+    uint8_t c = s[i];
+    char esc = escaped[c];
+    if (esc) {
+      sb_add(sb, '\\');
+      sb_add(sb, esc);
+    } else if (isgraph(c) || c == ' ') {
+      sb_add(sb, c);
+    } else {
+      sb_append(sb, format("\\%03o", c));
+    }
+  }
+  return sb_get(sb);
 }
 
 static void emit_data(Var *var) {
