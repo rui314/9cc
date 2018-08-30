@@ -103,9 +103,6 @@ static void emit_ir(IR *ir, char *ret) {
     emit("pop r10");
     emit("mov %s, rax", regs[lhs]);
     break;
-  case IR_LABEL:
-    p(".L%d:", lhs);
-    break;
   case IR_LABEL_ADDR:
     emit("lea %s, %s", regs[lhs], ir->name);
     break;
