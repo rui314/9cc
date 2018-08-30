@@ -201,7 +201,7 @@ static Vector *read_args() {
   return v;
 }
 
-static bool add_special_macro(Token *t) {
+static bool emit_special_macro(Token *t) {
   if (is_ident(t, "__LINE__")) {
     emit(new_int(t, get_line_number(t)));
     return true;
@@ -212,7 +212,7 @@ static bool add_special_macro(Token *t) {
 static void apply_objlike(Macro *m, Token *start) {
   for (int i = 0; i < m->tokens->len; i++) {
     Token *t = m->tokens->data[i];
-    if (add_special_macro(t))
+    if (emit_special_macro(t))
       continue;
     emit(t);
   }
@@ -227,7 +227,7 @@ static void apply_funclike(Macro *m, Token *start) {
 
   for (int i = 0; i < m->tokens->len; i++) {
     Token *t = m->tokens->data[i];
-    if (add_special_macro(t))
+    if (emit_special_macro(t))
       continue;
 
     if (t->ty == TK_PARAM) {
