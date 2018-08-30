@@ -42,11 +42,11 @@ static void kill(int r) {
 }
 
 static void visit(IR *ir) {
-  if (ir->lhs)
-    ir->lhs = alloc(ir->lhs);
+  if (ir->r0)
+    ir->r0 = alloc(ir->r0);
 
-  if (ir->rhs)
-    ir->rhs = alloc(ir->rhs);
+  if (ir->r2)
+    ir->r2 = alloc(ir->r2);
 
   if (ir->op == IR_CALL)
     for (int i = 0; i < ir->nargs; i++)

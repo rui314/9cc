@@ -31,9 +31,9 @@ static void emit(char *fmt, ...) {
 }
 
 static void emit_cmp(char *insn, IR *ir) {
-  emit("cmp %s, %s", regs[ir->lhs], regs[ir->rhs]);
-  emit("%s %s", insn, regs8[ir->lhs]);
-  emit("movzb %s, %s", regs[ir->lhs], regs8[ir->lhs]);
+  emit("cmp %s, %s", regs[ir->r0], regs[ir->r2]);
+  emit("%s %s", insn, regs8[ir->r0]);
+  emit("movzb %s, %s", regs[ir->r0], regs8[ir->r0]);
 }
 
 static char *reg(int r, int size) {
@@ -55,21 +55,21 @@ static char *argreg(int r, int size) {
 }
 
 static void emit_ir(IR *ir, char *ret) {
-  int lhs = ir->lhs;
-  int rhs = ir->rhs;
+  int r0 = ir->r0;
+  int r2 = ir->r2;
 
   switch (ir->op) {
   case IR_IMM:
-    emit("mov %s, %d", regs[lhs], ir->imm);
+    emit("mov %s, %d", regs[r0], ir->imm);
     break;
   case IR_BPREL:
-    emit("lea %s, [rbp%d]", regs[lhs], ir->imm);
+    emit("lea %s, [rbp%d]", regs[r0], ir->imm);
     break;
   case IR_MOV:
-    emit("mov %s, %s", regs[lhs], regs[rhs]);
+    emit("mov %s, %s", regs[r0], regs[r2]);
     break;
   case IR_RETURN:
-    emit("mov rax, %s", regs[lhs]);
+    emit("mov rax, %s", regs[r0]);
     emit("jmp %s", ret);
     break;
   case IR_CALL:
@@ -82,10 +82,10 @@ static void emit_ir(IR *ir, char *ret) {
     emit("call %s", ir->name);
     emit("pop r11");
     emit("pop r10");
-    emit("mov %s, rax", regs[lhs]);
+    emit("mov %s, rax", regs[r0]);
     break;
   case IR_LABEL_ADDR:
-    emit("lea %s, %s", regs[lhs], ir->name);
+    emit("lea %s, %s", regs[r0], ir->name);
     break;
   case IR_EQ:
     emit_cmp("sete", ir);
@@ -100,63 +100,63 @@ static void emit_ir(IR *ir, char *ret) {
     emit_cmp("setle", ir);
     break;
   case IR_AND:
-    emit("and %s, %s", regs[lhs], regs[rhs]);
+    emit("and %s, %s", regs[r0], regs[r2]);
     break;
   case IR_OR:
-    emit("or %s, %s", regs[lhs], regs[rhs]);
+    emit("or %s, %s", regs[r0], regs[r2]);
     break;
   case IR_XOR:
-    emit("xor %s, %s", regs[lhs], regs[rhs]);
+    emit("xor %s, %s", regs[r0], regs[r2]);
     break;
   case IR_SHL:
-    emit("mov cl, %s", regs8[rhs]);
-    emit("shl %s, cl", regs[lhs]);
+    emit("mov cl, %s", regs8[r2]);
+    emit("shl %s, cl", regs[r0]);
     break;
   case IR_SHR:
-    emit("mov cl, %s", regs8[rhs]);
-    emit("shr %s, cl", regs[lhs]);
+    emit("mov cl, %s", regs8[r2]);
+    emit("shr %s, cl", regs[r0]);
     break;
   case IR_JMP:
     emit("jmp .L%d", ir->bb1->label);
     break;
   case IR_BR:
-    emit("cmp %s, 0", regs[lhs]);
+    emit("cmp %s, 0", regs[r0]);
     emit("jne .L%d", ir->bb1->label);
     emit("jmp .L%d", ir->bb2->label);
     break;
   case IR_LOAD:
-    emit("mov %s, [%s]", reg(lhs, ir->size), regs[rhs]);
+    emit("mov %s, [%s]", reg(r0, ir->size), regs[r2]);
     if (ir->size == 1)
-      emit("movzb %s, %s", regs[lhs], regs8[lhs]);
+      emit("movzb %s, %s", regs[r0], regs8[r0]);
     break;
   case IR_STORE:
-    emit("mov [%s], %s", regs[lhs], reg(rhs, ir->size));
+    emit("mov [%s], %s", regs[r0], reg(r2, ir->size));
     break;
   case IR_STORE_ARG:
     emit("mov [rbp%d], %s", ir->imm, argreg(ir->imm2, ir->size));
     break;
   case IR_ADD:
-    emit("add %s, %s", regs[lhs], regs[rhs]);
+    emit("add %s, %s", regs[r0], regs[r2]);
     break;
   case IR_SUB:
-    emit("sub %s, %s", regs[lhs], regs[rhs]);
+    emit("sub %s, %s", regs[r0], regs[r2]);
     break;
   case IR_MUL:
-    emit("mov rax, %s", regs[rhs]);
-    emit("imul %s", regs[lhs]);
-    emit("mov %s, rax", regs[lhs]);
+    emit("mov rax, %s", regs[r2]);
+    emit("imul %s", regs[r0]);
+    emit("mov %s, rax", regs[r0]);
     break;
   case IR_DIV:
-    emit("mov rax, %s", regs[lhs]);
+    emit("mov rax, %s", regs[r0]);
     emit("cqo");
-    emit("idiv %s", regs[rhs]);
-    emit("mov %s, rax", regs[lhs]);
+    emit("idiv %s", regs[r2]);
+    emit("mov %s, rax", regs[r0]);
     break;
   case IR_MOD:
-    emit("mov rax, %s", regs[lhs]);
+    emit("mov rax, %s", regs[r0]);
     emit("cqo");
-    emit("idiv %s", regs[rhs]);
-    emit("mov %s, rdx", regs[lhs]);
+    emit("idiv %s", regs[r2]);
+    emit("mov %s, rdx", regs[r0]);
     break;
   case IR_NOP:
     break;

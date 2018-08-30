@@ -31,16 +31,16 @@ static IR *new_ir(int op) {
   return ir;
 }
 
-static IR *emit(int op, int lhs, int rhs) {
+static IR *emit(int op, int r0, int r2) {
   IR *ir = new_ir(op);
-  ir->lhs = lhs;
-  ir->rhs = rhs;
+  ir->r0 = r0;
+  ir->r2 = r2;
   return ir;
 }
 
 static IR *br(int r, BB *then, BB *els) {
   IR *ir = new_ir(IR_BR);
-  ir->lhs = r;
+  ir->r0 = r;
   ir->bb1 = then;
   ir->bb2 = els;
   return ir;
@@ -58,7 +58,7 @@ static void jmp(BB *bb) {
 
 static void imm(int r, int imm) {
   IR *ir = new_ir(IR_IMM);
-  ir->lhs = r;
+  ir->r0 = r;
   ir->imm = imm;
 }
 
@@ -110,7 +110,7 @@ static int gen_lval(Node *node) {
   int r = nreg++;
   if (var->is_local) {
     IR *ir = new_ir(IR_BPREL);
-    ir->lhs = r;
+    ir->r0 = r;
     ir->imm = var->offset;
   } else {
     IR *ir = emit(IR_LABEL_ADDR, r, -1);
