@@ -23,24 +23,26 @@ static BB *new_bb() {
   return bb;
 }
 
-static IR *emit(int op, int lhs, int rhs) {
+static IR *new_ir(int op) {
   IR *ir = calloc(1, sizeof(IR));
   ir->op = op;
-  ir->lhs = lhs;
-  ir->rhs = rhs;
   ir->kill = new_vec();
   vec_push(out->ir, ir);
   return ir;
 }
 
+static IR *emit(int op, int lhs, int rhs) {
+  IR *ir = new_ir(op);
+  ir->lhs = lhs;
+  ir->rhs = rhs;
+  return ir;
+}
+
 static IR *br(int r, BB *then, BB *els) {
-  IR *ir = calloc(1, sizeof(IR));
-  ir->op = IR_BR;
+  IR *ir = new_ir(IR_BR);
   ir->lhs = r;
   ir->bb1 = then;
   ir->bb2 = els;
-  ir->kill = new_vec();
-  vec_push(out->ir, ir);
   return ir;
 }
 
@@ -50,11 +52,8 @@ static void kill(int r) {
 }
 
 static void jmp(BB *bb) {
-  IR *ir = calloc(1, sizeof(IR));
-  ir->op = IR_JMP;
+  IR *ir = new_ir(IR_JMP);
   ir->bb1 = bb;
-  ir->kill = new_vec();
-  vec_push(out->ir, ir);
 }
 
 static int gen_expr(Node *node);
