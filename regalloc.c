@@ -1,5 +1,3 @@
-#include "9cc.h"
-
 // Register allocator.
 //
 // Before this pass, it is assumed that we have infinite number of
@@ -11,6 +9,8 @@
 // This design choice simplifies the implementation a lot, since
 // practically we don't have to think about the case in which
 // registers are exhausted and need to be spilled to memory.
+
+#include "9cc.h"
 
 static bool *used;
 static int reg_map[8192];
@@ -42,29 +42,15 @@ static void kill(int r) {
 }
 
 static void visit(IR *ir) {
-  switch (irinfo[ir->op].ty) {
-  case IR_TY_BINARY:
+  if (ir->lhs)
     ir->lhs = alloc(ir->lhs);
+
+  if (ir->rhs)
     ir->rhs = alloc(ir->rhs);
-    break;
-  case IR_TY_REG:
-  case IR_TY_REG_IMM:
-  case IR_TY_REG_LABEL:
-  case IR_TY_LABEL_ADDR:
-  case IR_TY_BR:
-    ir->lhs = alloc(ir->lhs);
-    break;
-  case IR_TY_MEM:
-  case IR_TY_REG_REG:
-    ir->lhs = alloc(ir->lhs);
-    ir->rhs = alloc(ir->rhs);
-    break;
-  case IR_TY_CALL:
-    ir->lhs = alloc(ir->lhs);
+
+  if (ir->op == IR_CALL)
     for (int i = 0; i < ir->nargs; i++)
       ir->args[i] = alloc(ir->args[i]);
-    break;
-  }
 
   for (int i = 0; i < ir->kill->len; i++) {
     int r = (intptr_t)ir->kill->data[i];

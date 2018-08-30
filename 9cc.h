@@ -305,13 +305,6 @@ void sema(Program *prog);
 
 /// ir_dump.c
 
-typedef struct {
-  char *name;
-  int ty;
-} IRInfo;
-
-extern IRInfo irinfo[];
-
 void dump_ir(Vector *irv);
 
 /// gen_ir.c
@@ -355,6 +348,10 @@ typedef struct {
   int lhs;
   int rhs;
 
+  int imm;
+  int imm2;
+  int label;
+
   BB *bb1;
   BB *bb2;
 
@@ -369,23 +366,6 @@ typedef struct {
   // For liveness tracking
   Vector *kill;
 } IR;
-
-enum {
-  IR_TY_NOARG,
-  IR_TY_BINARY,
-  IR_TY_REG,
-  IR_TY_IMM,
-  IR_TY_MEM,
-  IR_TY_JMP,
-  IR_TY_LABEL,
-  IR_TY_LABEL_ADDR,
-  IR_TY_REG_REG,
-  IR_TY_REG_IMM,
-  IR_TY_STORE_ARG,
-  IR_TY_REG_LABEL,
-  IR_TY_BR,
-  IR_TY_CALL,
-};
 
 void gen_ir(Program *prog);
 

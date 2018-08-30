@@ -56,6 +56,12 @@ static void jmp(BB *bb) {
   ir->bb1 = bb;
 }
 
+static void imm(int r, int imm) {
+  IR *ir = new_ir(IR_IMM);
+  ir->lhs = r;
+  ir->imm = imm;
+}
+
 static int gen_expr(Node *node);
 
 static void load(Node *node, int dst, int src) {
@@ -66,13 +72,6 @@ static void load(Node *node, int dst, int src) {
 static void store(Node *node, int dst, int src) {
   IR *ir = emit(IR_STORE, dst, src);
   ir->size = node->ty->size;
-}
-
-static void gen_imm(int op, int r, int imm) {
-  int r2 = nreg++;
-  emit(IR_IMM, r2, imm);
-  emit(op, r, r2);
-  kill(r2);
 }
 
 // In C, all expressions that can be written on the left-hand side of
@@ -98,7 +97,10 @@ static int gen_lval(Node *node) {
 
   if (node->op == ND_DOT) {
     int r = gen_lval(node->expr);
-    gen_imm(IR_ADD, r, node->ty->offset);
+    int r2 = nreg++;
+    imm(r2, node->ty->offset);
+    emit(IR_ADD, r, r2);
+    kill(r2);
     return r;
   }
 
@@ -107,7 +109,9 @@ static int gen_lval(Node *node) {
 
   int r = nreg++;
   if (var->is_local) {
-    emit(IR_BPREL, r, var->offset);
+    IR *ir = new_ir(IR_BPREL);
+    ir->lhs = r;
+    ir->imm = var->offset;
   } else {
     IR *ir = emit(IR_LABEL_ADDR, r, -1);
     ir->name = var->name;
@@ -129,7 +133,7 @@ static int gen_expr(Node *node) {
   switch (node->op) {
   case ND_NUM: {
     int r = nreg++;
-    emit(IR_IMM, r, node->val);
+    imm(r, node->val);
     return r;
   }
   case ND_EQ:
@@ -151,7 +155,7 @@ static int gen_expr(Node *node) {
     br(r, bb2, last);
 
     out = bb2;
-    emit(IR_IMM, r, 1);
+    imm(r, 1);
     jmp(last);
 
     out = last;
@@ -167,11 +171,11 @@ static int gen_expr(Node *node) {
     br(r, set1, bb);
 
     out = set0;
-    emit(IR_IMM, r, 0);
+    imm(r, 0);
     jmp(last);
 
     out = set1;
-    emit(IR_IMM, r, 1);
+    imm(r, 1);
     jmp(last);
 
     out = bb;
@@ -217,7 +221,7 @@ static int gen_expr(Node *node) {
     if (node->ty->ty != BOOL)
       return r;
     int r2 = nreg++;
-    emit(IR_IMM, r2, 0);
+    imm(r2, 0);
     emit(IR_NE, r, r2);
     kill(r2);
     return r;
@@ -259,7 +263,10 @@ static int gen_expr(Node *node) {
     return gen_binop(IR_SHR, node);
   case '~': {
     int r = gen_expr(node->expr);
-    gen_imm(IR_XOR, r, -1);
+    int r2 = nreg++;
+    imm(r2, -1);
+    emit(IR_XOR, r, r2);
+    kill(r2);
     return r;
   }
   case ',':
@@ -291,7 +298,7 @@ static int gen_expr(Node *node) {
   case '!': {
     int lhs = gen_expr(node->expr);
     int rhs = nreg++;
-    emit(IR_IMM, rhs, 0);
+    imm(rhs, 0);
     emit(IR_EQ, lhs, rhs);
     kill(rhs);
     return lhs;
@@ -388,7 +395,7 @@ static void gen_stmt(Node *node) {
       BB *next = new_bb();
       int r2 = nreg++;
 
-      emit(IR_IMM, r2, case_->val);
+      imm(r2, case_->val);
       emit(IR_EQ, r2, r);
       br(r2, case_->bb, next);
       kill(r2);
@@ -437,7 +444,9 @@ static void gen_stmt(Node *node) {
 }
 
 static void gen_param(Var *var, int i) {
-  IR *ir = emit(IR_STORE_ARG, var->offset, i);
+  IR *ir = new_ir(IR_STORE_ARG);
+  ir->imm = var->offset;
+  ir->imm2 = i;
   ir->size = var->ty->size;
 }
 

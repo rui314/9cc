@@ -60,10 +60,10 @@ static void emit_ir(IR *ir, char *ret) {
 
   switch (ir->op) {
   case IR_IMM:
-    emit("mov %s, %d", regs[lhs], rhs);
+    emit("mov %s, %d", regs[lhs], ir->imm);
     break;
   case IR_BPREL:
-    emit("lea %s, [rbp%d]", regs[lhs], rhs);
+    emit("lea %s, [rbp%d]", regs[lhs], ir->imm);
     break;
   case IR_MOV:
     emit("mov %s, %s", regs[lhs], regs[rhs]);
@@ -133,7 +133,7 @@ static void emit_ir(IR *ir, char *ret) {
     emit("mov [%s], %s", regs[lhs], reg(rhs, ir->size));
     break;
   case IR_STORE_ARG:
-    emit("mov [rbp%d], %s", lhs, argreg(rhs, ir->size));
+    emit("mov [rbp%d], %s", ir->imm, argreg(ir->imm2, ir->size));
     break;
   case IR_ADD:
     emit("add %s, %s", regs[lhs], regs[rhs]);
