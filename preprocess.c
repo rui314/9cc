@@ -8,16 +8,16 @@ typedef struct Env {
   Vector *input;
   Vector *output;
   int pos;
-  struct Env *next;
+  struct Env *prev;
 } Env;
 
 static Env *env;
 
-static Env *new_env(Env *next, Vector *input) {
+static Env *new_env(Env *prev, Vector *input) {
   Env *env = calloc(1, sizeof(Env));
   env->input = input;
   env->output = new_vec();
-  env->next = next;
+  env->prev = prev;
   return env;
 }
 
@@ -315,6 +315,6 @@ Vector *preprocess(Vector *tokens) {
   }
 
   Vector *v = env->output;
-  env = env->next;
+  env = env->prev;
   return v;
 }
