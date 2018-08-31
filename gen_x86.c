@@ -32,9 +32,10 @@ static void emit(char *fmt, ...) {
 
 static void emit_cmp(char *insn, IR *ir) {
   int r0 = ir->r0->rn;
+  int r1 = ir->r1->rn;
   int r2 = ir->r2->rn;
 
-  emit("cmp %s, %s", regs[r0], regs[r2]);
+  emit("cmp %s, %s", regs[r1], regs[r2]);
   emit("%s %s", insn, regs8[r0]);
   emit("movzb %s, %s", regs[r0], regs8[r0]);
 }
@@ -123,7 +124,7 @@ static void emit_ir(IR *ir, char *ret) {
     emit("jmp .L%d", ir->bb1->label);
     break;
   case IR_BR:
-    emit("cmp %s, 0", regs[r0]);
+    emit("cmp %s, 0", regs[r2]);
     emit("jne .L%d", ir->bb1->label);
     emit("jmp .L%d", ir->bb2->label);
     break;

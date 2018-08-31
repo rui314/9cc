@@ -22,15 +22,16 @@ static char *tostr_call(IR *ir) {
 
 static char *tostr(IR *ir) {
   int r0 = regno(ir->r0);
+  int r1 = regno(ir->r1);
   int r2 = regno(ir->r2);
 
   switch (ir->op) {
   case IR_ADD:
-    return format("ADD r%d, r%d", r0, r2);
+    return format("r%d = r%d + r%d", r0, r1, r2);
   case IR_CALL:
     return tostr_call(ir);
   case IR_DIV:
-    return format("DIV r%d, r%d", r0, r2);
+    return format("r%d = r%d / r%d", r0, r1, r2);
   case IR_IMM:
     return format("r%d = %d", r0, ir->imm);
   case IR_JMP:
@@ -38,31 +39,31 @@ static char *tostr(IR *ir) {
   case IR_LABEL_ADDR:
     return format("r%d = .L%d", r0, ir->label);
   case IR_EQ:
-    return format("EQ r%d, r%d", r0, r2);
+    return format("r%d = r%d == r%d", r0, r1, r2);
   case IR_NE:
-    return format("NE r%d, r%d", r0, r2);
+    return format("r%d = r%d != r%d", r0, r1, r2);
   case IR_LE:
-    return format("LE r%d, r%d", r0, r2);
+    return format("r%d = r%d <= r%d", r0, r1, r2);
   case IR_LT:
-    return format("LT r%d, r%d", r0, r2);
+    return format("r%d = r%d < r%d", r0, r1, r2);
   case IR_AND:
-    return format("AND r%d, r%d", r0, r2);
+    return format("r%d = r%d & r%d", r0, r1, r2);
   case IR_OR:
-    return format("OR r%d, r%d", r0, r2);
+    return format("r%d = r%d | r%d", r0, r1, r2);
   case IR_XOR:
-    return format("XOR r%d, r%d", r0, r2);
+    return format("r%d = r%d ^ r%d", r0, r1, r2);
   case IR_SHL:
-    return format("SHL r%d, r%d", r0, r2);
+    return format("r%d = r%d << r%d", r0, r1, r2);
   case IR_SHR:
-    return format("SHR r%d, r%d", r0, r2);
+    return format("r%d = r%d >> r%d", r0, r1, r2);
   case IR_LOAD:
     return format("LOAD%d r%d, r%d", ir->size, r0, r2);
   case IR_MOD:
-    return format("MOD r%d, r%d", r0, r2);
+    return format("r%d = r%d %% r%d", r0, r1, r2);
   case IR_MOV:
-    return format("MOV r%d, r%d", r0, r2);
+    return format("r%d = r%d", r0, r2);
   case IR_MUL:
-    return format("MUL r%d, r%d", r0, r2);
+    return format("r%d = r%d * r%d", r0, r1, r2);
   case IR_NOP:
     return "NOP";
   case IR_RETURN:
@@ -72,11 +73,11 @@ static char *tostr(IR *ir) {
   case IR_STORE_ARG:
     return format("STORE_ARG%d %d, %d", ir->size, ir->imm, ir->imm2);
   case IR_SUB:
-    return format("SUB r%d, r%d", r0, r2);
+    return format("r%d = r%d - r%d", r0, r1, r2);
   case IR_BPREL:
-    return format("BPREL r%d, %d", r0, ir->imm);
+    return format("BPREL r%d %d", r0, ir->imm);
   case IR_BR:
-    return format("BR r%d, .L%d, L%d", r0, ir->bb1->label, ir->bb2->label);
+    return format("BR r%d .L%d .L%d", r2, ir->bb1->label, ir->bb2->label);
   default:
     assert(0 && "unknown op");
   }

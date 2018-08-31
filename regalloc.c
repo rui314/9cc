@@ -14,6 +14,31 @@
 
 static bool *used;
 
+// Rewrite `A = B op C` to `A = B; A = A op C`.
+static void three_to_two(BB *bb) {
+  Vector *v = new_vec();
+
+  for (int i = 0; i < bb->ir->len; i++) {
+    IR *ir = bb->ir->data[i];
+
+    if (!ir->r0 || !ir->r1 || ir->r0 == ir->r1) {
+      vec_push(v, ir);
+      continue;
+    }
+
+    IR *ir2 = calloc(1, sizeof(IR));
+    ir2->op = IR_MOV;
+    ir2->kill = new_vec();
+    ir2->r0 = ir->r0;
+    ir2->r2 = ir->r1;
+    vec_push(v, ir2);
+
+    ir->r1 = ir->r0;
+    vec_push(v, ir);
+  }
+  bb->ir = v;
+}
+
 static void alloc(Reg *r) {
   if (!r || r->rn != -1)
     return;
@@ -30,6 +55,7 @@ static void alloc(Reg *r) {
 
 static void visit(IR *ir) {
   alloc(ir->r0);
+  alloc(ir->r1);
   alloc(ir->r2);
 
   if (ir->op == IR_CALL)
@@ -50,6 +76,8 @@ void alloc_regs(Program *prog) {
     Function *fn = prog->funcs->data[i];
     for (int i = 0; i < fn->bbs->len; i++) {
       BB *bb = fn->bbs->data[i];
+      three_to_two(bb);
+
       for (int i = 0; i < bb->ir->len; i++) {
         IR *ir = bb->ir->data[i];
         visit(ir);
