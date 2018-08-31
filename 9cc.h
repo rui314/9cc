@@ -338,15 +338,16 @@ enum {
   IR_NOP,
 };
 
-typedef struct BB {
-  int label;
-  Vector *ir;
-} BB;
-
 typedef struct {
   int vn; // virtual register number
   int rn; // real register number
 } Reg;
+
+typedef struct BB {
+  int label;
+  Vector *ir;
+  Reg *param;
+} BB;
 
 typedef struct {
   int op;
@@ -372,6 +373,9 @@ typedef struct {
 
   // For liveness tracking
   Vector *kill;
+
+  // For SSA
+  Reg *bbarg;
 } IR;
 
 void gen_ir(Program *prog);

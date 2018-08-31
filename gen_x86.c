@@ -60,6 +60,7 @@ static char *argreg(int r, int size) {
 
 static void emit_ir(IR *ir, char *ret) {
   int r0 = ir->r0 ? ir->r0->rn : 0;
+  int r1 = ir->r1 ? ir->r1->rn : 0;
   int r2 = ir->r2 ? ir->r2->rn : 0;
 
   switch (ir->op) {
@@ -121,6 +122,8 @@ static void emit_ir(IR *ir, char *ret) {
     emit("shr %s, cl", regs[r0]);
     break;
   case IR_JMP:
+    if (ir->bbarg)
+      emit("mov %s, %s", regs[ir->bb1->param->rn], regs[ir->bbarg->rn]);
     emit("jmp .L%d", ir->bb1->label);
     break;
   case IR_BR:
@@ -134,7 +137,7 @@ static void emit_ir(IR *ir, char *ret) {
       emit("movzb %s, %s", regs[r0], regs8[r0]);
     break;
   case IR_STORE:
-    emit("mov [%s], %s", regs[r0], reg(r2, ir->size));
+    emit("mov [%s], %s", regs[r1], reg(r2, ir->size));
     break;
   case IR_STORE_ARG:
     emit("mov [rbp%d], %s", ir->imm, argreg(ir->imm2, ir->size));
@@ -185,7 +188,7 @@ void emit_code(Function *fn) {
 
   for (int i = 0; i < fn->bbs->len; i++) {
     BB *bb = fn->bbs->data[i];
-    p(".L%d:\n", bb->label);
+    p(".L%d:", bb->label);
     for (int i = 0; i < bb->ir->len; i++) {
       IR *ir = bb->ir->data[i];
       emit_ir(ir, ret);

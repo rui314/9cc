@@ -35,6 +35,8 @@ static char *tostr(IR *ir) {
   case IR_IMM:
     return format("r%d = %d", r0, ir->imm);
   case IR_JMP:
+    if (ir->bbarg)
+      return format("JMP .L%d (r%d)", ir->bb1->label, regno(ir->bbarg));
     return format("JMP .L%d", ir->bb1->label);
   case IR_LABEL_ADDR:
     return format("r%d = .L%d", r0, ir->label);
@@ -69,7 +71,7 @@ static char *tostr(IR *ir) {
   case IR_RETURN:
     return format("RET r%d", r0);
   case IR_STORE:
-    return format("STORE%d r%d, r%d", ir->size, r0, r2);
+    return format("STORE%d r%d, r%d", ir->size, r1, r2);
   case IR_STORE_ARG:
     return format("STORE_ARG%d %d, %d", ir->size, ir->imm, ir->imm2);
   case IR_SUB:
@@ -90,7 +92,11 @@ void dump_ir(Vector *irv) {
 
     for (int i = 0; i < fn->bbs->len; i++) {
       BB *bb = fn->bbs->data[i];
-      fprintf(stderr, ".L%d:\n", bb->label);
+
+      if (bb->param)
+	fprintf(stderr, ".L%d(r%d):\n", bb->label, regno(bb->param));
+      else
+	fprintf(stderr, ".L%d:\n", bb->label);
 
       for (int i = 0; i < bb->ir->len; i++) {
         IR *ir = bb->ir->data[i];
