@@ -341,6 +341,7 @@ enum {
 typedef struct {
   int vn; // virtual register number
   int rn; // real register number
+  bool marked;
 } Reg;
 
 typedef struct BB {

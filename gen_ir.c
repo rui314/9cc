@@ -26,7 +26,6 @@ static BB *new_bb() {
 static IR *new_ir(int op) {
   IR *ir = calloc(1, sizeof(IR));
   ir->op = op;
-  ir->kill = new_vec();
   vec_push(out->ir, ir);
   return ir;
 }
@@ -60,14 +59,16 @@ static IR *br(Reg *r, BB *then, BB *els) {
   return ir;
 }
 
-static void kill(Reg *r) {
-  IR *ir = vec_last(out->ir);
-  vec_push(ir->kill, r);
-}
-
 static IR *jmp(BB *bb) {
   IR *ir = new_ir(IR_JMP);
   ir->bb1 = bb;
+  return ir;
+}
+
+static IR *jmp_arg(BB *bb, Reg *r) {
+  IR *ir = new_ir(IR_JMP);
+  ir->bb1 = bb;
+  ir->bbarg = r;
   return ir;
 }
 
@@ -112,8 +113,6 @@ static Reg *gen_lval(Node *node) {
     Reg *r2 = gen_lval(node->expr);
     Reg *r3 = imm(node->ty->offset);
     emit(IR_ADD, r1, r2, r3);
-    kill(r2);
-    kill(r3);
     return r1;
   }
 
@@ -137,8 +136,6 @@ static Reg *gen_binop(int op, Node *node) {
   Reg *r2 = gen_expr(node->lhs);
   Reg *r3 = gen_expr(node->rhs);
   emit(op, r1, r2, r3);
-  kill(r2);
-  kill(r3);
   return r1;
 }
 
@@ -158,24 +155,16 @@ static Reg *gen_expr(Node *node) {
     BB *set1 = new_bb();
     BB *last = new_bb();
 
-    Reg *r1 = gen_expr(node->lhs);
-    br(r1, bb, set0);
-    kill(r1);
+    br(gen_expr(node->lhs), bb, set0);
 
     out = bb;
-    Reg *r2 = gen_expr(node->rhs);
-    br(r2, set1, set0);
-    kill(r2);
+    br(gen_expr(node->rhs), set1, set0);
 
     out = set0;
-    Reg *r3 = imm(0);
-    jmp(last)->bbarg = r3;
-    kill(r3);
+    jmp_arg(last, imm(0));
 
     out = set1;
-    Reg *r4 = imm(1);
-    jmp(last)->bbarg = r4;
-    kill(r4);
+    jmp_arg(last, imm(1));
 
     out = last;
     out->param = new_reg();
@@ -189,22 +178,16 @@ static Reg *gen_expr(Node *node) {
 
     Reg *r1 = gen_expr(node->lhs);
     br(r1, set1, bb);
-    kill(r1);
 
     out = bb;
     Reg *r2 = gen_expr(node->rhs);
     br(r2, set1, set0);
-    kill(r2);
 
     out = set0;
-    Reg *r3 = imm(0);
-    jmp(last)->bbarg = r3;
-    kill(r3);
+    jmp_arg(last, imm(0));
 
     out = set1;
-    Reg *r4 = imm(1);
-    jmp(last)->bbarg = r4;
-    kill(r4);
+    jmp_arg(last, imm(1));
 
     out = last;
     out->param = new_reg();
@@ -212,11 +195,9 @@ static Reg *gen_expr(Node *node) {
   }
   case ND_VARREF:
   case ND_DOT: {
-    Reg *r1 = new_reg();
-    Reg *r2 = gen_lval(node);
-    load(node, r1, r2);
-    kill(r2);
-    return r1;
+    Reg *r = new_reg();
+    load(node, r, gen_lval(node));
+    return r;
   }
   case ND_CALL: {
     Reg *args[6];
@@ -224,33 +205,26 @@ static Reg *gen_expr(Node *node) {
       args[i] = gen_expr(node->args->data[i]);
 
     Reg *r = new_reg();
-
     IR *ir = emit1(IR_CALL, r);
     ir->name = node->name;
     ir->nargs = node->args->len;
     memcpy(ir->args, args, sizeof(args));
-
-    for (int i = 0; i < ir->nargs; i++)
-      kill(ir->args[i]);
     return r;
   }
   case ND_ADDR:
     return gen_lval(node->expr);
   case ND_DEREF: {
-    Reg *r = gen_expr(node->expr);
-    load(node, r, r);
+    Reg *r = new_reg();
+    load(node, r, gen_expr(node->expr));
     return r;
   }
   case ND_CAST: {
     Reg *r1 = gen_expr(node->expr);
     if (node->ty->ty != BOOL)
       return r1;
-    Reg *r2 = imm(0);
-    Reg *r3 = new_reg();
-    emit(IR_NE, r3, r1, r2);
-    kill(r1);
-    kill(r2);
-    return r3;
+    Reg *r2 = new_reg();
+    emit(IR_NE, r2, r1, imm(0));
+    return r2;
   }
   case ND_STMT_EXPR:
     for (int i = 0; i < node->stmts->len; i++)
@@ -262,7 +236,6 @@ static Reg *gen_expr(Node *node) {
 
     IR *ir = emit(IR_STORE, NULL, r2, r1);
     ir->size = node->ty->size;
-    kill(r2);
     return r1;
   }
   case '+':
@@ -292,33 +265,24 @@ static Reg *gen_expr(Node *node) {
   case '~': {
     Reg *r1 = new_reg();
     Reg *r2 = gen_expr(node->expr);
-    Reg *r3 = imm(-1);
-    emit(IR_XOR, r1, r2, r3);
-    kill(r2);
-    kill(r3);
+    emit(IR_XOR, r1, r2, imm(-1));
     return r1;
   }
   case ',':
-    kill(gen_expr(node->lhs));
+    gen_expr(node->lhs);
     return gen_expr(node->rhs);
   case '?': {
     BB *then = new_bb();
     BB *els = new_bb();
     BB *last = new_bb();
 
-    Reg *r1 = gen_expr(node->cond);
-    br(r1, then, els);
-    kill(r1);
+    br(gen_expr(node->cond), then, els);
 
     out = then;
-    Reg *r2 = gen_expr(node->then);
-    jmp(last)->bbarg = r2;
-    kill(r2);
+    jmp_arg(last, gen_expr(node->then));
 
     out = els;
-    Reg *r3 = gen_expr(node->els);
-    jmp(last)->bbarg = r3;
-    kill(r3);
+    jmp_arg(last, gen_expr(node->els));
 
     out = last;
     out->param = new_reg();
@@ -327,10 +291,7 @@ static Reg *gen_expr(Node *node) {
   case '!': {
     Reg *r1 = new_reg();
     Reg *r2 = gen_expr(node->expr);
-    Reg *r3 = imm(0);
-    emit(IR_EQ, r1, r2, r3);
-    kill(r2);
-    kill(r3);
+    emit(IR_EQ, r1, r2, imm(0));
     return r1;
   }
   default:
@@ -347,9 +308,7 @@ static void gen_stmt(Node *node) {
     BB *els = new_bb();
     BB *last = new_bb();
 
-    Reg *r = gen_expr(node->cond);
-    br(r, then, els);
-    kill(r);
+    br(gen_expr(node->cond), then, els);
 
     out = then;
     gen_stmt(node->then);
@@ -365,9 +324,9 @@ static void gen_stmt(Node *node) {
   }
   case ND_FOR: {
     BB *cond = new_bb();
+    node->continue_ = new_bb();
     BB *body = new_bb();
     node->break_ = new_bb();
-    node->continue_ = new_bb();
 
     if (node->init)
       gen_stmt(node->init);
@@ -377,7 +336,6 @@ static void gen_stmt(Node *node) {
     if (node->cond) {
       Reg *r = gen_expr(node->cond);
       br(r, body, node->break_);
-      kill(r);
     } else {
       jmp(body);
     }
@@ -388,15 +346,15 @@ static void gen_stmt(Node *node) {
 
     out = node->continue_;
     if (node->inc)
-      kill(gen_expr(node->inc));
+      gen_expr(node->inc);
     jmp(cond);
 
     out = node->break_;
     return;
   }
   case ND_DO_WHILE: {
-    BB *body = new_bb();
     node->continue_ = new_bb();
+    BB *body = new_bb();
     node->break_ = new_bb();
 
     jmp(body);
@@ -408,7 +366,6 @@ static void gen_stmt(Node *node) {
     out = node->continue_;
     Reg *r = gen_expr(node->cond);
     br(r, body, node->break_);
-    kill(r);
 
     out = node->break_;
     return;
@@ -424,15 +381,11 @@ static void gen_stmt(Node *node) {
 
       BB *next = new_bb();
       Reg *r2 = new_reg();
-      Reg *r3 = imm(case_->val);
-      emit(IR_EQ, r2, r3, r);
+      emit(IR_EQ, r2, r, imm(case_->val));
       br(r2, case_->bb, next);
-      kill(r2);
-      kill(r3);
       out = next;
     }
     jmp(node->break_);
-    kill(r);
 
     gen_stmt(node->body);
     jmp(node->break_);
@@ -452,9 +405,7 @@ static void gen_stmt(Node *node) {
     jmp(node->target->continue_);
     break;
   case ND_RETURN: {
-    Reg *r = gen_expr(node->expr);
-    emit1(IR_RETURN, r);
-    kill(r);
+    emit1(IR_RETURN, gen_expr(node->expr));
 
     BB *bb = new_bb();
     jmp(bb);
@@ -462,7 +413,7 @@ static void gen_stmt(Node *node) {
     return;
   }
   case ND_EXPR_STMT:
-    kill(gen_expr(node->expr));
+    gen_expr(node->expr);
     return;
   case ND_COMP_STMT:
     for (int i = 0; i < node->stmts->len; i++)

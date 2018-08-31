@@ -30,7 +30,6 @@ static void three_to_two(BB *bb) {
 
     IR *ir2 = calloc(1, sizeof(IR));
     ir2->op = IR_MOV;
-    ir2->kill = new_vec();
     ir2->r0 = ir->r0;
     ir2->r2 = ir->r1;
     vec_push(v, ir2);
@@ -39,6 +38,26 @@ static void three_to_two(BB *bb) {
     vec_push(v, ir);
   }
   bb->ir = v;
+}
+
+static void mark(IR *ir, Reg *r) {
+  if (!r || r->marked)
+    return;
+  if (!ir->kill)
+    ir->kill = new_vec();
+  r->marked = true;
+  vec_push(ir->kill, r);
+}
+
+static void mark_last_use(IR *ir) {
+  mark(ir, ir->r0);
+  mark(ir, ir->r1);
+  mark(ir, ir->r2);
+  mark(ir, ir->bbarg);
+
+  if (ir->op == IR_CALL)
+    for (int i = 0; i < ir->nargs; i++)
+      mark(ir, ir->args[i]);
 }
 
 static void alloc(Reg *r) {
@@ -55,7 +74,7 @@ static void alloc(Reg *r) {
   error("register exhausted");
 }
 
-static void visit(IR *ir) {
+static void regalloc(IR *ir) {
   alloc(ir->r0);
   alloc(ir->r1);
   alloc(ir->r2);
@@ -64,6 +83,9 @@ static void visit(IR *ir) {
   if (ir->op == IR_CALL)
     for (int i = 0; i < ir->nargs; i++)
       alloc(ir->args[i]);
+
+  if (!ir->kill)
+    return;
 
   for (int i = 0; i < ir->kill->len; i++) {
     Reg *r = ir->kill->data[i];
@@ -77,15 +99,35 @@ void alloc_regs(Program *prog) {
 
   for (int i = 0; i < prog->funcs->len; i++) {
     Function *fn = prog->funcs->data[i];
-
     for (int i = 0; i < fn->bbs->len; i++) {
       BB *bb = fn->bbs->data[i];
       three_to_two(bb);
+    }
+  }
+
+  for (int i = prog->funcs->len - 1; i >= 0; i--) {
+    Function *fn = prog->funcs->data[i];
+
+    for (int i = fn->bbs->len - 1; i >= 0; i--) {
+      BB *bb = fn->bbs->data[i];
+
+      for (int i = bb->ir->len - 1; i >= 0; i--) {
+        IR *ir = bb->ir->data[i];
+        mark_last_use(ir);
+      }
+    }
+  }
+
+  for (int i = 0; i < prog->funcs->len; i++) {
+    Function *fn = prog->funcs->data[i];
+
+    for (int i = 0; i < fn->bbs->len; i++) {
+      BB *bb = fn->bbs->data[i];
       alloc(bb->param);
 
       for (int i = 0; i < bb->ir->len; i++) {
         IR *ir = bb->ir->data[i];
-        visit(ir);
+        regalloc(ir);
       }
     }
   }

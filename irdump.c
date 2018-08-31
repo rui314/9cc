@@ -94,9 +94,9 @@ void dump_ir(Vector *irv) {
       BB *bb = fn->bbs->data[i];
 
       if (bb->param)
-	fprintf(stderr, ".L%d(r%d):\n", bb->label, regno(bb->param));
+        fprintf(stderr, ".L%d(r%d):\n", bb->label, regno(bb->param));
       else
-	fprintf(stderr, ".L%d:\n", bb->label);
+        fprintf(stderr, ".L%d:\n", bb->label);
 
       for (int i = 0; i < bb->ir->len; i++) {
         IR *ir = bb->ir->data[i];
