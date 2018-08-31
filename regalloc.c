@@ -13,55 +13,38 @@
 #include "9cc.h"
 
 static bool *used;
-static int reg_map[8192];
-static int reg_map_sz = sizeof(reg_map) / sizeof(*reg_map);
 
-static int alloc(int ir_reg) {
-  if (reg_map_sz <= ir_reg)
-    error("program too big");
-
-  if (reg_map[ir_reg] != -1) {
-    int r = reg_map[ir_reg];
-    assert(used[r]);
-    return r;
-  }
+static void alloc(Reg *r) {
+  if (!r || r->rn != -1)
+    return;
 
   for (int i = 0; i < num_regs; i++) {
     if (used[i])
       continue;
-    reg_map[ir_reg] = i;
     used[i] = true;
-    return i;
+    r->rn = i;
+    return;
   }
   error("register exhausted");
 }
 
-static void kill(int r) {
-  assert(used[r]);
-  used[r] = false;
-}
-
 static void visit(IR *ir) {
-  if (ir->r0)
-    ir->r0 = alloc(ir->r0);
-
-  if (ir->r2)
-    ir->r2 = alloc(ir->r2);
+  alloc(ir->r0);
+  alloc(ir->r2);
 
   if (ir->op == IR_CALL)
     for (int i = 0; i < ir->nargs; i++)
-      ir->args[i] = alloc(ir->args[i]);
+      alloc(ir->args[i]);
 
   for (int i = 0; i < ir->kill->len; i++) {
-    int r = (intptr_t)ir->kill->data[i];
-    kill(reg_map[r]);
+    Reg *r = ir->kill->data[i];
+    assert(r->rn != -1);
+    used[r->rn] = false;
   }
 }
 
 void alloc_regs(Program *prog) {
   used = calloc(1, num_regs);
-  for (int i = 0; i < reg_map_sz; i++)
-    reg_map[i] = -1;
 
   for (int i = 0; i < prog->funcs->len; i++) {
     Function *fn = prog->funcs->data[i];

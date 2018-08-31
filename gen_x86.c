@@ -31,9 +31,12 @@ static void emit(char *fmt, ...) {
 }
 
 static void emit_cmp(char *insn, IR *ir) {
-  emit("cmp %s, %s", regs[ir->r0], regs[ir->r2]);
-  emit("%s %s", insn, regs8[ir->r0]);
-  emit("movzb %s, %s", regs[ir->r0], regs8[ir->r0]);
+  int r0 = ir->r0->rn;
+  int r2 = ir->r2->rn;
+
+  emit("cmp %s, %s", regs[r0], regs[r2]);
+  emit("%s %s", insn, regs8[r0]);
+  emit("movzb %s, %s", regs[r0], regs8[r0]);
 }
 
 static char *reg(int r, int size) {
@@ -55,8 +58,8 @@ static char *argreg(int r, int size) {
 }
 
 static void emit_ir(IR *ir, char *ret) {
-  int r0 = ir->r0;
-  int r2 = ir->r2;
+  int r0 = ir->r0 ? ir->r0->rn : 0;
+  int r2 = ir->r2 ? ir->r2->rn : 0;
 
   switch (ir->op) {
   case IR_IMM:
@@ -74,7 +77,7 @@ static void emit_ir(IR *ir, char *ret) {
     break;
   case IR_CALL:
     for (int i = 0; i < ir->nargs; i++)
-      emit("mov %s, %s", argregs[i], regs[ir->args[i]]);
+      emit("mov %s, %s", argregs[i], regs[ir->args[i]->rn]);
 
     emit("push r10");
     emit("push r11");

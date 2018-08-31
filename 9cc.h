@@ -344,10 +344,15 @@ typedef struct BB {
 } BB;
 
 typedef struct {
+  int vn; // virtual register number
+  int rn; // real register number
+} Reg;
+
+typedef struct {
   int op;
 
-  int r0;
-  int r2;
+  Reg *r0;
+  Reg *r2;
 
   int imm;
   int imm2;
@@ -362,7 +367,7 @@ typedef struct {
   // Function call
   char *name;
   int nargs;
-  int args[6];
+  Reg *args[6];
 
   // For liveness tracking
   Vector *kill;
