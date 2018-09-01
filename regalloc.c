@@ -99,32 +99,23 @@ void alloc_regs(Program *prog) {
 
   for (int i = 0; i < prog->funcs->len; i++) {
     Function *fn = prog->funcs->data[i];
+
     for (int i = 0; i < fn->bbs->len; i++) {
       BB *bb = fn->bbs->data[i];
       three_to_two(bb);
     }
-  }
-
-  for (int i = prog->funcs->len - 1; i >= 0; i--) {
-    Function *fn = prog->funcs->data[i];
 
     for (int i = fn->bbs->len - 1; i >= 0; i--) {
       BB *bb = fn->bbs->data[i];
-
       for (int i = bb->ir->len - 1; i >= 0; i--) {
         IR *ir = bb->ir->data[i];
         mark_last_use(ir);
       }
     }
-  }
-
-  for (int i = 0; i < prog->funcs->len; i++) {
-    Function *fn = prog->funcs->data[i];
 
     for (int i = 0; i < fn->bbs->len; i++) {
       BB *bb = fn->bbs->data[i];
       alloc(bb->param);
-
       for (int i = 0; i < bb->ir->len; i++) {
         IR *ir = bb->ir->data[i];
         regalloc(ir);
