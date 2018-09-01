@@ -136,11 +136,17 @@ static void emit_ir(IR *ir, char *ret) {
     if (ir->size == 1)
       emit("movzb %s, %s", regs[r0], regs8[r0]);
     break;
+  case IR_LOAD_SPILL:
+    emit("mov %s, [rbp%d]", regs[r0], ir->var->offset);
+    break;
   case IR_STORE:
     emit("mov [%s], %s", regs[r1], reg(r2, ir->size));
     break;
   case IR_STORE_ARG:
     emit("mov [rbp%d], %s", ir->var->offset, argreg(ir->imm, ir->size));
+    break;
+  case IR_STORE_SPILL:
+    emit("mov [rbp%d], %s", ir->var->offset, regs[r1]);
     break;
   case IR_ADD:
     emit("add %s, %s", regs[r0], regs[r2]);

@@ -60,6 +60,8 @@ static char *tostr(IR *ir) {
     return format("r%d = r%d >> r%d", r0, r1, r2);
   case IR_LOAD:
     return format("LOAD%d r%d, r%d", ir->size, r0, r2);
+  case IR_LOAD_SPILL:
+    return format("LOAD_SPILL r%d, %d", r0, ir->imm);
   case IR_MOD:
     return format("r%d = r%d %% r%d", r0, r1, r2);
   case IR_MOV:
@@ -75,6 +77,8 @@ static char *tostr(IR *ir) {
   case IR_STORE_ARG:
     return format("STORE_ARG%d %d %s (%d)", ir->size, ir->imm, ir->var->name,
                   ir->var->offset);
+  case IR_STORE_SPILL:
+    return format("STORE_SPILL r%d, %d", r1, ir->imm);
   case IR_SUB:
     return format("r%d = r%d - r%d", r0, r1, r2);
   case IR_BPREL:

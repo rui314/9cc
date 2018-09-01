@@ -332,15 +332,22 @@ enum {
   IR_JMP,
   IR_BR,
   IR_LOAD,
+  IR_LOAD_SPILL,
   IR_STORE,
   IR_STORE_ARG,
+  IR_STORE_SPILL,
   IR_NOP,
 };
 
 typedef struct {
   int vn; // virtual register number
   int rn; // real register number
-  bool marked;
+
+  // For regalloc
+  int def;
+  int last_use;
+  bool spill;
+  Var *var;
 } Reg;
 
 typedef struct BB {
