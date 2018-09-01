@@ -400,16 +400,15 @@ static void gen_stmt(Node *node) {
     break;
   case ND_BREAK:
     jmp(node->target->break_);
+    out = new_bb();
     break;
   case ND_CONTINUE:
     jmp(node->target->continue_);
+    out = new_bb();
     break;
   case ND_RETURN: {
     emit1(IR_RETURN, gen_expr(node->expr));
-
-    BB *bb = new_bb();
-    jmp(bb);
-    out = bb;
+    out = new_bb();
     return;
   }
   case ND_EXPR_STMT:
