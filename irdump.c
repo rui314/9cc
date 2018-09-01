@@ -73,11 +73,12 @@ static char *tostr(IR *ir) {
   case IR_STORE:
     return format("STORE%d r%d, r%d", ir->size, r1, r2);
   case IR_STORE_ARG:
-    return format("STORE_ARG%d %d, %d", ir->size, ir->imm, ir->imm2);
+    return format("STORE_ARG%d %d %s (%d)", ir->size, ir->imm, ir->var->name,
+                  ir->var->offset);
   case IR_SUB:
     return format("r%d = r%d - r%d", r0, r1, r2);
   case IR_BPREL:
-    return format("BPREL r%d %d", r0, ir->imm);
+    return format("BPREL r%d %s (%d)", r0, ir->var->name, ir->var->offset);
   case IR_BR:
     return format("BR r%d .L%d .L%d", r2, ir->bb1->label, ir->bb2->label);
   default:

@@ -123,7 +123,7 @@ static Reg *gen_lval(Node *node) {
   if (var->is_local) {
     IR *ir = new_ir(IR_BPREL);
     ir->r0 = r;
-    ir->imm = var->offset;
+    ir->var = var;
   } else {
     IR *ir = emit1(IR_LABEL_ADDR, r);
     ir->name = var->name;
@@ -426,8 +426,8 @@ static void gen_stmt(Node *node) {
 
 static void gen_param(Var *var, int i) {
   IR *ir = new_ir(IR_STORE_ARG);
-  ir->imm = var->offset;
-  ir->imm2 = i;
+  ir->var = var;
+  ir->imm = i;
   ir->size = var->ty->size;
 }
 
@@ -438,16 +438,6 @@ void gen_ir(Program *prog) {
 
     assert(fn->node->op == ND_FUNC);
 
-    // Assign an offset from RBP to each local variable.
-    int off = 0;
-    for (int i = 0; i < fn->lvars->len; i++) {
-      Var *var = fn->lvars->data[i];
-      off += var->ty->size;
-      off = roundup(off, var->ty->align);
-      var->offset = -off;
-    }
-    fn->stacksize = off;
-
     // Emit IR.
     Vector *params = fn->node->params;
     for (int i = 0; i < params->len; i++)
@@ -455,9 +445,7 @@ void gen_ir(Program *prog) {
 
     gen_stmt(fn->node->body);
 
-    // Later passes shouldn't need the following members,
-    // so make it explicit.
-    fn->lvars = NULL;
+    // Later passes shouldn't need the AST, so make it explicit.
     fn->node = NULL;
   }
 }

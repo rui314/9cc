@@ -76,6 +76,7 @@ static Var *add_lvar(Type *ty, char *name) {
   Var *var = calloc(1, sizeof(Var));
   var->ty = ty;
   var->is_local = true;
+  var->name = name;
   map_put(env->vars, name, var);
   vec_push(lvars, var);
   return var;

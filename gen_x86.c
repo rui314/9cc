@@ -68,7 +68,7 @@ static void emit_ir(IR *ir, char *ret) {
     emit("mov %s, %d", regs[r0], ir->imm);
     break;
   case IR_BPREL:
-    emit("lea %s, [rbp%d]", regs[r0], ir->imm);
+    emit("lea %s, [rbp%d]", regs[r0], ir->var->offset);
     break;
   case IR_MOV:
     emit("mov %s, %s", regs[r0], regs[r2]);
@@ -140,7 +140,7 @@ static void emit_ir(IR *ir, char *ret) {
     emit("mov [%s], %s", regs[r1], reg(r2, ir->size));
     break;
   case IR_STORE_ARG:
-    emit("mov [rbp%d], %s", ir->imm, argreg(ir->imm2, ir->size));
+    emit("mov [rbp%d], %s", ir->var->offset, argreg(ir->imm, ir->size));
     break;
   case IR_ADD:
     emit("add %s, %s", regs[r0], regs[r2]);
@@ -173,6 +173,16 @@ static void emit_ir(IR *ir, char *ret) {
 }
 
 void emit_code(Function *fn) {
+  // Assign an offset from RBP to each local variable.
+  int off = 0;
+  for (int i = 0; i < fn->lvars->len; i++) {
+    Var *var = fn->lvars->data[i];
+    off += var->ty->size;
+    off = roundup(off, var->ty->align);
+    var->offset = -off;
+  }
+
+  // Emit assembly
   char *ret = format(".Lend%d", nlabel++);
 
   p(".text");
@@ -180,7 +190,7 @@ void emit_code(Function *fn) {
   p("%s:", fn->name);
   emit("push rbp");
   emit("mov rbp, rsp");
-  emit("sub rsp, %d", roundup(fn->stacksize, 16));
+  emit("sub rsp, %d", roundup(off, 16));
   emit("push r12");
   emit("push r13");
   emit("push r14");
