@@ -25,6 +25,8 @@ void vec_push(Vector *v, void *elem);
 void vec_pushi(Vector *v, int val);
 void *vec_pop(Vector *v);
 void *vec_last(Vector *v);
+bool vec_contains(Vector *v, void *elem);
+bool vec_union1(Vector *v, void *elem);
 
 typedef struct {
   Vector *keys;
@@ -354,6 +356,13 @@ typedef struct BB {
   int label;
   Vector *ir;
   Reg *param;
+
+  // For liveness analysis
+  Vector *succ;
+  Vector *pred;
+  Vector *def_regs;
+  Vector *in_regs;
+  Vector *out_regs;
 } BB;
 
 typedef struct {
@@ -386,6 +395,10 @@ typedef struct {
 } IR;
 
 void gen_ir(Program *prog);
+
+/// liveness.c
+
+void liveness(Program *prog);
 
 /// regalloc.c
 

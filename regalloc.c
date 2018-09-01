@@ -77,7 +77,13 @@ static Vector *collect_regs(Function *fn) {
         for (int i = 0; i < ir->nargs; i++)
           set_last_use(ir->args[i], ic);
     }
+
+    for (int i = 0; i < bb->out_regs->len; i++) {
+      Reg *r = bb->out_regs->data[i];
+      set_last_use(r, ic);
+    }
   }
+
   return v;
 }
 

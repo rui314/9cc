@@ -47,6 +47,20 @@ void *vec_last(Vector *v) {
   return v->data[v->len - 1];
 }
 
+bool vec_contains(Vector *v, void *elem) {
+  for (int i = 0; i < v->len; i++)
+    if (v->data[i] == elem)
+      return true;
+  return false;
+}
+
+bool vec_union1(Vector *v, void *elem) {
+  if (vec_contains(v, elem))
+    return false;
+  vec_push(v, elem);
+  return true;
+}
+
 Map *new_map(void) {
   Map *map = malloc(sizeof(Map));
   map->keys = new_vec();

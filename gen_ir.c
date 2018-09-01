@@ -19,6 +19,11 @@ static BB *new_bb() {
   BB *bb = calloc(1, sizeof(BB));
   bb->label = nlabel++;
   bb->ir = new_vec();
+  bb->succ = new_vec();
+  bb->pred = new_vec();
+  bb->def_regs = new_vec();
+  bb->in_regs = new_vec();
+  bb->out_regs = new_vec();
   vec_push(fn->bbs, bb);
   return bb;
 }
@@ -430,9 +435,14 @@ static void gen_param(Var *var, int i) {
 void gen_ir(Program *prog) {
   for (int i = 0; i < prog->funcs->len; i++) {
     fn = prog->funcs->data[i];
-    out = new_bb();
 
     assert(fn->node->op == ND_FUNC);
+
+    // Add an empty entry BB to make later analysis easy.
+    out = new_bb();
+    BB *bb = new_bb();
+    jmp(bb);
+    out = bb;
 
     // Emit IR.
     Vector *params = fn->node->params;
@@ -440,6 +450,9 @@ void gen_ir(Program *prog) {
       gen_param(params->data[i], i);
 
     gen_stmt(fn->node->body);
+
+    // Make it always ends with a return to make later analysis easy.
+    new_ir(IR_RETURN)->r2 = imm(0);
 
     // Later passes shouldn't need the AST, so make it explicit.
     fn->node = NULL;
