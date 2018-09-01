@@ -205,6 +205,8 @@ static Node *do_walk(Node *node, bool decay) {
     node->expr = walk(node->expr);
     check_lval(node->expr);
     node->ty = ptr_to(node->expr->ty);
+    if (node->expr->op == ND_VARREF)
+      node->expr->var->address_taken = true;
     return node;
   case ND_DEREF:
     node->expr = walk(node->expr);

@@ -71,7 +71,7 @@ static char *tostr(IR *ir) {
   case IR_NOP:
     return "NOP";
   case IR_RETURN:
-    return format("RET r%d", r0);
+    return format("RET r%d", r2);
   case IR_STORE:
     return format("STORE%d r%d, r%d", ir->size, r1, r2);
   case IR_STORE_ARG:

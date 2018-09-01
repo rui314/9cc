@@ -75,5 +75,20 @@ void liveness(Program *prog) {
 	visit(bb, ir);
       }
     }
+
+    // Incoming registers of the entry BB correspond to
+    // uninitialized variables in a program.
+    // Add dummy definitions to make later analysis easy.
+    BB *ent = fn->bbs->data[0];
+    for (int i = 0; i < ent->in_regs->len; i++) {
+      Reg *r = ent->in_regs->data[i];
+      IR *ir = calloc(1, sizeof(IR));
+      ir->op = IR_MOV;
+      ir->r0 = r;
+      ir->imm = 0;
+      vec_push(ent->ir, ir);
+      vec_push(ent->def_regs, r);
+    }
+    ent->in_regs = new_vec();
   }
 }

@@ -38,12 +38,12 @@ int main(int argc, char **argv) {
   if (dump_ir1)
     dump_ir(prog->funcs);
 
+  optimize(prog);
   liveness(prog);
+  alloc_regs(prog);
 
   if (dump_ir2)
     dump_ir(prog->funcs);
-
-  alloc_regs(prog);
 
   gen_x86(prog);
   return 0;

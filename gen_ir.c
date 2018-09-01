@@ -35,7 +35,7 @@ static IR *new_ir(int op) {
   return ir;
 }
 
-static Reg *new_reg() {
+Reg *new_reg() {
   Reg *r = calloc(1, sizeof(Reg));
   r->vn = nreg++;
   r->rn = -1;
@@ -430,6 +430,7 @@ static void gen_param(Var *var, int i) {
   ir->var = var;
   ir->imm = i;
   ir->size = var->ty->size;
+  var->address_taken = true;
 }
 
 void gen_ir(Program *prog) {

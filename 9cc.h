@@ -218,6 +218,8 @@ enum {
   FUNC,
 };
 
+typedef struct Reg Reg;
+
 // Represents a variable.
 typedef struct {
   Type *ty;
@@ -230,6 +232,10 @@ typedef struct {
   // Global variables are compiled to labels with optional
   // initialized data.
   char *data;
+
+  // For optimization passes.
+  bool address_taken;
+  Reg *promoted;
 } Var;
 
 typedef struct Node Node;
@@ -341,9 +347,12 @@ enum {
   IR_NOP,
 };
 
-typedef struct {
+typedef struct Reg {
   int vn; // virtual register number
   int rn; // real register number
+
+  // For optimizer
+  Reg *promoted;
 
   // For regalloc
   int def;
@@ -395,6 +404,15 @@ typedef struct {
 } IR;
 
 void gen_ir(Program *prog);
+Reg *new_reg();
+
+/// opt.c
+
+void optimize(Program *prog);
+
+/// liveness.c
+
+void liveness(Program *prog);
 
 /// liveness.c
 
