@@ -45,12 +45,6 @@ static IR *emit(int op, Reg *r0, Reg *r1, Reg *r2) {
   return ir;
 }
 
-static IR *emit1(int op, Reg *r) {
-  IR *ir = new_ir(op);
-  ir->r0 = r;
-  return ir;
-}
-
 static IR *br(Reg *r, BB *then, BB *els) {
   IR *ir = new_ir(IR_BR);
   ir->r2 = r;
@@ -119,16 +113,17 @@ static Reg *gen_lval(Node *node) {
   assert(node->op == ND_VARREF);
   Var *var = node->var;
 
-  Reg *r = new_reg();
+  IR *ir;
   if (var->is_local) {
-    IR *ir = new_ir(IR_BPREL);
-    ir->r0 = r;
+    ir = new_ir(IR_BPREL);
+    ir->r0 = new_reg();
     ir->var = var;
   } else {
-    IR *ir = emit1(IR_LABEL_ADDR, r);
+    ir = new_ir(IR_LABEL_ADDR);
+    ir->r0 = new_reg();
     ir->name = var->name;
   }
-  return r;
+  return ir->r0;
 }
 
 static Reg *gen_binop(int op, Node *node) {
@@ -204,12 +199,12 @@ static Reg *gen_expr(Node *node) {
     for (int i = 0; i < node->args->len; i++)
       args[i] = gen_expr(node->args->data[i]);
 
-    Reg *r = new_reg();
-    IR *ir = emit1(IR_CALL, r);
+    IR *ir = new_ir(IR_CALL);
+    ir->r0 = new_reg();
     ir->name = node->name;
     ir->nargs = node->args->len;
     memcpy(ir->args, args, sizeof(args));
-    return r;
+    return ir->r0;
   }
   case ND_ADDR:
     return gen_lval(node->expr);
@@ -407,7 +402,9 @@ static void gen_stmt(Node *node) {
     out = new_bb();
     break;
   case ND_RETURN: {
-    emit1(IR_RETURN, gen_expr(node->expr));
+    Reg *r = gen_expr(node->expr);
+    IR *ir = new_ir(IR_RETURN);
+    ir->r2 = r;
     out = new_bb();
     return;
   }

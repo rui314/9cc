@@ -74,7 +74,7 @@ static void emit_ir(IR *ir, char *ret) {
     emit("mov %s, %s", regs[r0], regs[r2]);
     break;
   case IR_RETURN:
-    emit("mov rax, %s", regs[r0]);
+    emit("mov rax, %s", regs[r2]);
     emit("jmp %s", ret);
     break;
   case IR_CALL:
