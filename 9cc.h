@@ -52,18 +52,16 @@ void sb_append(StringBuilder *sb, char *s);
 void sb_append_n(StringBuilder *sb, char *s, int len);
 char *sb_get(StringBuilder *sb);
 
-typedef struct Type Type;
-
 typedef struct Type {
   int ty;
   int size;  // sizeof
   int align; // alignof
 
   // Pointer
-  Type *ptr_to;
+  struct Type *ptr_to;
 
   // Array
-  Type *ary_of;
+  struct Type *ary_of;
   int len;
 
   // Struct
@@ -71,15 +69,15 @@ typedef struct Type {
   int offset;
 
   // Function
-  Type *returning;
+  struct Type *returning;
 } Type;
 
 Type *ptr_to(Type *base);
 Type *ary_of(Type *base, int len);
-Type *void_ty();
-Type *bool_ty();
-Type *char_ty();
-Type *int_ty();
+Type *void_ty(void);
+Type *bool_ty(void);
+Type *char_ty(void);
+Type *int_ty(void);
 Type *func_ty(Type *returning);
 bool same_type(Type *x, Type *y);
 int roundup(int x, int align);
@@ -218,10 +216,8 @@ enum {
   FUNC,
 };
 
-typedef struct Reg Reg;
-
 // Represents a variable.
-typedef struct {
+typedef struct Reg {
   Type *ty;
   char *name;
   bool is_local;
@@ -235,20 +231,19 @@ typedef struct {
 
   // For optimization passes.
   bool address_taken;
-  Reg *promoted;
+  struct Reg *promoted;
 } Var;
 
-typedef struct Node Node;
 typedef struct BB BB;
 
 // AST node
 typedef struct Node {
   int op;        // Node type
   Type *ty;      // C type
-  Node *lhs;     // left-hand side
-  Node *rhs;     // right-hand side
+  struct Node *lhs;     // left-hand side
+  struct Node *rhs;     // right-hand side
   int val;       // Number literal
-  Node *expr;    // "return" or expresson stmt
+  struct Node *expr;    // "return" or expresson stmt
   Vector *stmts; // Compound statement
 
   char *name;
@@ -262,19 +257,19 @@ typedef struct Node {
   // "do" body "while" ( cond )
   // "switch" ( cond ) body
   // "case" val ":" body
-  Node *cond;
-  Node *then;
-  Node *els;
-  Node *init;
-  Node *inc;
-  Node *body;
+  struct Node *cond;
+  struct Node *then;
+  struct Node *els;
+  struct Node *init;
+  struct Node *inc;
+  struct Node *body;
 
   // For switch and case
   Vector *cases;
   BB *bb;
 
   // For case, break and continue
-  Node *target;
+  struct Node *target;
   BB *break_;
   BB *continue_;
 
