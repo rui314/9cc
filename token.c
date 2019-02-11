@@ -93,7 +93,7 @@ static void print_line(char *buf, char *path, char *pos) {
 void warn_token(Token *t, char *msg) {
   if (t->start)
     print_line(t->buf, t->path, t->start);
-  fprintf(stderr, msg);
+  fprintf(stderr, "%s", msg);
   fprintf(stderr, "\n");
 }
 
@@ -104,7 +104,7 @@ noreturn void bad_token(Token *t, char *msg) {
 
 noreturn static void bad_position(char *p, char *msg) {
   print_line(env->buf, env->path, p);
-  error(msg);
+  error("%s", msg);
 }
 
 int get_line_number(Token *t) {
