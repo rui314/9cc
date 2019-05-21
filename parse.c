@@ -886,6 +886,11 @@ static void toplevel() {
 
   char *name = ident();
 
+  lvars = new_vec();
+  breaks = new_vec();
+  continues = new_vec();
+  switches = new_vec();
+
   // Function
   if (consume('(')) {
     Vector *params = new_vec();
@@ -897,11 +902,6 @@ static void toplevel() {
 
     Token *t = tokens->data[pos];
     Node *node = new_node(ND_DECL, t);
-
-    lvars = new_vec();
-    breaks = new_vec();
-    continues = new_vec();
-    switches = new_vec();
 
     node->name = name;
     node->params = params;
