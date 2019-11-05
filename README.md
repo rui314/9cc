@@ -1,6 +1,9 @@
 9cc C compiler
 ==============
 
+Note: 9cc is no longer an active project, and the successor is
+[chibicc](https://github.com/rui314/chibicc).
+
 9cc is a successor of my [8cc](https://github.com/rui314/8cc) C compiler.
 In this new project, I'm trying to write code that can be understood
 extremely easily while creating a compiler that generates reasonably
