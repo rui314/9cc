@@ -12,7 +12,7 @@
 // correct. As a heuristic, we spill a register whose last use is
 // furthest.
 //
-// We then insert load and store instructions for spilled registesr.
+// We then insert load and store instructions for spilled register.
 // The last register (num_regs-1'th register) is reserved for that
 // purpose.
 
